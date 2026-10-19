@@ -52,6 +52,13 @@ animaciones con [Remotion](https://www.remotion.dev); tú revisas en el navegado
 
    Los archivos quedan en `salida/`.
 
+## Actualizar
+
+Cuando haya mejoras nuevas, dentro de la carpeta del proyecto:
+```bash
+npm run actualizar
+```
+
 ## Comandos (si prefieres hacerlo sin Claude)
 
 | Comando | Qué hace |

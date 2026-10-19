@@ -26,6 +26,7 @@ pide en español lo que quiere ver ("corta las pausas y pon subtítulos") y tú 
 | Comando | Qué hace |
 |---|---|
 | `npm run instalar` | Instala Whisper y descarga el modelo (solo la primera vez) |
+| `npm run actualizar` | Trae la última versión desde GitHub e instala lo nuevo |
 | `npm run preparar -- <video> [opciones]` | Convierte, transcribe y corta pausas. `--ayuda` muestra las opciones |
 | `npm run dev` | Abre la vista previa (Remotion Studio) |
 | `npm run exportar -- <id> [--formato 9:16\|4:5\|1:1\|16:9] [--todos]` | Exporta a `salida/` |

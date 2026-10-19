@@ -34,6 +34,7 @@
     "predev": "node scripts/sincronizar.mjs",
     "dev": "remotion studio",
     "instalar": "node scripts/instalar.mjs",
+    "actualizar": "node scripts/actualizar.mjs",
     "preparar": "node scripts/preparar.mjs",
     "duplicar": "node scripts/duplicar.mjs",
     "revisar": "node scripts/revisar.mjs",
