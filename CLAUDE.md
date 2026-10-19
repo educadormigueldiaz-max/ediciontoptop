@@ -5,7 +5,7 @@ pide en español lo que quiere ver ("corta las pausas y pon subtítulos") y tú 
 
 - Responde siempre en español, con frases cortas y sin jerga técnica.
 - Antes de editar, lee las skills de `.claude/skills/` que apliquen (ritmo, subtítulos, estilo,
-  movimiento, composición). Son el criterio de edición de la marca.
+  elementos, movimiento, composición). Son el criterio de edición de la marca.
 - Si el pedido es ambiguo ("déjalo bonito"), aplica las skills y explica en una línea qué decidiste.
 
 ## Flujo de trabajo: Prepara → Pide → Revisa → Reutiliza
@@ -14,8 +14,8 @@ pide en español lo que quiere ver ("corta las pausas y pon subtítulos") y tú 
    Crea `public/proyectos/<id>/` con `video.mp4`, `edicion.json` y `transcripcion.txt`.
 2. **Pide**: casi todo pedido se resuelve editando `public/proyectos/<id>/edicion.json`
    (ver "Archivo de edición" abajo). No cambies los componentes de `src/` para un video concreto.
-3. **Revisa**: antes de exportar, genera 3 o 4 cuadros y míralos:
-   `npx remotion still <id> salida/revision-<frame>.png --frame=<frame>`.
+3. **Revisa**: antes de exportar, ejecuta `npm run revisar -- <id>` y mira las imágenes que
+   deja en `salida/revision/<id>/` (inicio, cortes, cada elemento gráfico, final y cierre).
    Usa `plantillas/ficha-revision.md`. Dile a la persona que puede verlo en `npm run dev`
    (Remotion Studio en http://localhost:3000; si ya estaba abierto, que recargue la página).
 4. **Reutiliza**: `npm run exportar -- <id>` (o `--formato 1:1`, o `--todos`).
@@ -30,6 +30,7 @@ pide en español lo que quiere ver ("corta las pausas y pon subtítulos") y tú 
 | `npm run dev` | Abre la vista previa (Remotion Studio) |
 | `npm run exportar -- <id> [--formato 9:16\|4:5\|1:1\|16:9] [--todos]` | Exporta a `salida/` |
 | `npm run duplicar -- <id> <nuevo>` | Copia la edición usando el mismo video |
+| `npm run revisar -- <id> [--formato …]` | Genera cuadros de revisión en `salida/revision/<id>/` |
 | `npm run lint` | Revisa el código (ESLint + TypeScript) |
 
 ## Archivo de edición (`public/proyectos/<id>/edicion.json`)
@@ -49,6 +50,9 @@ Tiempos en **segundos del video original**. El esquema está en `src/edicion/esq
   - `cierre`: `{ "texto": "...", "duracion": 2 }` o null.
 - `enfasis`: acercamientos en momentos clave, `[{ "inicio": 12.3, "fin": 13.1, "zoom": 1.15 }]`.
   Para "haz zoom cuando digo X", usa el `inicio` y `fin` de esa palabra en `palabras`.
+- `elementos`: gráficos sobre el video: `lista` (motion explicativo), `lettering`, `icono` e
+  `imagen`. Formato y criterio en la skill `toptop-elementos`. Las imágenes de la persona van
+  en `public/imagenes/`.
 - Usa `transcripcion.txt` para ubicar frases por tiempo (por ejemplo, una toma repetida).
 
 ## Reglas

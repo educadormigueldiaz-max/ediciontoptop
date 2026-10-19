@@ -9,6 +9,8 @@ entrada/*
 salida/*
 !salida/.gitkeep
 public/proyectos/
+public/imagenes/*
+!public/imagenes/.gitkeep
 out
 
 # Generados en cada computadora

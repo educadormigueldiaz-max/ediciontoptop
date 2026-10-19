@@ -21,15 +21,19 @@ export const Subtitulos: React.FC<{
   captions: Caption[];
   estilo: Estilo;
   posicion: number;
-}> = ({ captions, estilo, posicion }) => {
+  // Rangos de frames [desde, hasta) en los que no se muestran.
+  ocultarEn?: ReadonlyArray<readonly [number, number]>;
+}> = ({ captions, estilo, posicion, ocultarEn = [] }) => {
+  const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const { pages } = useMemo(
     () => createTikTokStyleCaptions({ captions, combineTokensWithinMilliseconds: AGRUPAR_MS[estilo] }),
     [captions, estilo],
   );
+  const oculto = ocultarEn.some(([desde, hasta]) => frame >= desde && frame < hasta);
 
   return (
-    <AbsoluteFill>
+    <AbsoluteFill style={{ opacity: oculto ? 0 : 1 }}>
       {pages.map((page, i) => {
         const siguiente = pages[i + 1];
         const finMs = Math.min(

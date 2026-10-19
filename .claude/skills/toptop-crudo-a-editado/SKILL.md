@@ -26,9 +26,9 @@ description: Flujo completo para convertir una grabación cruda en un video edit
 - Gancho, cierre, formato, subtítulos: en `opciones` (ver skills de estilo y subtítulos).
 
 ## 4. Revisar
-- Genera cuadros: inicio (frame 15), justo después de 2 o 3 cortes y el último segundo.
-  `npx remotion still <id> salida/revision-<n>.png --frame=<n>`
-- Míralos y compara con `plantillas/ficha-revision.md`.
+- Ejecuta `npm run revisar -- <id>` y mira las imágenes de `salida/revision/<id>/`.
+- Compáralas con `plantillas/ficha-revision.md`. Si avisa que un elemento cae en una parte
+  cortada, corrige sus tiempos o quítalo.
 - Resume a la persona: duración original → editada, cuántos cortes hiciste, qué tomas quitaste
   y qué palabras corregiste.
 

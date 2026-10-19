@@ -11,6 +11,9 @@ animaciones con [Remotion](https://www.remotion.dev); tú revisas en el navegado
 - **Subtítulos automáticos** (Whisper, en tu computadora, sin subir nada a internet), palabra por
   palabra con la palabra activa resaltada, o por frases.
 - **Gancho** al inicio, **cierre** con la marca, **zoom** en los cortes y en palabras clave.
+- **Motion explicativo**: listas de puntos que aparecen al ritmo de lo que dices.
+- **Lettering**: frases clave en letras grandes a pantalla completa.
+- **Íconos animados** y **fotos o capturas** que aparecen justo cuando las mencionas.
 - **Variaciones** de un mismo video para probar anuncios.
 - **5 skills de criterio** para Claude Code: estilo, ritmo, subtítulos, movimiento y composición.
 
@@ -57,6 +60,7 @@ animaciones con [Remotion](https://www.remotion.dev); tú revisas en el navegado
 | `npm run dev` | Vista previa en http://localhost:3000 |
 | `npm run exportar -- <proyecto>` | Exporta a `salida/` (`--formato 1:1` o `--todos`) |
 | `npm run duplicar -- <proyecto> <nuevo>` | Copia la edición para hacer otra versión |
+| `npm run revisar -- <proyecto>` | Saca cuadros de revisión a `salida/revision/` |
 
 ## Carpetas
 
@@ -64,11 +68,12 @@ animaciones con [Remotion](https://www.remotion.dev); tú revisas en el navegado
 entrada/                 Tus grabaciones crudas (no se suben a git)
 salida/                  Videos exportados (no se suben a git)
 public/proyectos/<id>/   Video de trabajo + edicion.json + transcripcion.txt (no se suben a git)
+public/imagenes/         Tus fotos y capturas para insertar en los videos (no se suben a git)
 public/fuentes/          Fuentes de la marca
 public/marca/            Logo y recursos de la marca
 src/marca.ts             Colores, fuente y logo de TopTop Lab
 src/componentes/         Subtítulos, gancho, cierre, encuadre
-src/estilos/             Estilos de video (hoy: crudo → editado)
+src/estilos/             Composiciones: video editado y muestras
 .claude/skills/          Criterio de edición que usa Claude Code
 plantillas/              Brief y ficha de revisión
 GUIA-DE-PEDIDOS.md       Pedidos listos para copiar
@@ -77,8 +82,8 @@ GUIA-DE-PEDIDOS.md       Pedidos listos para copiar
 ## Personalizar la marca
 
 Edita `src/marca.ts` (o pídeselo a Claude): nombre, colores, fuente y logo. Las muestras
-**Muestra-Subtitulos** y **Muestra-Cierre** en la vista previa sirven para ver los cambios
-sin necesidad de un video.
+**Muestra-Subtitulos**, **Muestra-Elementos** y **Muestra-Cierre** en la vista previa sirven
+para ver los cambios sin necesidad de un video.
 
 ## Licencia de Remotion
 
@@ -87,6 +92,5 @@ necesita una licencia: https://www.remotion.pro/license
 
 ## Próximas fases
 
-- Motion explicativo, lettering, íconos animados, inserción de imágenes.
 - Montaje y perspectiva 3D, recorte de fondo.
 - Video semanal automático con el Top 10 de artistas desde Google Sheets.

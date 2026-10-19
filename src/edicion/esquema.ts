@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { buscarIcono } from "../componentes/iconos";
 
 export const FPS = 30;
 
@@ -11,6 +12,50 @@ export const DIMENSIONES: Record<Formato, { width: number; height: number }> = {
   "1:1": { width: 1080, height: 1080 },
   "16:9": { width: 1920, height: 1080 },
 };
+
+// Elementos gráficos sobre el video. `inicio`, `fin` y `en` son segundos del video original,
+// igual que las palabras, así que siguen a los cortes.
+const tramo = { inicio: z.number().min(0), fin: z.number().positive() };
+
+export const esquemaElemento = z.discriminatedUnion("tipo", [
+  // Motion explicativo: título + puntos que aparecen uno a uno.
+  z.object({
+    tipo: z.literal("lista"),
+    ...tramo,
+    titulo: z.string().nullable().default(null),
+    puntos: z.array(z.object({ texto: z.string(), en: z.number() })).min(1).max(6),
+  }),
+  // Lettering: frase grande a pantalla completa.
+  z.object({
+    tipo: z.literal("lettering"),
+    ...tramo,
+    texto: z.string().min(1),
+    // Palabra(s) que van en color de acento.
+    destacar: z.string().nullable().default(null),
+    // "marca" = fondo de color; "video" = el video se ve oscurecido detrás.
+    fondo: z.enum(["marca", "video"]).default("video"),
+  }),
+  // Ícono animado con etiqueta opcional.
+  z.object({
+    tipo: z.literal("icono"),
+    ...tramo,
+    icono: z.string().refine((n) => buscarIcono(n) !== null, {
+      message: "Ícono desconocido: usa un nombre en español de src/componentes/iconos.ts o uno de lucide.dev/icons",
+    }),
+    texto: z.string().nullable().default(null),
+    posicion: z.enum(["arriba-derecha", "arriba-izquierda", "arriba", "centro"]).default("arriba-derecha"),
+  }),
+  // Foto, captura o imagen de public/ (por ejemplo "imagenes/producto.jpg").
+  z.object({
+    tipo: z.literal("imagen"),
+    ...tramo,
+    archivo: z.string().min(1),
+    modo: z.enum(["tarjeta", "pantalla-completa"]).default("tarjeta"),
+    texto: z.string().nullable().default(null),
+  }),
+]);
+
+export type Elemento = z.infer<typeof esquemaElemento>;
 
 // Estructura de public/proyectos/<id>/edicion.json (la crea `npm run preparar`).
 // Tiempos en segundos del video original.
@@ -53,6 +98,7 @@ export const esquemaEdicion = z.object({
   enfasis: z
     .array(z.object({ inicio: z.number(), fin: z.number(), zoom: z.number().min(1).max(2) }))
     .default([]),
+  elementos: z.array(esquemaElemento).default([]),
 });
 
 export type Edicion = z.infer<typeof esquemaEdicion>;

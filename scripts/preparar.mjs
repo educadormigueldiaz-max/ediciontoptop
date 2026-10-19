@@ -156,6 +156,7 @@ const edicion = {
   segmentos,
   palabras,
   enfasis: [],
+  elementos: [],
 };
 escribirJson(archivoEdicion, edicion);
 

@@ -1,5 +1,5 @@
 import type { Caption } from "@remotion/captions";
-import type { Edicion } from "./esquema";
+import type { Edicion, Elemento } from "./esquema";
 
 export const ZOOM_EN_CORTES = 1.12;
 
@@ -66,3 +66,59 @@ export const palabrasEnElEditado = (
   }
   return captions;
 };
+
+// Frame del video editado que corresponde a un segundo del original.
+// Si ese segundo se cortó: para un "inicio" se usa el comienzo del siguiente tramo,
+// para un "fin" el final del tramo anterior. Devuelve null si no queda nada.
+export const aFrameEditado = (
+  segundo: number,
+  tramos: Tramo[],
+  fps: number,
+  lado: "inicio" | "fin",
+): number | null => {
+  const frame = segundo * fps;
+  for (const t of tramos) {
+    if (frame >= t.trimBefore && frame <= t.trimBefore + t.duracionFrames) {
+      return Math.round(t.desdeFrame + frame - t.trimBefore);
+    }
+  }
+  if (lado === "inicio") {
+    const siguientes = tramos.filter((t) => t.trimBefore > frame);
+    if (siguientes.length === 0) return null;
+    return siguientes.reduce((a, b) => (b.trimBefore < a.trimBefore ? b : a)).desdeFrame;
+  }
+  const anteriores = tramos.filter((t) => t.trimBefore + t.duracionFrames < frame);
+  if (anteriores.length === 0) return null;
+  const t = anteriores.reduce((a, b) => (b.trimBefore > a.trimBefore ? b : a));
+  return t.desdeFrame + t.duracionFrames;
+};
+
+export type ElementoEnEditado = {
+  elemento: Elemento;
+  desdeFrame: number;
+  duracionFrames: number;
+  // Solo para listas: frame (relativo al elemento) en que aparece cada punto.
+  momentos: number[];
+};
+
+// Duración mínima para que un elemento alcance a leerse.
+const MIN_FRAMES_ELEMENTO = 10;
+
+export const elementosEnElEditado = (
+  edicion: Edicion,
+  tramos: Tramo[],
+  fps: number,
+): ElementoEnEditado[] =>
+  edicion.elementos.flatMap((elemento) => {
+    const desde = aFrameEditado(elemento.inicio, tramos, fps, "inicio");
+    const hasta = aFrameEditado(elemento.fin, tramos, fps, "fin");
+    if (desde === null || hasta === null || hasta - desde < MIN_FRAMES_ELEMENTO) return [];
+    const momentos =
+      elemento.tipo === "lista"
+        ? elemento.puntos.map((p) => {
+            const f = aFrameEditado(p.en, tramos, fps, "inicio");
+            return Math.max(0, Math.min((f ?? desde) - desde, hasta - desde - 1));
+          })
+        : [];
+    return [{ elemento, desdeFrame: desde, duracionFrames: hasta - desde, momentos }];
+  });

@@ -13,8 +13,10 @@ import { Gancho } from "../componentes/Gancho";
 import { Subtitulos } from "../componentes/Subtitulos";
 import { VideoEncuadrado } from "../componentes/VideoEncuadrado";
 import { DIMENSIONES, esquemaEdicion, FPS, type PropsEditado } from "../edicion/esquema";
+import { Elementos } from "../componentes/Elementos";
 import {
   calcularTramos,
+  elementosEnElEditado,
   framesDeVideo,
   framesTotales,
   palabrasEnElEditado,
@@ -54,10 +56,18 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
     () => (edicion ? palabrasEnElEditado(edicion, tramos, fps) : []),
     [edicion, tramos, fps],
   );
+  const elementos = useMemo(
+    () => (edicion ? elementosEnElEditado(edicion, tramos, fps) : []),
+    [edicion, tramos, fps],
+  );
   if (!edicion) return null;
 
   const { opciones } = edicion;
   const finVideo = framesDeVideo(tramos);
+  // Durante un lettering no se muestran subtítulos: la frase ya está en pantalla.
+  const sinSubtitulos = elementos
+    .filter((e) => e.elemento.tipo === "lettering")
+    .map((e) => [e.desdeFrame, e.desdeFrame + e.duracionFrames] as const);
 
   return (
     <AbsoluteFill style={{ backgroundColor: marca.colores.fondo }}>
@@ -79,12 +89,19 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
         ))}
       </Series>
 
+      {elementos.length > 0 ? (
+        <Sequence durationInFrames={finVideo} name="Elementos">
+          <Elementos items={elementos} />
+        </Sequence>
+      ) : null}
+
       {opciones.subtitulos && captions.length > 0 ? (
         <Sequence durationInFrames={finVideo} name="Subtítulos">
           <Subtitulos
             captions={captions}
             estilo={opciones.estiloSubtitulos}
             posicion={opciones.posicionSubtitulos}
+            ocultarEn={sinSubtitulos}
           />
         </Sequence>
       ) : null}

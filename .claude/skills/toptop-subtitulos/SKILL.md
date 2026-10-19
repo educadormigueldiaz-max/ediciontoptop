@@ -20,7 +20,7 @@ description: Criterio para los subtítulos de TopTop Lab (estilo, posición, cor
 | 16:9 | 0.85 | Tercio inferior clásico |
 
 - Nunca deben tapar la cara ni la boca. Si la persona está abajo en el encuadre, súbelos (0.25–0.3).
-- Revisa con un cuadro (`npx remotion still`) después de moverlos.
+- Revisa con `npm run revisar -- <id>` después de moverlos.
 
 ## Corregir lo que dicen
 - Cambia solo `palabras[i].texto` en `edicion.json`; no toques `inicio` ni `fin`.

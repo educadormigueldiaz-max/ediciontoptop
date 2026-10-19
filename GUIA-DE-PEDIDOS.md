@@ -55,11 +55,24 @@ Abre Claude Code dentro de la carpeta del proyecto (`cd ediciontoptop` y luego `
 
 > Al pasarlo a vertical me corta la cara: estoy a la izquierda del cuadro.
 
+**Hacerlo más visual (motion, lettering, íconos, imágenes)**
+> Hazlo más visual: pon los puntos que enumero como lista animada, la frase más fuerte en grande y algunos íconos.
+
+> Cuando digo los 3 pasos, muéstralos como lista animada con el título "<título>".
+
+> Pon la frase "<frase que dices>" en grande a pantalla completa, con "<palabra>" en amarillo.
+
+> Pon un ícono de <dinero / tiempo / idea / alerta…> cuando digo "<palabra>".
+
+> Puse una foto en `public/imagenes/<archivo>`: muéstrala cuando hablo de "<tema>".
+
+> Muestra la captura `public/imagenes/<archivo>` a pantalla completa cuando digo "<frase>".
+
 ---
 
 ## 3. Revisa
 
-> Muéstrame 4 cuadros del video antes de exportar.
+> Revisa el video antes de exportar y muéstrame los cuadros.
 
 > Revisa el video con `plantillas/ficha-revision.md` y dime qué falla.
 

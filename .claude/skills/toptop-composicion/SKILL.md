@@ -22,7 +22,7 @@ description: Criterio de encuadre y composición para TopTop Lab (zonas seguras 
 - El video llena el formato y se recorta lo que sobra.
 - `enfoqueX` / `enfoqueY` eligen qué parte queda: si la persona está a la izquierda del
   encuadre original, usa `enfoqueX` 0.3; a la derecha, 0.7.
-- Verifica siempre con un cuadro después de cambiar el formato.
+- Verifica siempre con `npm run revisar -- <id> --formato <formato>` después de cambiar el formato.
 
 ## Foco
 - Cada momento tiene una sola cosa principal: la cara, el producto o el texto.

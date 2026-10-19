@@ -14,6 +14,11 @@
 - [ ] No tapan la cara ni el producto.
 - [ ] Están fuera de la zona de botones de la red social.
 
+## Elementos gráficos
+- [ ] Cada lista, lettering, ícono o imagen aparece cuando se dice lo que muestra.
+- [ ] No tapan la cara ni chocan con los subtítulos o entre sí.
+- [ ] Los textos en pantalla dicen lo mismo que la voz.
+
 ## Marca
 - [ ] Colores y fuente de `src/marca.ts`.
 - [ ] El cierre tiene una sola llamada a la acción, y es correcta.
