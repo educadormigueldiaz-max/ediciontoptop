@@ -24,8 +24,8 @@ animaciones con [Remotion](https://www.remotion.dev); tú revisas en el navegado
    https://nodejs.org (versión LTS) o, con Homebrew, `brew install node`.
 3. **Descarga el proyecto e instala:**
    ```bash
-   git clone https://github.com/educadormigueldiaz-max/toptop-lab.git
-   cd toptop-lab
+   git clone https://github.com/educadormigueldiaz-max/ediciontoptop.git
+   cd ediciontoptop
    npm install
    npm run instalar
    ```
@@ -37,7 +37,7 @@ animaciones con [Remotion](https://www.remotion.dev); tú revisas en el navegado
 1. Copia tu grabación a la carpeta `entrada/`.
 2. Abre Claude Code en la carpeta del proyecto:
    ```bash
-   cd toptop-lab
+   cd ediciontoptop
    claude
    ```
 3. Pide lo que quieres. Ejemplos listos en **[GUIA-DE-PEDIDOS.md](GUIA-DE-PEDIDOS.md)**:

@@ -1,7 +1,7 @@
 # Guía de pedidos de TopTop Lab
 
 Copia el pedido, cambia lo que está entre `<…>` y pégalo en Claude Code.
-Abre Claude Code dentro de la carpeta del proyecto (`cd toptop-lab` y luego `claude`).
+Abre Claude Code dentro de la carpeta del proyecto (`cd ediciontoptop` y luego `claude`).
 
 ---
 
