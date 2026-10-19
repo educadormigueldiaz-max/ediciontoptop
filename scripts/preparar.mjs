@@ -12,6 +12,7 @@ import {
   CARPETA_PROYECTOS, FPS, RAIZ, actualizarListaDeProyectos, aId, escribirJson, ffmpeg, ffprobe,
   leerJson, redondear,
 } from "./lib/herramientas.mjs";
+import { detectarCaras } from "./lib/caras.mjs";
 import { transcribir } from "./lib/transcribir.mjs";
 
 const AYUDA = `
@@ -28,6 +29,7 @@ Opciones:
   --sin-subtitulos          No transcribe (más rápido; no habrá subtítulos)
   --sin-cortes              No corta pausas (solo subtítulos)
   --conservar-muletillas    No corta "eh", "mmm", etc.
+  --sin-caras               No busca la cara (los textos no sabrán dónde está)
   --transcripcion <json>    Usa una transcripción ya hecha en vez de Whisper
   --forzar                  Rehace el proyecto aunque ya exista (pierde los cambios a mano)
 `;
@@ -44,6 +46,7 @@ const { values: op, positionals } = parseArgs({
     formato: { type: "string", default: "9:16" },
     "sin-subtitulos": { type: "boolean", default: false },
     "sin-cortes": { type: "boolean", default: false },
+    "sin-caras": { type: "boolean", default: false },
     "conservar-muletillas": { type: "boolean", default: false },
     transcripcion: { type: "string" },
     forzar: { type: "boolean", default: false },
@@ -82,7 +85,7 @@ if (fs.existsSync(archivoEdicion) && !op.forzar) {
 }
 fs.mkdirSync(carpeta, { recursive: true });
 
-const paso = (n, texto) => console.log(`\n[${n}/5] ${texto}`);
+const paso = (n, texto) => console.log(`\n[${n}/6] ${texto}`);
 
 // 1. Video de trabajo: H.264 a 30 fps constantes. Evita desfases de los videos
 //    del celular (que graban con fps variables) y funciona en cualquier navegador.
@@ -130,8 +133,18 @@ const muletillas = op["sin-cortes"] || op["conservar-muletillas"] ? [] : buscarM
 const segmentos = calcularSegmentos({ duracion, silencios, cortesExtra: muletillas, margen });
 fs.rmSync(path.dirname(wav), { recursive: true, force: true });
 
-// 5. Archivo de edición: aquí vive todo lo que se puede cambiar de este video.
-paso(5, "Guardando la edición…");
+// 5. Dónde está la cara en cada momento, para que ningún texto o gráfico la tape.
+let caras = null;
+if (op["sin-caras"]) {
+  paso(5, "Sin búsqueda de cara (--sin-caras)");
+} else {
+  paso(5, "Buscando la cara…");
+  caras = await detectarCaras({ video, ancho: flujoVideo.width, alto: flujoVideo.height });
+  if (!caras) console.log("  No se encontró una cara en el video.");
+}
+
+// 6. Archivo de edición: aquí vive todo lo que se puede cambiar de este video.
+paso(6, "Guardando la edición…");
 const edicion = {
   version: 1,
   id,
@@ -157,6 +170,7 @@ const edicion = {
   palabras,
   enfasis: [],
   elementos: [],
+  caras,
 };
 escribirJson(archivoEdicion, edicion);
 

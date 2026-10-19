@@ -99,6 +99,15 @@ export const esquemaEdicion = z.object({
     .array(z.object({ inicio: z.number(), fin: z.number(), zoom: z.number().min(1).max(2) }))
     .default([]),
   elementos: z.array(esquemaElemento).default([]),
+  // Cara principal cada `cada` segundos: [x, y, ancho, alto] en fracciones del video original.
+  // La llena `npm run preparar` o `npm run caras`; no se edita a mano.
+  caras: z
+    .object({
+      cada: z.number().positive(),
+      cuadros: z.array(z.tuple([z.number(), z.number(), z.number(), z.number()]).nullable()),
+    })
+    .nullable()
+    .default(null),
 });
 
 export type Edicion = z.infer<typeof esquemaEdicion>;

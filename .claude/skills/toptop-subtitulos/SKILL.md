@@ -19,7 +19,9 @@ description: Criterio para los subtítulos de TopTop Lab (estilo, posición, cor
 | 1:1 | 0.78 | |
 | 16:9 | 0.85 | Tercio inferior clásico |
 
-- Nunca deben tapar la cara ni la boca. Si la persona está abajo en el encuadre, súbelos (0.25–0.3).
+- Nunca tapan la cara: si en algún momento la posición elegida la toca, se mueven solos debajo
+  o encima de ella (necesita `caras` en `edicion.json`; si falta, `npm run caras -- <id>`).
+- Mientras se ve un lettering o un elemento que necesita su espacio, se esconden solos.
 - Revisa con `npm run revisar -- <id>` después de moverlos.
 
 ## Corregir lo que dicen

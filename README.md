@@ -14,6 +14,7 @@ animaciones con [Remotion](https://www.remotion.dev); tú revisas en el navegado
 - **Motion explicativo**: listas de puntos que aparecen al ritmo de lo que dices.
 - **Lettering**: frases clave en letras grandes a pantalla completa.
 - **Íconos animados** y **fotos o capturas** que aparecen justo cuando las mencionas.
+- **Tu cara nunca se tapa**: el programa detecta dónde está y acomoda textos y gráficos alrededor.
 - **Variaciones** de un mismo video para probar anuncios.
 - **5 skills de criterio** para Claude Code: estilo, ritmo, subtítulos, movimiento y composición.
 
@@ -68,6 +69,7 @@ npm run actualizar
 | `npm run exportar -- <proyecto>` | Exporta a `salida/` (`--formato 1:1` o `--todos`) |
 | `npm run duplicar -- <proyecto> <nuevo>` | Copia la edición para hacer otra versión |
 | `npm run revisar -- <proyecto>` | Saca cuadros de revisión a `salida/revision/` |
+| `npm run caras -- <proyecto>` | Vuelve a buscar dónde está la cara |
 
 ## Carpetas
 
@@ -77,6 +79,7 @@ salida/                  Videos exportados (no se suben a git)
 public/proyectos/<id>/   Video de trabajo + edicion.json + transcripcion.txt (no se suben a git)
 public/imagenes/         Tus fotos y capturas para insertar en los videos (no se suben a git)
 public/fuentes/          Fuentes de la marca
+modelos/                 Detector de caras (corre en tu computadora)
 public/marca/            Logo y recursos de la marca
 src/marca.ts             Colores, fuente y logo de TopTop Lab
 src/componentes/         Subtítulos, gancho, cierre, encuadre

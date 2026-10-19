@@ -15,8 +15,10 @@
 - [ ] Están fuera de la zona de botones de la red social.
 
 ## Elementos gráficos
+- [ ] La cara se ve completa en todo momento.
 - [ ] Cada lista, lettering, ícono o imagen aparece cuando se dice lo que muestra.
-- [ ] No tapan la cara ni chocan con los subtítulos o entre sí.
+- [ ] Ninguna palabra aparece dos veces (en el lettering y en los subtítulos).
+- [ ] No chocan con los subtítulos ni entre sí, y el texto se lee.
 - [ ] Los textos en pantalla dicen lo mismo que la voz.
 
 ## Marca

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import {
   AbsoluteFill,
   CalculateMetadataFunction,
@@ -14,7 +14,9 @@ import { Subtitulos } from "../componentes/Subtitulos";
 import { VideoEncuadrado } from "../componentes/VideoEncuadrado";
 import { DIMENSIONES, esquemaEdicion, FPS, type PropsEditado } from "../edicion/esquema";
 import { Elementos } from "../componentes/Elementos";
+import { caraEnSalida, colocarElementos } from "../edicion/encuadre";
 import {
+  ajustarLetterings,
   calcularTramos,
   elementosEnElEditado,
   framesDeVideo,
@@ -50,23 +52,44 @@ export const calcularMetadatos: CalculateMetadataFunction<PropsEditado> = async 
 
 // Estilo "Crudo → editado": tramos sin pausas, subtítulos, gancho y cierre opcionales.
 export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
   const tramos = useMemo(() => (edicion ? calcularTramos(edicion, fps) : []), [edicion, fps]);
+  // Los lettering se alinean con las palabras que repiten, y esas palabras salen de los subtítulos.
+  const letterings = useMemo(() => (edicion ? ajustarLetterings(edicion) : null), [edicion]);
   const captions = useMemo(
-    () => (edicion ? palabrasEnElEditado(edicion, tramos, fps) : []),
-    [edicion, tramos, fps],
+    () =>
+      edicion && letterings
+        ? palabrasEnElEditado(edicion, tramos, fps, letterings.palabrasOcultas)
+        : [],
+    [edicion, letterings, tramos, fps],
   );
+  const caraEntre = useCallback(
+    (desde: number, hasta: number) =>
+      edicion ? caraEnSalida(edicion, tramos, fps, width, height, desde, hasta) : null,
+    [edicion, tramos, fps, width, height],
+  );
+  // Cada elemento va en el espacio libre que deja la cara.
   const elementos = useMemo(
-    () => (edicion ? elementosEnElEditado(edicion, tramos, fps) : []),
-    [edicion, tramos, fps],
+    () =>
+      edicion && letterings
+        ? colocarElementos({
+            items: elementosEnElEditado({ ...edicion, elementos: letterings.elementos }, tramos, fps),
+            edicion,
+            width,
+            height,
+            caraEntre,
+          })
+        : [],
+    [edicion, letterings, tramos, fps, width, height, caraEntre],
   );
   if (!edicion) return null;
 
   const { opciones } = edicion;
   const finVideo = framesDeVideo(tramos);
-  // Durante un lettering no se muestran subtítulos: la frase ya está en pantalla.
+  // Sin subtítulos durante un lettering (la frase ya está en pantalla) o cuando un elemento
+  // necesita su espacio.
   const sinSubtitulos = elementos
-    .filter((e) => e.elemento.tipo === "lettering")
+    .filter((e) => e.ocultaSubtitulos)
     .map((e) => [e.desdeFrame, e.desdeFrame + e.duracionFrames] as const);
 
   return (
@@ -102,6 +125,7 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
             estilo={opciones.estiloSubtitulos}
             posicion={opciones.posicionSubtitulos}
             ocultarEn={sinSubtitulos}
+            caraEntre={caraEntre}
           />
         </Sequence>
       ) : null}

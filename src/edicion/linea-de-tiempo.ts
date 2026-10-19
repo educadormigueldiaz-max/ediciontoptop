@@ -43,9 +43,12 @@ export const palabrasEnElEditado = (
   edicion: Edicion,
   tramos: Tramo[],
   fps: number,
+  // Índices de `palabras` que no van en los subtítulos (por ejemplo, las que muestra un lettering).
+  ocultas: ReadonlySet<number> = new Set(),
 ): Caption[] => {
   const captions: Caption[] = [];
-  for (const palabra of edicion.palabras) {
+  for (const [indice, palabra] of edicion.palabras.entries()) {
+    if (ocultas.has(indice)) continue;
     for (const tramo of tramos) {
       const inicioTramo = tramo.trimBefore / fps;
       const finTramo = (tramo.trimBefore + tramo.duracionFrames) / fps;
@@ -122,3 +125,50 @@ export const elementosEnElEditado = (
         : [];
     return [{ elemento, desdeFrame: desde, duracionFrames: hasta - desde, momentos }];
   });
+
+const normalizar = (texto: string) =>
+  texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9ñ]/g, "");
+
+// Une cada lettering con las palabras que repite: empieza justo cuando se empiezan a decir
+// y esas palabras salen de los subtítulos, para que no aparezcan dos veces.
+export const ajustarLetterings = (
+  edicion: Edicion,
+): { elementos: Elemento[]; palabrasOcultas: Set<number> } => {
+  const ocultas = new Set<number>();
+  const dichas = edicion.palabras.map((p) => normalizar(p.texto));
+  const elementos = edicion.elementos.map((e) => {
+    if (e.tipo !== "lettering") return e;
+    const frase = e.texto.split(/\s+/).map(normalizar).filter(Boolean);
+    if (frase.length === 0) return e;
+    let mejor: { desde: number; hasta: number; distancia: number } | null = null;
+    for (let i = 0; i < dichas.length; i++) {
+      const p = edicion.palabras[i];
+      if (dichas[i] !== frase[0] || p.inicio < e.inicio - 4 || p.inicio > e.fin) continue;
+      let k = 0;
+      let j = i;
+      while (k < frase.length && j < dichas.length) {
+        if (!dichas[j]) {
+          j++;
+          continue;
+        }
+        if (dichas[j] !== frase[k]) break;
+        k++;
+        j++;
+      }
+      // Basta con que coincidan las primeras palabras (o todas, si la frase es corta).
+      if (k < Math.min(2, frase.length)) continue;
+      const distancia = Math.abs(p.inicio - e.inicio) - k * 10;
+      if (!mejor || distancia < mejor.distancia) mejor = { desde: i, hasta: j, distancia };
+    }
+    if (!mejor) return e;
+    for (let i = mejor.desde; i < mejor.hasta; i++) ocultas.add(i);
+    const primera = edicion.palabras[mejor.desde];
+    const ultima = edicion.palabras[mejor.hasta - 1];
+    return { ...e, inicio: primera.inicio, fin: Math.max(e.fin, ultima.fin + 0.5) };
+  });
+  return { elementos, palabrasOcultas: ocultas };
+};

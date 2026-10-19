@@ -8,6 +8,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
+import { asegurarCaras } from "./lib/caras.mjs";
 import {
   CARPETA_PROYECTOS, CARPETA_SALIDA, RAIZ, actualizarListaDeProyectos, leerJson,
 } from "./lib/herramientas.mjs";
@@ -33,6 +34,7 @@ if (!id || !fs.existsSync(archivoEdicion)) {
   process.exit(1);
 }
 
+await asegurarCaras(archivoEdicion);
 const edicion = leerJson(archivoEdicion);
 const formatos = op.todos ? FORMATOS : [op.formato ?? edicion.opciones.formato];
 for (const f of formatos) {

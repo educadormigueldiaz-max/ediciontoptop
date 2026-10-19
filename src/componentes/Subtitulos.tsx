@@ -8,6 +8,7 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
+import { centroSubtitulos, mediaFranjaSubtitulos, type Caja } from "../edicion/encuadre";
 import { marca } from "../marca";
 
 type Estilo = "palabra" | "frase";
@@ -16,6 +17,8 @@ type Estilo = "palabra" | "frase";
 const AGRUPAR_MS: Record<Estilo, number> = { palabra: 900, frase: 2200 };
 // La página se queda un poco más en pantalla si no hay otra inmediatamente después.
 const PERMANENCIA_MS = 300;
+// Si entre dos palabras pasa más que esto (por ejemplo, palabras quitadas), empieza otra página.
+const CORTAR_EN_SILENCIO_MS = 500;
 
 export const Subtitulos: React.FC<{
   captions: Caption[];
@@ -23,11 +26,19 @@ export const Subtitulos: React.FC<{
   posicion: number;
   // Rangos de frames [desde, hasta) en los que no se muestran.
   ocultarEn?: ReadonlyArray<readonly [number, number]>;
-}> = ({ captions, estilo, posicion, ocultarEn = [] }) => {
+  // Dónde está la cara entre dos frames, para no taparla.
+  caraEntre?: (desde: number, hasta: number) => Caja | null;
+}> = ({ captions, estilo, posicion, ocultarEn = [], caraEntre }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
+  const media = mediaFranjaSubtitulos(width, height, estilo);
   const { pages } = useMemo(
-    () => createTikTokStyleCaptions({ captions, combineTokensWithinMilliseconds: AGRUPAR_MS[estilo] }),
+    () =>
+      createTikTokStyleCaptions({
+        captions,
+        combineTokensWithinMilliseconds: AGRUPAR_MS[estilo],
+        breakOnSilenceAfterMilliseconds: CORTAR_EN_SILENCIO_MS,
+      }),
     [captions, estilo],
   );
   const oculto = ocultarEn.some(([desde, hasta]) => frame >= desde && frame < hasta);
@@ -43,9 +54,16 @@ export const Subtitulos: React.FC<{
         const desde = Math.round((page.startMs / 1000) * fps);
         const hasta = Math.round((finMs / 1000) * fps);
         if (hasta <= desde) return null;
+        const centro = centroSubtitulos({
+          preferido: posicion * height,
+          media,
+          cara: caraEntre?.(desde, hasta) ?? null,
+          width,
+          height,
+        });
         return (
           <Sequence key={i} from={desde} durationInFrames={hasta - desde} name={page.text.trim()}>
-            <Pagina page={page} estilo={estilo} posicion={posicion} />
+            <Pagina page={page} estilo={estilo} centro={centro} />
           </Sequence>
         );
       })}
@@ -53,10 +71,10 @@ export const Subtitulos: React.FC<{
   );
 };
 
-const Pagina: React.FC<{ page: TikTokPage; estilo: Estilo; posicion: number }> = ({
+const Pagina: React.FC<{ page: TikTokPage; estilo: Estilo; centro: number }> = ({
   page,
   estilo,
-  posicion,
+  centro,
 }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
@@ -71,7 +89,7 @@ const Pagina: React.FC<{ page: TikTokPage; estilo: Estilo; posicion: number }> =
         position: "absolute",
         left: margen,
         right: margen,
-        top: height * posicion,
+        top: centro,
         translate: "0 -50%",
         textAlign: "center",
         fontFamily: marca.fuente,

@@ -1,16 +1,7 @@
 import { Video } from "@remotion/media";
-import {
-  AbsoluteFill,
-  Easing,
-  interpolate,
-  staticFile,
-  useCurrentFrame,
-  useVideoConfig,
-} from "remotion";
+import { AbsoluteFill, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { geometriaVideo, zoomEnfasisEn } from "../edicion/encuadre";
 import type { Edicion } from "../edicion/esquema";
-
-// Tiempo que tarda en entrar y salir un acercamiento de énfasis.
-const RAMPA_ENFASIS = 0.15;
 
 // Muestra un tramo del video original llenando el formato de salida (recorta lo que sobra).
 export const VideoEncuadrado: React.FC<{
@@ -39,27 +30,15 @@ export const VideoEncuadrado: React.FC<{
 
   // Segundo del video original que se ve en este frame.
   const segundo = (trimBefore + frame) / fps;
-  const zoomEnfasis = enfasis.reduce(
-    (max, e) =>
-      Math.max(
-        max,
-        interpolate(
-          segundo,
-          [e.inicio, e.inicio + RAMPA_ENFASIS, e.fin, e.fin + RAMPA_ENFASIS],
-          [1, e.zoom, e.zoom, 1],
-          {
-            extrapolateLeft: "clamp",
-            extrapolateRight: "clamp",
-            easing: Easing.bezier(0.16, 1, 0.3, 1),
-          },
-        ),
-      ),
-    1,
-  );
-
-  const escala = Math.max(width / anchoOriginal, height / altoOriginal) * zoom * zoomEnfasis;
-  const ancho = anchoOriginal * escala;
-  const alto = altoOriginal * escala;
+  const g = geometriaVideo({
+    width,
+    height,
+    anchoOriginal,
+    altoOriginal,
+    enfoqueX,
+    enfoqueY,
+    zoom: zoom * zoomEnfasisEn(segundo, enfasis),
+  });
 
   return (
     <AbsoluteFill style={{ overflow: "hidden", backgroundColor: "black" }}>
@@ -78,10 +57,10 @@ export const VideoEncuadrado: React.FC<{
         }
         style={{
           position: "absolute",
-          left: (width - ancho) * enfoqueX,
-          top: (height - alto) * enfoqueY,
-          width: ancho,
-          height: alto,
+          left: g.left,
+          top: g.top,
+          width: g.ancho,
+          height: g.alto,
         }}
       />
     </AbsoluteFill>

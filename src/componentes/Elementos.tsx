@@ -1,20 +1,20 @@
 import { AbsoluteFill, Sequence } from "remotion";
-import type { ElementoEnEditado } from "../edicion/linea-de-tiempo";
+import type { ElementoColocado } from "../edicion/encuadre";
 import { IconoAnimado } from "./IconoAnimado";
 import { ImagenInsertada } from "./ImagenInsertada";
 import { Lettering } from "./Lettering";
 import { ListaAnimada } from "./ListaAnimada";
 
 // Orden de capas: lo que tapa toda la pantalla va primero (abajo), el lettering al final (arriba).
-const capa = ({ elemento }: ElementoEnEditado) =>
+const capa = ({ elemento }: ElementoColocado) =>
   elemento.tipo === "imagen" && elemento.modo === "pantalla-completa"
     ? 0
     : elemento.tipo === "lettering"
       ? 2
       : 1;
 
-const Elemento: React.FC<{ item: ElementoEnEditado }> = ({ item }) => {
-  const { elemento, duracionFrames, momentos } = item;
+const Elemento: React.FC<{ item: ElementoColocado }> = ({ item }) => {
+  const { elemento, duracionFrames, momentos, zona } = item;
   switch (elemento.tipo) {
     case "lista":
       return (
@@ -22,6 +22,7 @@ const Elemento: React.FC<{ item: ElementoEnEditado }> = ({ item }) => {
           titulo={elemento.titulo}
           puntos={elemento.puntos.map((p, i) => ({ texto: p.texto, desdeFrame: momentos[i] }))}
           duracionFrames={duracionFrames}
+          zona={zona}
         />
       );
     case "lettering":
@@ -31,6 +32,7 @@ const Elemento: React.FC<{ item: ElementoEnEditado }> = ({ item }) => {
           destacar={elemento.destacar}
           fondo={elemento.fondo}
           duracionFrames={duracionFrames}
+          zona={zona}
         />
       );
     case "icono":
@@ -40,6 +42,7 @@ const Elemento: React.FC<{ item: ElementoEnEditado }> = ({ item }) => {
           texto={elemento.texto}
           posicion={elemento.posicion}
           duracionFrames={duracionFrames}
+          zona={zona}
         />
       );
     case "imagen":
@@ -49,6 +52,7 @@ const Elemento: React.FC<{ item: ElementoEnEditado }> = ({ item }) => {
           modo={elemento.modo}
           texto={elemento.texto}
           duracionFrames={duracionFrames}
+          zona={zona}
         />
       );
   }
@@ -56,7 +60,7 @@ const Elemento: React.FC<{ item: ElementoEnEditado }> = ({ item }) => {
 
 const NOMBRES = { lista: "Lista", lettering: "Lettering", icono: "Ícono", imagen: "Imagen" };
 
-export const Elementos: React.FC<{ items: ElementoEnEditado[] }> = ({ items }) => (
+export const Elementos: React.FC<{ items: ElementoColocado[] }> = ({ items }) => (
   <AbsoluteFill>
     {[...items]
       .sort((a, b) => capa(a) - capa(b))

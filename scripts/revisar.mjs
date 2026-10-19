@@ -8,6 +8,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
+import { asegurarCaras } from "./lib/caras.mjs";
 import {
   CARPETA_PROYECTOS, CARPETA_SALIDA, FPS, RAIZ, actualizarListaDeProyectos, leerJson,
 } from "./lib/herramientas.mjs";
@@ -23,6 +24,7 @@ if (!id || !fs.existsSync(archivoEdicion)) {
   console.error("Uso: npm run revisar -- <proyecto> [--formato 9:16|4:5|1:1|16:9]");
   process.exit(1);
 }
+await asegurarCaras(archivoEdicion);
 const edicion = leerJson(archivoEdicion);
 
 // Misma cuenta que src/edicion/linea-de-tiempo.ts.

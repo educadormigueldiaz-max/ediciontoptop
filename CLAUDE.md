@@ -27,7 +27,8 @@ pide en español lo que quiere ver ("corta las pausas y pon subtítulos") y tú 
 |---|---|
 | `npm run instalar` | Instala Whisper y descarga el modelo (solo la primera vez) |
 | `npm run actualizar` | Trae la última versión desde GitHub e instala lo nuevo |
-| `npm run preparar -- <video> [opciones]` | Convierte, transcribe y corta pausas. `--ayuda` muestra las opciones |
+| `npm run preparar -- <video> [opciones]` | Convierte, transcribe, corta pausas y ubica la cara. `--ayuda` muestra las opciones |
+| `npm run caras -- <id>` | Vuelve a buscar la cara en un proyecto (no toca la edición) |
 | `npm run dev` | Abre la vista previa (Remotion Studio) |
 | `npm run exportar -- <id> [--formato 9:16\|4:5\|1:1\|16:9] [--todos]` | Exporta a `salida/` |
 | `npm run duplicar -- <id> <nuevo>` | Copia la edición usando el mismo video |
@@ -54,9 +55,13 @@ Tiempos en **segundos del video original**. El esquema está en `src/edicion/esq
 - `elementos`: gráficos sobre el video: `lista` (motion explicativo), `lettering`, `icono` e
   `imagen`. Formato y criterio en la skill `toptop-elementos`. Las imágenes de la persona van
   en `public/imagenes/`.
+- `caras`: dónde está la cara en cada momento. Lo llena el programa; no se edita a mano.
 - Usa `transcripcion.txt` para ubicar frases por tiempo (por ejemplo, una toma repetida).
 
 ## Reglas
+
+- **La cara de la persona nunca se tapa.** Subtítulos y elementos se acomodan solos alrededor
+  de ella. No uses imagen `pantalla-completa` ni lettering con `fondo: "marca"` salvo que lo pidan.
 
 - **Nunca** ejecutes `preparar --forzar` sobre un proyecto existente sin preguntar: borra las
   ediciones hechas a mano.

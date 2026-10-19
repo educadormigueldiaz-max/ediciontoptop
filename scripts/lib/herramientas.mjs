@@ -11,7 +11,7 @@ export const CARPETA_WHISPER = path.join(RAIZ, "whisper.cpp");
 export const ARCHIVO_LISTA = path.join(RAIZ, "src", "proyectos.ts");
 export const FPS = 30;
 
-const REMOTION_BIN = path.join(RAIZ, "node_modules", ".bin", "remotion");
+export const REMOTION_BIN = path.join(RAIZ, "node_modules", ".bin", "remotion");
 
 const ejecutar = (bin, args) => {
   const r = spawnSync(bin, args, { encoding: "utf8", maxBuffer: 1024 * 1024 * 512 });

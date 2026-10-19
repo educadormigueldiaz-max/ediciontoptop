@@ -24,6 +24,13 @@ description: Criterio de encuadre y composición para TopTop Lab (zonas seguras 
   encuadre original, usa `enfoqueX` 0.3; a la derecha, 0.7.
 - Verifica siempre con `npm run revisar -- <id> --formato <formato>` después de cambiar el formato.
 
+## La cara nunca se tapa
+- `npm run preparar` guarda dónde está la cara (`caras` en `edicion.json`); en proyectos viejos,
+  `npm run caras -- <id>`.
+- Subtítulos y elementos gráficos se acomodan solos alrededor de ella.
+- Al cambiar `enfoqueX`/`enfoqueY` o el formato, revisa con `npm run revisar` que la cara siga
+  dentro del cuadro.
+
 ## Foco
 - Cada momento tiene una sola cosa principal: la cara, el producto o el texto.
 - El texto nunca tapa la cara ni el producto.
