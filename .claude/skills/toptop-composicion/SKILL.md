@@ -1,0 +1,30 @@
+---
+name: toptop-composicion
+description: Criterio de encuadre y composición para TopTop Lab (zonas seguras por red social, tamaños de texto, recorte de horizontal a vertical, foco visual). Úsala al cambiar el formato, el encuadre, posiciones de textos o al diseñar cualquier escena nueva.
+---
+
+# Composición
+
+## Zonas seguras (video de 1080 px de ancho)
+| Formato | Mantén los textos importantes fuera de… |
+|---|---|
+| 9:16 (Reels, TikTok, Shorts) | 220 px de arriba, 380 px de abajo, 140 px a la derecha (botones) |
+| 4:5 (feed de Instagram) | 100 px arriba y abajo |
+| 1:1 | 90 px en cada borde |
+| 16:9 (YouTube, LinkedIn) | 100 px en cada borde |
+
+## Tamaños mínimos de texto (escala con el ancho)
+- Título o gancho: 84 px.
+- Texto de apoyo: 44 px.
+- Nunca más de 2 líneas en el gancho ni más de 3 en un subtítulo.
+
+## Recorte de horizontal a vertical
+- El video llena el formato y se recorta lo que sobra.
+- `enfoqueX` / `enfoqueY` eligen qué parte queda: si la persona está a la izquierda del
+  encuadre original, usa `enfoqueX` 0.3; a la derecha, 0.7.
+- Verifica siempre con un cuadro después de cambiar el formato.
+
+## Foco
+- Cada momento tiene una sola cosa principal: la cara, el producto o el texto.
+- El texto nunca tapa la cara ni el producto.
+- Contraste: texto claro con contorno oscuro (o al revés) sobre cualquier imagen.
