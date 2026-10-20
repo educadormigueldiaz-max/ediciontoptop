@@ -9,8 +9,9 @@ import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { asegurarCaras } from "./lib/caras.mjs";
+import { asegurarRecortes, avisarRecortesIncompletos } from "./lib/recorte.mjs";
 import {
-  CARPETA_PROYECTOS, CARPETA_SALIDA, FPS, RAIZ, actualizarListaDeProyectos, leerJson,
+  CARPETA_PROYECTOS, CARPETA_SALIDA, FPS, RAIZ, actualizarListaDeProyectos, leerJson, puertoLibre,
 } from "./lib/herramientas.mjs";
 
 const { values: op, positionals } = parseArgs({
@@ -25,6 +26,8 @@ if (!id || !fs.existsSync(archivoEdicion)) {
   process.exit(1);
 }
 await asegurarCaras(archivoEdicion);
+await asegurarRecortes(archivoEdicion);
+avisarRecortesIncompletos(archivoEdicion);
 const edicion = leerJson(archivoEdicion);
 
 // Misma cuenta que src/edicion/linea-de-tiempo.ts.
@@ -82,12 +85,13 @@ fs.mkdirSync(carpeta, { recursive: true });
 const props = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "toptop-")), "props.json");
 fs.writeFileSync(props, JSON.stringify({ proyecto: id, formato: op.formato ?? null }));
 const remotion = path.join(RAIZ, "node_modules", ".bin", "remotion");
+const puerto = await puertoLibre();
 
 for (const [nombre, frame] of cuadros) {
   const salida = path.join(carpeta, `${nombre}.png`);
   const r = spawnSync(
     remotion,
-    ["still", id, salida, `--frame=${frame}`, `--props=${props}`, "--log=error"],
+    ["still", id, salida, `--frame=${frame}`, `--props=${props}`, `--port=${puerto}`, "--log=error"],
     { cwd: RAIZ, encoding: "utf8" },
   );
   if (r.status !== 0) {

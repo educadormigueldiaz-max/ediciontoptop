@@ -21,6 +21,8 @@ import {
 import { Elementos } from "../componentes/Elementos";
 import { VideoEnEscena } from "../componentes/Escena3D";
 import { esEscena } from "../edicion/escenas";
+import { esRecorte, recorteCompleto } from "../edicion/recortes";
+import { Recortes } from "../componentes/Recorte";
 import { caraEnSalida, colocarElementos, enfoqueEfectivo } from "../edicion/encuadre";
 import {
   ajustarLetterings,
@@ -103,11 +105,20 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
   // Las escenas 3D transforman el video entero; el resto va encima, en el espacio libre que
   // deja la cara.
   const escenas = useMemo(() => todos.filter(esEscena), [todos]);
+  // Los recortes van encima del video, con la persona recortada adelante. Uno sin recorte
+  // completo (falta `npm run recortar`) no se dibuja: sin la persona encima, taparía la cara.
+  const recortes = useMemo(
+    () =>
+      edicion
+        ? todos.filter(esRecorte).filter((item) => recorteCompleto(edicion.recorte, item, tramos))
+        : [],
+    [edicion, todos, tramos],
+  );
   const elementos = useMemo(
     () =>
       edicion
         ? colocarElementos({
-            items: todos.filter((item) => !esEscena(item)),
+            items: todos.filter((item) => !esEscena(item) && !esRecorte(item)),
             edicion,
             width,
             height,
@@ -122,10 +133,11 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
   const finVideo = framesDeVideo(tramos);
   const enfoque = enfoqueEfectivo(edicion, width, height);
   // Sin subtítulos durante un lettering (la frase ya está en pantalla), una escena 3D (tiene
-  // sus propios textos) o cuando un elemento necesita su espacio.
+  // sus propios textos), un texto detrás o un marco, o cuando un elemento necesita su espacio.
   const sinSubtitulos = [
     ...elementos.filter((e) => e.ocultaSubtitulos),
     ...escenas,
+    ...recortes.filter((r) => r.elemento.tipo !== "fondo"),
   ].map((e) => [e.desdeFrame, e.desdeFrame + e.duracionFrames] as const);
 
   return (
@@ -153,6 +165,18 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
           ))}
         </Series>
       </VideoEnEscena>
+
+      {recortes.length > 0 ? (
+        <Sequence durationInFrames={finVideo} name="Recortes">
+          <Recortes
+            items={recortes}
+            edicion={edicion}
+            tramos={tramos}
+            enfoque={enfoque}
+            caraEntre={caraEntre}
+          />
+        </Sequence>
+      ) : null}
 
       {elementos.length > 0 ? (
         <Sequence durationInFrames={finVideo} name="Elementos">

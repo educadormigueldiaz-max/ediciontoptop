@@ -14,12 +14,16 @@ animaciones con [Remotion](https://www.remotion.dev); tú revisas en el navegado
 - **Motion explicativo**: listas de puntos que aparecen al ritmo de lo que dices.
 - **Lettering**: frases clave en letras grandes a pantalla completa.
 - **Íconos animados** y **fotos o capturas** que aparecen justo cuando las mencionas.
+- **Recorte de fondo**: textos detrás de ti (estilo portada de revista), cambiar el fondo por un
+  color, un degradado o una imagen, y salir de un círculo o una tarjeta de color. Se calcula en tu
+  Mac, sin internet, solo en los momentos que lo necesitan.
 - **Escenas 3D**: montaje en capas, perspectiva, tutorial con capturas en un celular o navegador,
   y objetos que giran con etiquetas.
 - **Tu cara nunca se tapa**: el programa detecta dónde está, acomoda textos y gráficos alrededor
   y ajusta el recorte para que siempre quede en cuadro.
 - **Variaciones** de un mismo video para probar anuncios.
-- **5 skills de criterio** para Claude Code: estilo, ritmo, subtítulos, movimiento y composición.
+- **Skills de criterio** para Claude Code: estilo, ritmo, subtítulos, elementos, 3D, recorte,
+  movimiento y composición.
 
 ## Instalación en Mac (una sola vez)
 
@@ -73,13 +77,14 @@ npm run actualizar
 | `npm run duplicar -- <proyecto> <nuevo>` | Copia la edición para hacer otra versión |
 | `npm run revisar -- <proyecto>` | Saca cuadros de revisión a `salida/revision/` |
 | `npm run caras -- <proyecto>` | Vuelve a buscar dónde está la cara |
+| `npm run recortar -- <proyecto>` | Separa a la persona del fondo donde haga falta |
 
 ## Carpetas
 
 ```
 entrada/                 Tus grabaciones crudas (no se suben a git)
 salida/                  Videos exportados (no se suben a git)
-public/proyectos/<id>/   Video de trabajo + edicion.json + transcripcion.txt (no se suben a git)
+public/proyectos/<id>/   Video de trabajo + edicion.json + transcripcion.txt + recorte/ (no se suben a git)
 public/imagenes/         Tus fotos y capturas para insertar en los videos (no se suben a git)
 public/fuentes/          Fuentes de los videos
 modelos/                 Detector de caras (corre en tu computadora)
@@ -95,7 +100,7 @@ GUIA-DE-PEDIDOS.md       Pedidos listos para copiar
 
 El nombre y el logo de TopTop Lab **nunca** aparecen en los videos. Los colores y la fuente se
 cambian en `src/marca.ts` (o pídeselo a Claude). Las muestras
-**Muestra-Subtitulos**, **Muestra-Elementos**, **Muestra-3D** y **Muestra-Cierre** en la vista previa sirven
+**Muestra-Subtitulos**, **Muestra-Elementos**, **Muestra-3D**, **Muestra-Recorte** y **Muestra-Cierre** en la vista previa sirven
 para ver los cambios sin necesidad de un video.
 
 ## Licencia de Remotion
@@ -105,5 +110,4 @@ necesita una licencia: https://www.remotion.pro/license
 
 ## Próximas fases
 
-- Recorte de fondo (textos detrás de la persona).
 - Video semanal automático con el Top 10 de artistas desde Google Sheets.

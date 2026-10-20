@@ -103,13 +103,46 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
     titulo: z.string().nullable().default(null),
     etiquetas: z.array(z.object({ texto: z.string(), en: z.number() })).max(5).default([]),
   }),
+
+  // --- Recorte de fondo: la persona se separa del fondo (`npm run recortar`). ---
+
+  // Texto detrás de la persona, como en las portadas de revista.
+  z.object({
+    tipo: z.literal("detras"),
+    ...tramo,
+    texto: z.string().min(1),
+    destacar: z.string().nullable().default(null),
+    // "arriba" = detrás de la cabeza; "centro" = detrás del cuerpo.
+    posicion: z.enum(["arriba", "centro"]).default("arriba"),
+  }),
+  // Cambia el fondo por un color o un degradado de src/marca.ts, o por una imagen.
+  z
+    .object({
+      tipo: z.literal("fondo"),
+      ...tramo,
+      estilo: z.enum(["color", "degradado", "imagen"]).default("degradado"),
+      archivo: z.string().nullable().default(null),
+    })
+    .refine((e) => e.estilo !== "imagen" || e.archivo, {
+      message: 'El fondo con estilo "imagen" necesita "archivo" (por ejemplo "imagenes/oficina.jpg")',
+    }),
+  // La persona recortada sale de un círculo o una tarjeta de color, con lettering detrás.
+  z.object({
+    tipo: z.literal("marco"),
+    ...tramo,
+    forma: z.enum(["circulo", "tarjeta"]).default("circulo"),
+    texto: z.string().nullable().default(null),
+    destacar: z.string().nullable().default(null),
+  }),
 ]);
 
 export type Elemento = z.infer<typeof esquemaElemento>;
 
 export const TIPOS_ESCENA = ["capas", "perspectiva", "tutorial", "objeto3d"] as const;
 export type ElementoEscena = Extract<Elemento, { tipo: (typeof TIPOS_ESCENA)[number] }>;
-export type ElementoSobreVideo = Exclude<Elemento, ElementoEscena>;
+export const TIPOS_RECORTE = ["detras", "fondo", "marco"] as const;
+export type ElementoRecorte = Extract<Elemento, { tipo: (typeof TIPOS_RECORTE)[number] }>;
+export type ElementoSobreVideo = Exclude<Elemento, ElementoEscena | ElementoRecorte>;
 
 // Estructura de public/proyectos/<id>/edicion.json (la crea `npm run preparar`).
 // Tiempos en segundos del video original.
@@ -171,6 +204,16 @@ export const esquemaEdicion = z.object({
     .object({
       cada: z.number().positive(),
       cuadros: z.array(z.tuple([z.number(), z.number(), z.number(), z.number()]).nullable()),
+    })
+    .nullable()
+    .default(null),
+  // Máscaras de la persona para los elementos de recorte: carpeta (dentro de public/) y tramos
+  // [desde, hasta) de cuadros del video original que ya tienen máscara.
+  // La llena `npm run recortar` (o revisar y exportar); no se edita a mano.
+  recorte: z
+    .object({
+      carpeta: z.string(),
+      cuadros: z.array(z.tuple([z.number(), z.number()])),
     })
     .nullable()
     .default(null),

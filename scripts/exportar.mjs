@@ -9,8 +9,9 @@ import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { asegurarCaras } from "./lib/caras.mjs";
+import { asegurarRecortes, avisarRecortesIncompletos } from "./lib/recorte.mjs";
 import {
-  CARPETA_PROYECTOS, CARPETA_SALIDA, RAIZ, actualizarListaDeProyectos, leerJson,
+  CARPETA_PROYECTOS, CARPETA_SALIDA, RAIZ, actualizarListaDeProyectos, leerJson, puertoLibre,
 } from "./lib/herramientas.mjs";
 
 const FORMATOS = ["9:16", "4:5", "1:1", "16:9"];
@@ -35,6 +36,8 @@ if (!id || !fs.existsSync(archivoEdicion)) {
 }
 
 await asegurarCaras(archivoEdicion);
+await asegurarRecortes(archivoEdicion);
+avisarRecortesIncompletos(archivoEdicion);
 const edicion = leerJson(archivoEdicion);
 const formatos = op.todos ? FORMATOS : [op.formato ?? edicion.opciones.formato];
 for (const f of formatos) {
@@ -53,7 +56,7 @@ for (const formato of formatos) {
   const props = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "toptop-")), "props.json");
   fs.writeFileSync(props, JSON.stringify({ proyecto: id, formato }));
   console.log(`\nExportando ${id} en ${formato}…`);
-  const r = spawnSync(remotion, ["render", id, salida, `--props=${props}`], {
+  const r = spawnSync(remotion, ["render", id, salida, `--props=${props}`, `--port=${await puertoLibre()}`], {
     cwd: RAIZ,
     stdio: "inherit",
   });

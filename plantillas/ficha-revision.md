@@ -19,6 +19,8 @@
 - [ ] Cada lista, lettering, ícono o imagen aparece cuando se dice lo que muestra.
 - [ ] Ninguna palabra aparece dos veces (en el lettering y en los subtítulos).
 - [ ] En las escenas 3D la cara se ve bien y las capturas o imágenes se entienden.
+- [ ] En los recortes (texto detrás, fondo nuevo, marco) el borde de la persona se ve limpio,
+      sin pedazos del fondo ni de otras personas, y el texto se lee aunque la cabeza tape una parte.
 - [ ] No chocan con los subtítulos ni entre sí, y el texto se lee.
 - [ ] Los textos en pantalla dicen lo mismo que la voz.
 

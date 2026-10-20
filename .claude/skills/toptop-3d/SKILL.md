@@ -56,7 +56,8 @@ etiquetas a los lados mientras se explica.
 - Las imágenes las pone la persona en `public/imagenes/`. Verifica que existan; si faltan, pídelas.
 - **Duración**: capas y perspectiva, 2.5–4 s. Tutorial, 2–4 s por paso. Objeto, 4–8 s.
 - **Densidad**: máximo una escena 3D cada 15–20 s. No pongas otros elementos (lista, ícono,
-  lettering) al mismo tiempo que una escena 3D, ni durante el gancho.
+  lettering, recortes de la skill `toptop-recorte`) al mismo tiempo que una escena 3D, ni
+  durante el gancho.
 - Deja al menos 0.5 s de video normal entre dos escenas.
 - Los textos dicen lo mismo que la voz; no inventes datos.
 - "Hazlo en 3D" sin más detalles: apertura con `capas` usando el tema del video y una

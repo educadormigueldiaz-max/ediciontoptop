@@ -76,7 +76,7 @@ Fotos de producto, capturas, logos de clientes, documentos que se mencionan.
 
 ## Criterio (lo más importante)
 - **Un protagonista a la vez**: no juntes lista + ícono, ni elementos durante el gancho
-  (los primeros `duracionGancho` segundos).
+  (los primeros `duracionGancho` segundos), una escena 3D o un recorte de fondo.
 - **Nada en los primeros 0.5 s ni encima del cierre.**
 - **Densidad**: un elemento cada 5–10 s como máximo. Si todo resalta, nada resalta.
 - **Fidelidad**: el texto en pantalla dice lo mismo que la voz. No inventes datos.

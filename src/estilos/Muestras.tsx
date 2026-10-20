@@ -1,6 +1,7 @@
 import type { Caption } from "@remotion/captions";
 import {
   AbsoluteFill,
+  Img,
   interpolate,
   Sequence,
   useCurrentFrame,
@@ -12,9 +13,11 @@ import { IconoAnimado } from "../componentes/IconoAnimado";
 import { ImagenInsertada } from "../componentes/ImagenInsertada";
 import { Lettering } from "../componentes/Lettering";
 import { ListaAnimada } from "../componentes/ListaAnimada";
+import { EscenaRecorte } from "../componentes/Recorte";
 import { Subtitulos } from "../componentes/Subtitulos";
 import type { EscenaEnEditado } from "../edicion/escenas";
-import { FPS } from "../edicion/esquema";
+import type { Caja } from "../edicion/encuadre";
+import { FPS, type ElementoRecorte } from "../edicion/esquema";
 import { marca } from "../marca";
 
 // Composiciones de prueba para ajustar la marca sin necesitar un video.
@@ -259,4 +262,63 @@ export const MuestraEscenas3D: React.FC = () => (
   <VideoEnEscena escenas={ESCENAS_DE_MUESTRA} caraEntre={() => null}>
     <VideoDeMuestra />
   </VideoEnEscena>
+);
+
+// --- Recorte de fondo de la fase 4, con una silueta dibujada en lugar de una persona real. ---
+
+// Silueta en un cuadro de 1080 x 1920, y dónde queda su cara (con el pelo).
+const SILUETA = svg(
+  `<g fill="#f4f4f5">
+     <circle cx="540" cy="620" r="170"/>
+     <rect x="470" y="760" width="140" height="120" rx="40"/>
+     <path d="M 200 1920 L 200 1150 Q 200 860 540 860 Q 880 860 880 1150 L 880 1920 Z"/>
+   </g>
+   <g fill="#3f3f46">
+     <circle cx="480" cy="610" r="18"/><circle cx="600" cy="610" r="18"/>
+     <rect x="490" y="690" width="100" height="16" rx="8"/>
+   </g>`,
+  1080,
+  1920,
+);
+const CARA_SILUETA: Caja = { x: 350, y: 420, ancho: 380, alto: 420 };
+
+const Silueta: React.FC = () => (
+  <AbsoluteFill>
+    <Img src={SILUETA} style={{ width: "100%", height: "100%" }} />
+  </AbsoluteFill>
+);
+
+const RECORTES_DE_MUESTRA: Array<{ elemento: ElementoRecorte; desde: number; duracion: number }> = [
+  {
+    elemento: { tipo: "detras", inicio: 0, fin: 0, texto: "Edita con IA", destacar: "IA", posicion: "arriba" },
+    desde: 0,
+    duracion: 3.5,
+  },
+  {
+    elemento: { tipo: "fondo", inicio: 0, fin: 0, estilo: "degradado", archivo: null },
+    desde: 4,
+    duracion: 3.5,
+  },
+  {
+    elemento: { tipo: "marco", inicio: 0, fin: 0, forma: "circulo", texto: "Tu marca", destacar: "marca" },
+    desde: 8,
+    duracion: 3.5,
+  },
+  {
+    elemento: { tipo: "marco", inicio: 0, fin: 0, forma: "tarjeta", texto: null, destacar: null },
+    desde: 12,
+    duracion: 3.5,
+  },
+];
+
+export const MuestraRecorte: React.FC = () => (
+  <AbsoluteFill>
+    <FondoDeMuestra />
+    <Silueta />
+    {RECORTES_DE_MUESTRA.map(({ elemento, desde, duracion }, i) => (
+      <Sequence key={i} from={s(desde)} durationInFrames={s(duracion)} name={elemento.tipo}>
+        <EscenaRecorte elemento={elemento} duracionFrames={s(duracion)} cara={CARA_SILUETA} persona={<Silueta />} />
+      </Sequence>
+    ))}
+  </AbsoluteFill>
 );

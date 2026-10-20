@@ -2,7 +2,7 @@ import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } fr
 import { elegirZona, type Zona } from "../edicion/encuadre";
 import { marca } from "../marca";
 
-const normalizar = (texto: string) =>
+export const normalizar = (texto: string) =>
   texto
     .toLowerCase()
     .normalize("NFD")
@@ -13,8 +13,14 @@ const normalizar = (texto: string) =>
 const ANCHO_LETRA = 0.78;
 
 // Tamaño de letra más grande con el que la frase cabe en el espacio disponible.
-const tamanoQueCabe = (palabras: string[], ancho: number, alto: number, base: number) => {
-  let tamano = base * 0.17;
+export const tamanoQueCabe = (
+  palabras: string[],
+  ancho: number,
+  alto: number,
+  base: number,
+  maximo = 0.17,
+) => {
+  let tamano = base * maximo;
   while (tamano > base * 0.05) {
     let lineas = 1;
     let actual = 0;

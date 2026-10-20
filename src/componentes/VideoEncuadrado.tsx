@@ -1,9 +1,11 @@
 import { Video } from "@remotion/media";
-import { AbsoluteFill, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Img, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { geometriaVideo, zoomEnfasisEn } from "../edicion/encuadre";
 import type { Edicion } from "../edicion/esquema";
 
 // Muestra un tramo del video original llenando el formato de salida (recorta lo que sobra).
+// Con `mascara`, muestra solo a la persona (sin fondo y sin sonido): la máscara de cada cuadro
+// del original sale de `npm run recortar`; si un cuadro no tiene, no se muestra nada.
 export const VideoEncuadrado: React.FC<{
   src: string;
   anchoOriginal: number;
@@ -14,6 +16,7 @@ export const VideoEncuadrado: React.FC<{
   enfoqueY: number;
   zoom: number;
   enfasis: Edicion["enfasis"];
+  mascara?: (cuadroOriginal: number) => string | null;
 }> = ({
   src,
   anchoOriginal,
@@ -24,6 +27,7 @@ export const VideoEncuadrado: React.FC<{
   enfoqueY,
   zoom,
   enfasis,
+  mascara,
 }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
@@ -39,13 +43,21 @@ export const VideoEncuadrado: React.FC<{
     enfoqueY,
     zoom: zoom * zoomEnfasisEn(segundo, enfasis),
   });
+  const archivoMascara = mascara ? mascara(trimBefore + frame) : null;
+  if (mascara && !archivoMascara) return null;
+  const urlMascara = archivoMascara ? staticFile(archivoMascara) : null;
 
   return (
-    <AbsoluteFill style={{ overflow: "hidden", backgroundColor: "black" }}>
+    <AbsoluteFill style={{ overflow: "hidden", backgroundColor: urlMascara ? undefined : "black" }}>
+      {urlMascara ? (
+        // Se carga con <Img> para que el render espere a la máscara antes de tomar el cuadro.
+        <Img src={urlMascara} style={{ position: "absolute", width: 1, height: 1, opacity: 0 }} />
+      ) : null}
       <Video
         src={staticFile(src)}
         trimBefore={trimBefore}
         objectFit="fill"
+        muted={urlMascara !== null}
         // Fundido de un frame en cada corte para que no se escuchen "clics".
         volume={(f) =>
           duracionFrames < 4
@@ -61,6 +73,16 @@ export const VideoEncuadrado: React.FC<{
           top: g.top,
           width: g.ancho,
           height: g.alto,
+          // Blanco = persona, negro = fondo.
+          ...(urlMascara
+            ? {
+                maskImage: `url("${urlMascara}")`,
+                maskSize: "100% 100%",
+                // Sin repetir: si no, una franja del borde de abajo asoma arriba.
+                maskRepeat: "no-repeat",
+                maskMode: "luminance",
+              }
+            : {}),
         }}
       />
     </AbsoluteFill>

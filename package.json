@@ -38,6 +38,7 @@
     "actualizar": "node scripts/actualizar.mjs",
     "preparar": "node scripts/preparar.mjs",
     "caras": "node scripts/caras.mjs",
+    "recortar": "node scripts/recortar.mjs",
     "duplicar": "node scripts/duplicar.mjs",
     "revisar": "node scripts/revisar.mjs",
     "exportar": "node scripts/exportar.mjs",

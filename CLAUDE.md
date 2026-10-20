@@ -5,7 +5,7 @@ pide en español lo que quiere ver ("corta las pausas y pon subtítulos") y tú 
 
 - Responde siempre en español, con frases cortas y sin jerga técnica.
 - Antes de editar, lee las skills de `.claude/skills/` que apliquen (ritmo, subtítulos, estilo,
-  elementos, 3d, movimiento, composición). Son el criterio de edición.
+  elementos, 3d, recorte, movimiento, composición). Son el criterio de edición.
 - Si el pedido es ambiguo ("déjalo bonito"), aplica las skills y explica en una línea qué decidiste.
 
 ## Flujo de trabajo: Prepara → Pide → Revisa → Reutiliza
@@ -29,6 +29,7 @@ pide en español lo que quiere ver ("corta las pausas y pon subtítulos") y tú 
 | `npm run actualizar` | Trae la última versión desde GitHub e instala lo nuevo |
 | `npm run preparar -- <video> [opciones]` | Convierte, transcribe, corta pausas y ubica la cara. `--ayuda` muestra las opciones |
 | `npm run caras -- <id>` | Vuelve a buscar la cara en un proyecto (no toca la edición) |
+| `npm run recortar -- <id>` | Separa a la persona del fondo para `detras`, `fondo` y `marco` (revisar y exportar lo hacen solos) |
 | `npm run dev` | Abre la vista previa (Remotion Studio) |
 | `npm run exportar -- <id> [--formato 9:16\|4:5\|1:1\|16:9] [--todos]` | Exporta a `salida/` |
 | `npm run duplicar -- <id> <nuevo>` | Copia la edición usando el mismo video |
@@ -56,8 +57,12 @@ Tiempos en **segundos del video original**. El esquema está en `src/edicion/esq
   Para "haz zoom cuando digo X", usa el `inicio` y `fin` de esa palabra en `palabras`.
 - `elementos`: gráficos sobre el video: `lista` (motion explicativo), `lettering`, `icono` e
   `imagen` (skill `toptop-elementos`), y escenas 3D: `capas`, `perspectiva`, `tutorial` y
-  `objeto3d` (skill `toptop-3d`). Las imágenes de la persona van en `public/imagenes/`.
+  `objeto3d` (skill `toptop-3d`), y recorte de fondo: `detras` (texto detrás de la persona),
+  `fondo` (color, degradado o imagen) y `marco` (persona saliendo de un círculo o tarjeta)
+  (skill `toptop-recorte`). Las imágenes de la persona van en `public/imagenes/`.
 - `caras`: dónde está la cara en cada momento. Lo llena el programa; no se edita a mano.
+- `recorte`: qué momentos ya tienen a la persona separada del fondo. Lo llena el programa
+  (`npm run recortar`, revisar o exportar); no se edita a mano.
 - Usa `transcripcion.txt` para ubicar frases por tiempo (por ejemplo, una toma repetida).
 
 ## Reglas

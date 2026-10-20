@@ -1,6 +1,7 @@
 // Utilidades compartidas por los scripts de TopTop Lab.
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -35,6 +36,18 @@ export const ffprobe = (archivo) => {
   if (r.status !== 0) throw new Error(`No se pudo leer ${archivo}:\n${r.stderr}`);
   return JSON.parse(r.stdout);
 };
+
+// Puerto libre para un render. Si la vista previa está abierta en el 3000, Remotion a veces
+// cree que está libre y se conecta a ella; con un puerto propio eso no pasa.
+export const puertoLibre = () =>
+  new Promise((resolve, reject) => {
+    const servidor = net.createServer();
+    servidor.on("error", reject);
+    servidor.listen(0, () => {
+      const { port } = servidor.address();
+      servidor.close(() => resolve(port));
+    });
+  });
 
 // "Mi Video_01.MOV" -> "mi-video-01"
 export const aId = (texto) =>

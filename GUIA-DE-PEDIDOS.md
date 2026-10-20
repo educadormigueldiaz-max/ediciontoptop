@@ -79,6 +79,15 @@ Abre Claude Code dentro de la carpeta del proyecto (`cd ediciontoptop` y luego `
 
 > Hazlo en 3D.
 
+**Recorte de fondo**
+> Pon "<frase que digo>" en grande detrás de mí, estilo portada de revista.
+
+> Cuando digo "<frase>", cambia el fondo por un degradado de mis colores.
+
+> Cuando hablo de "<tema>", ponme delante de la foto `public/imagenes/<archivo>`.
+
+> En el cierre, ponme saliendo de un círculo de color con la frase "<frase que digo>" detrás.
+
 ---
 
 ## 3. Revisa

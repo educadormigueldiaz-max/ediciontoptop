@@ -56,7 +56,7 @@ const Elemento: React.FC<{ item: ElementoColocado }> = ({ item }) => {
         />
       );
     default:
-      // Las escenas 3D se dibujan con el video (componentes/Escena3D.tsx).
+      // Las escenas 3D y los recortes se dibujan con el video (Escena3D.tsx y Recorte.tsx).
       return null;
   }
 };
@@ -70,6 +70,9 @@ const NOMBRES: Record<ElementoColocado["elemento"]["tipo"], string> = {
   perspectiva: "Perspectiva 3D",
   tutorial: "Tutorial 3D",
   objeto3d: "Objeto 3D",
+  detras: "Texto detrás",
+  fondo: "Fondo nuevo",
+  marco: "Marco",
 };
 
 export const Elementos: React.FC<{ items: ElementoColocado[] }> = ({ items }) => (
