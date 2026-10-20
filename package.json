@@ -42,6 +42,7 @@
     "duplicar": "node scripts/duplicar.mjs",
     "revisar": "node scripts/revisar.mjs",
     "exportar": "node scripts/exportar.mjs",
+    "lote": "node scripts/lote.mjs",
     "build": "remotion bundle",
     "upgrade": "remotion upgrade",
     "lint": "eslint src && tsc"

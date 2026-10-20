@@ -8,7 +8,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import { elegirZona, type Zona } from "../edicion/encuadre";
-import { marca } from "../marca";
+import { useMarca } from "../edicion/estilos";
 
 // Acepta rutas de public/ ("imagenes/foto.jpg") o direcciones completas (https://, data:).
 export const fuenteImagen = (archivo: string) =>
@@ -23,6 +23,7 @@ export const ImagenInsertada: React.FC<{
   duracionFrames: number;
   zona?: Zona;
 }> = ({ archivo, modo, texto, duracionFrames, zona: zonaDada }) => {
+  const marca = useMarca();
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const base = Math.min(width, height);

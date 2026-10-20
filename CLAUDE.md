@@ -5,20 +5,22 @@ pide en español lo que quiere ver ("corta las pausas y pon subtítulos") y tú 
 
 - Responde siempre en español, con frases cortas y sin jerga técnica.
 - Antes de editar, lee las skills de `.claude/skills/` que apliquen (ritmo, subtítulos, estilo,
-  elementos, 3d, recorte, movimiento, composición). Son el criterio de edición.
+  elementos, 3d, recorte, producción, movimiento, composición). Son el criterio de edición.
 - Si el pedido es ambiguo ("déjalo bonito"), aplica las skills y explica en una línea qué decidiste.
 
 ## Flujo de trabajo: Prepara → Pide → Revisa → Reutiliza
 
 1. **Prepara**: el video crudo va en `entrada/`. Ejecuta `npm run preparar -- entrada/<archivo>`.
    Crea `public/proyectos/<id>/` con `video.mp4`, `edicion.json` y `transcripcion.txt`.
+   Para varios videos a la vez: `npm run lote` (mismos ajustes para todos y un resumen).
 2. **Pide**: casi todo pedido se resuelve editando `public/proyectos/<id>/edicion.json`
    (ver "Archivo de edición" abajo). No cambies los componentes de `src/` para un video concreto.
 3. **Revisa**: antes de exportar, ejecuta `npm run revisar -- <id>` y mira las imágenes que
    deja en `salida/revision/<id>/` (inicio, cortes, cada elemento gráfico, final y cierre).
    Usa `plantillas/ficha-revision.md`. Dile a la persona que puede verlo en `npm run dev`
    (Remotion Studio en http://localhost:3000; si ya estaba abierto, que recargue la página).
-4. **Reutiliza**: `npm run exportar -- <id>` (o `--formato 1:1`, o `--todos`).
+4. **Reutiliza**: `npm run exportar -- <id>` (o `--formato 1:1`, `--todos`, o por red social:
+   `--red whatsapp|instagram|tiktok|youtube|youtube-shorts|todas`).
    Para variaciones de anuncios: `npm run duplicar -- <id> <id>-b` y cambia el gancho/cierre en la copia.
 
 ## Comandos
@@ -30,8 +32,10 @@ pide en español lo que quiere ver ("corta las pausas y pon subtítulos") y tú 
 | `npm run preparar -- <video> [opciones]` | Convierte, transcribe, corta pausas y ubica la cara. `--ayuda` muestra las opciones |
 | `npm run caras -- <id>` | Vuelve a buscar la cara en un proyecto (no toca la edición) |
 | `npm run recortar -- <id>` | Separa a la persona del fondo para `detras`, `fondo` y `marco` (revisar y exportar lo hacen solos) |
+| `npm run lote [-- opciones de preparar]` | Prepara y revisa todos los videos nuevos de `entrada/` y deja un resumen en `salida/lote-<fecha>.md` |
 | `npm run dev` | Abre la vista previa (Remotion Studio) |
 | `npm run exportar -- <id> [--formato 9:16\|4:5\|1:1\|16:9] [--todos]` | Exporta a `salida/` |
+| `npm run exportar -- <id> --red <red>\|todas` | Exporta con el tamaño y la calidad de WhatsApp, Instagram, TikTok, YouTube o YouTube Shorts |
 | `npm run duplicar -- <id> <nuevo>` | Copia la edición usando el mismo video |
 | `npm run revisar -- <id> [--formato …]` | Genera cuadros de revisión en `salida/revision/<id>/` |
 | `npm run lint` | Revisa el código (ESLint + TypeScript) |
@@ -39,6 +43,11 @@ pide en español lo que quiere ver ("corta las pausas y pon subtítulos") y tú 
 ## Archivo de edición (`public/proyectos/<id>/edicion.json`)
 
 Tiempos en **segundos del video original**. El esquema está en `src/edicion/esquema.ts`.
+
+- `estilo`: colores y fuentes. `"predeterminado"` (`src/marca.ts`) o el nombre de un cliente con
+  archivo en `estilos/<cliente>.json` (skill `toptop-produccion`).
+- `musica`: `{ "archivo": "musica/cancion.mp3", "volumen": 0.25, "alHablar": 0.3, "desde": 0 }` o
+  null. La canción va en `public/musica/`. Baja sola cuando la persona habla.
 
 - `segmentos`: tramos que se conservan, en orden. Para quitar una parte, parte o borra el tramo
   que la contiene. Para cambiar el orden, reordena. `zoom` opcional por tramo (1–3).
@@ -53,6 +62,8 @@ Tiempos en **segundos del video original**. El esquema está en `src/edicion/esq
   - `zoomEnCortes`: acercamiento alterno en cada corte.
   - `gancho` (texto o null) y `duracionGancho`: frase de los primeros segundos.
   - `cierre`: `{ "texto": "...", "duracion": 2 }` o null.
+  - `sonidos` (true/false) y `volumenSonidos` (0–1): efectos de sonido al aparecer los elementos.
+    Para apagar uno solo: `"sonido": false` en ese elemento.
 - `enfasis`: acercamientos en momentos clave, `[{ "inicio": 12.3, "fin": 13.1, "zoom": 1.15 }]`.
   Para "haz zoom cuando digo X", usa el `inicio` y `fin` de esa palabra en `palabras`.
 - `elementos`: gráficos sobre el video: `lista` (motion explicativo), `lettering`, `icono` e
@@ -75,10 +86,15 @@ Tiempos en **segundos del video original**. El esquema está en `src/edicion/esq
 - **Nunca** ejecutes `preparar --forzar` sobre un proyecto existente sin preguntar: borra las
   ediciones hechas a mano.
 - `src/proyectos.ts` se genera solo; no lo edites.
-- El estilo visual (colores y fuente) vive en `src/marca.ts`. Si piden cambiar colores o fuente,
-  cambia ese archivo, no los componentes.
+- El estilo visual (colores y fuente) vive en `src/marca.ts` (predeterminado) y en
+  `estilos/<cliente>.json` (cada cliente). Si piden cambiar los colores de un cliente, cambia su
+  archivo en `estilos/`; `src/marca.ts` solo si piden cambiar el estilo de siempre. Nunca en los
+  componentes.
+- Música: solo canciones que la persona puso en `public/musica/`. No descargues música. Si el
+  nombre es de un artista conocido, avisa del riesgo de derechos de autor.
 - No inventes datos en ganchos o cierres (precios, cifras, promesas). Si faltan, pregunta.
 - Animaciones: solo con `useCurrentFrame()`, `interpolate()` y `spring()`. Las transiciones o
   animaciones de CSS no se ven en el render.
 - Después de cambiar código en `src/`, ejecuta `npm run lint`.
-- Los videos (`entrada/`, `public/proyectos/`, `salida/`) no se suben a git.
+- Los videos (`entrada/`, `public/proyectos/`, `salida/`), la música (`public/musica/`) y los
+  estilos de clientes (`estilos/`, menos `ejemplo.json`) no se suben a git.

@@ -1,10 +1,20 @@
 import { Composition, Folder } from "remotion";
 import { z } from "zod";
-import { Cierre } from "./componentes/Cierre";
 import { FPS, esquemaProps } from "./edicion/esquema";
+import { nombresDeEstilos, PREDETERMINADO } from "./edicion/estilos";
 import { calcularMetadatos, Editado } from "./estilos/Editado";
-import { MuestraElementos, MuestraEscenas3D, MuestraRecorte, MuestraSubtitulos } from "./estilos/Muestras";
+import {
+  MuestraCierre,
+  MuestraElementos,
+  MuestraEscenas3D,
+  MuestraRecorte,
+  MuestraSubtitulos,
+} from "./estilos/Muestras";
 import { proyectos } from "./proyectos";
+
+// En las muestras se elige el estilo: el predeterminado o el de un cliente (estilos/<cliente>.json).
+const conEstilo = z.object({ estilo: z.enum(nombresDeEstilos) });
+const estiloInicial = { estilo: PREDETERMINADO };
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -31,8 +41,10 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="Muestra-Subtitulos"
           component={MuestraSubtitulos}
-          schema={z.object({ estilo: z.enum(["palabra", "frase"]) })}
-          defaultProps={{ estilo: "palabra" as const }}
+          schema={conEstilo.extend({
+            subtitulos: z.enum(["palabra", "frase"]),
+          })}
+          defaultProps={{ ...estiloInicial, subtitulos: "palabra" as const }}
           fps={FPS}
           width={1080}
           height={1920}
@@ -41,6 +53,8 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="Muestra-Elementos"
           component={MuestraElementos}
+          schema={conEstilo}
+          defaultProps={estiloInicial}
           fps={FPS}
           width={1080}
           height={1920}
@@ -49,6 +63,8 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="Muestra-3D"
           component={MuestraEscenas3D}
+          schema={conEstilo}
+          defaultProps={estiloInicial}
           fps={FPS}
           width={1080}
           height={1920}
@@ -57,6 +73,8 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="Muestra-Recorte"
           component={MuestraRecorte}
+          schema={conEstilo}
+          defaultProps={estiloInicial}
           fps={FPS}
           width={1080}
           height={1920}
@@ -64,9 +82,9 @@ export const RemotionRoot: React.FC = () => {
         />
         <Composition
           id="Muestra-Cierre"
-          component={Cierre}
-          schema={z.object({ texto: z.string() })}
-          defaultProps={{ texto: "Síguenos para más" }}
+          component={MuestraCierre}
+          schema={conEstilo.extend({ texto: z.string() })}
+          defaultProps={{ ...estiloInicial, texto: "Síguenos para más" }}
           fps={FPS}
           width={1080}
           height={1920}

@@ -17,7 +17,8 @@ import {
   type EscenaEnEditado,
   type Pose,
 } from "../edicion/escenas";
-import { marca } from "../marca";
+import { useMarca } from "../edicion/estilos";
+import type { Marca } from "../marca";
 import { buscarIcono } from "./iconos";
 import { fuenteImagen } from "./ImagenInsertada";
 
@@ -31,7 +32,7 @@ const normalizar = (texto: string) =>
     .replace(/[^a-z0-9ñ]/g, "");
 
 // Texto blanco con contorno, como los subtítulos: se lee sobre cualquier fondo.
-const textoConContorno = (tamano: number): React.CSSProperties => ({
+const textoConContorno = (tamano: number, marca: Marca): React.CSSProperties => ({
   fontFamily: marca.fuente,
   fontWeight: 900,
   fontSize: tamano,
@@ -50,6 +51,7 @@ export const VideoEnEscena: React.FC<{
   caraEntre: (desde: number, hasta: number) => Caja | null;
   children: React.ReactNode;
 }> = ({ escenas, caraEntre, children }) => {
+  const marca = useMarca();
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const base = Math.min(width, height);
@@ -126,6 +128,7 @@ const CapasDetras: React.FC<{ escena: EscenaEnEditado; pose: Pose; p: number }> 
   pose,
   p,
 }) => {
+  const marca = useMarca();
   const { width, height } = useVideoConfig();
   if (escena.elemento.tipo !== "capas") return null;
   const paso = Math.min(width, height) * 0.055;
@@ -191,6 +194,7 @@ const TituloEIconos: React.FC<{
   local: number;
   cara: Caja | null;
 }> = ({ titulo, iconos, pose, p, local, cara }) => {
+  const marca = useMarca();
   const { fps, width, height } = useVideoConfig();
   const base = Math.min(width, height);
   const techo = margenesSeguros(width, height).arriba * 0.8;
@@ -215,7 +219,7 @@ const TituloEIconos: React.FC<{
           opacity: p * entradaTitulo,
         }}
       >
-        <div style={{ ...textoConContorno(base * 0.075), scale: interpolate(entradaTitulo, [0, 1], [0.8, 1]) }}>
+        <div style={{ ...textoConContorno(base * 0.075, marca), scale: interpolate(entradaTitulo, [0, 1], [0.8, 1]) }}>
           {titulo}
         </div>
       </div>
@@ -261,6 +265,7 @@ const TextoEnPerspectiva: React.FC<{
   p: number;
   local: number;
 }> = ({ texto, destacar, lado, pose, p, local }) => {
+  const marca = useMarca();
   const { fps, width, height } = useVideoConfig();
   const base = Math.min(width, height);
   const margen = width * 0.05;
@@ -324,6 +329,7 @@ const TituloArriba: React.FC<{ titulo: string | null; p: number; local: number }
   p,
   local,
 }) => {
+  const marca = useMarca();
   const { fps, width, height } = useVideoConfig();
   if (!titulo) return null;
   const base = Math.min(width, height);
@@ -343,7 +349,7 @@ const TituloArriba: React.FC<{ titulo: string | null; p: number; local: number }
         translate: `${interpolate(entrada, [0, 1], [-base * 0.04, 0])}px 0`,
       }}
     >
-      <div style={textoConContorno(base * 0.068)}>{titulo}</div>
+      <div style={textoConContorno(base * 0.068, marca)}>{titulo}</div>
     </div>
   );
 };
@@ -356,6 +362,7 @@ const Dispositivo: React.FC<{
   p: number;
   local: number;
 }> = ({ marco, pasos, momentos, p, local }) => {
+  const marca = useMarca();
   const { fps, width, height } = useVideoConfig();
   const base = Math.min(width, height);
   const { banda } = distribucionConVentana(width, height);
@@ -522,6 +529,7 @@ const Objeto: React.FC<{
   p: number;
   local: number;
 }> = ({ archivo, etiquetas, momentos, p, local }) => {
+  const marca = useMarca();
   const { fps, width, height } = useVideoConfig();
   const base = Math.min(width, height);
   const { banda } = distribucionConVentana(width, height);

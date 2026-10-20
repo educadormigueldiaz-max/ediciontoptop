@@ -1,6 +1,6 @@
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { ALTO_FILA_LISTA, ALTO_TITULO_LISTA, elegirZona, type Zona } from "../edicion/encuadre";
-import { marca } from "../marca";
+import { useMarca } from "../edicion/estilos";
 
 // Motion explicativo: un título y puntos numerados que aparecen al ritmo de lo que se dice.
 // Se acomoda dentro de `zona` (el espacio libre que deja la cara), achicándose si hace falta.
@@ -10,6 +10,7 @@ export const ListaAnimada: React.FC<{
   duracionFrames: number;
   zona?: Zona;
 }> = ({ titulo, puntos, duracionFrames, zona: zonaDada }) => {
+  const marca = useMarca();
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const base = Math.min(width, height);

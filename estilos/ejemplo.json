@@ -1,0 +1,12 @@
+{
+  "nombre": "Cliente de ejemplo",
+  "colores": {
+    "primario": "#0F766E",
+    "secundario": "#F59E0B",
+    "acento": "#F59E0B",
+    "textoSobreAcento": "#0A0A0A",
+    "fondo": "#0B1414"
+  },
+  "fuente": { "familia": "Montserrat" },
+  "fuenteAlterna": { "familia": "Playfair Display", "cursiva": true }
+}

@@ -24,12 +24,19 @@
 - [ ] No chocan con los subtítulos ni entre sí, y el texto se lee.
 - [ ] Los textos en pantalla dicen lo mismo que la voz.
 
+## Sonido
+- [ ] La voz se entiende siempre: la música baja cuando se habla y no la tapa.
+- [ ] La música entra y sale suave, y su tono va con el mensaje.
+- [ ] La canción tiene permiso de uso (no es de un artista conocido sin licencia).
+- [ ] Los efectos de sonido son suaves y no se amontonan (uno cada 2–3 s como mucho).
+
 ## Marca
-- [ ] Colores y fuente de `src/marca.ts`.
+- [ ] Colores y fuente del estilo correcto (`"estilo"` en `edicion.json`: el del cliente o el predeterminado).
 - [ ] El cierre tiene una sola llamada a la acción, y es correcta.
 - [ ] No hay datos inventados (precios, promesas, testimonios).
 
 ## Entrega
 - [ ] Duración dentro del objetivo del brief.
-- [ ] Formato correcto para la red donde se publica.
+- [ ] Formato correcto para la red donde se publica (`--red whatsapp|instagram|tiktok|youtube`).
+- [ ] Para WhatsApp, el archivo pesa menos de 15 MB.
 - [ ] Exportado en `salida/` con un nombre claro.

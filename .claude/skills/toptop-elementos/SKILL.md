@@ -82,6 +82,9 @@ Fotos de producto, capturas, logos de clientes, documentos que se mencionan.
 - **Fidelidad**: el texto en pantalla dice lo mismo que la voz. No inventes datos.
 - "Hazlo más visual" sin más detalles: busca en la transcripción enumeraciones (→ lista),
   la frase más fuerte (→ lettering) y 2 o 3 palabras concretas (→ íconos). Explica qué pusiste.
+- **Sonido**: cada elemento suena solo al aparecer (whoosh en lettering e imagen, pop en cada
+  punto de una lista y en los íconos). `"sonido": false` lo apaga en ese elemento; detalles en
+  `toptop-produccion`.
 
 ## Revisar
 Ejecuta `npm run revisar -- <id>`: deja un cuadro de cada elemento en `salida/revision/<id>/`.

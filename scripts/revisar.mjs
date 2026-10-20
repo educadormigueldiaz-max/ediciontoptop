@@ -9,6 +9,7 @@ import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { asegurarCaras } from "./lib/caras.mjs";
+import { asegurarProduccion } from "./lib/produccion.mjs";
 import { asegurarRecortes, avisarRecortesIncompletos } from "./lib/recorte.mjs";
 import {
   CARPETA_PROYECTOS, CARPETA_SALIDA, FPS, RAIZ, actualizarListaDeProyectos, leerJson, puertoLibre,
@@ -29,6 +30,13 @@ await asegurarCaras(archivoEdicion);
 await asegurarRecortes(archivoEdicion);
 avisarRecortesIncompletos(archivoEdicion);
 const edicion = leerJson(archivoEdicion);
+asegurarProduccion(edicion);
+const { musica, opciones } = edicion;
+console.log(
+  `Estilo: ${edicion.estilo ?? "predeterminado"} · ` +
+    `Música: ${musica ? `${musica.archivo} (volumen ${musica.volumen ?? 0.25})` : "no"} · ` +
+    `Efectos de sonido: ${opciones.sonidos === false ? "apagados" : "sí"}`,
+);
 
 // Misma cuenta que src/edicion/linea-de-tiempo.ts.
 let cursor = 0;

@@ -1,11 +1,12 @@
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { marca } from "../marca";
+import { useMarca } from "../edicion/estilos";
 
 // Frase llamativa arriba del video durante los primeros segundos.
 export const Gancho: React.FC<{ texto: string; duracionFrames: number }> = ({
   texto,
   duracionFrames,
 }) => {
+  const marca = useMarca();
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const base = Math.min(width, height);

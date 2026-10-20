@@ -1,0 +1,10 @@
+Efectos de sonido de esta carpeta (whoosh.wav, pop.wav, click.wav)
+
+Se crearon desde cero con scripts/crear-sonidos.mjs (ruido y tonos generados con matemática):
+no contienen grabaciones ni partes de sonidos de otras personas.
+
+Licencia: CC0 1.0 (dominio público). Se pueden usar, cambiar y publicar en cualquier video,
+también con fines comerciales, sin pedir permiso ni nombrar a nadie.
+https://creativecommons.org/publicdomain/zero/1.0/deed.es
+
+Si agregas sonidos tuyos a esta carpeta, usa solo sonidos con permiso de uso.

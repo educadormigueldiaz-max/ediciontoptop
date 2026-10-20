@@ -1,6 +1,6 @@
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { elegirZona, type Zona } from "../edicion/encuadre";
-import { marca } from "../marca";
+import { useMarca } from "../edicion/estilos";
 import { buscarIcono } from "./iconos";
 
 type Posicion = "arriba-derecha" | "arriba-izquierda" | "arriba" | "centro";
@@ -14,6 +14,7 @@ export const IconoAnimado: React.FC<{
   duracionFrames: number;
   zona?: Zona;
 }> = ({ icono, texto, posicion, duracionFrames, zona: zonaDada }) => {
+  const marca = useMarca();
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const base = Math.min(width, height);

@@ -18,7 +18,7 @@ import {
   tramosDentro,
   type RecorteEnEditado,
 } from "../edicion/recortes";
-import { marca } from "../marca";
+import { useMarca } from "../edicion/estilos";
 import { fuenteImagen } from "./ImagenInsertada";
 import { normalizar, tamanoQueCabe } from "./Lettering";
 import { VideoEncuadrado } from "./VideoEncuadrado";
@@ -35,6 +35,7 @@ const TextoDetras: React.FC<{
   alinear: "abajo" | "centro";
   duracionFrames: number;
 }> = ({ texto, destacar, zona, alinear, duracionFrames }) => {
+  const marca = useMarca();
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const base = Math.min(width, height);
@@ -104,6 +105,7 @@ const FondoNuevo: React.FC<{
   archivo: string | null;
   duracionFrames: number;
 }> = ({ estilo, archivo, duracionFrames }) => {
+  const marca = useMarca();
   const frame = useCurrentFrame();
   if (estilo === "imagen" && archivo) {
     return (
@@ -154,6 +156,7 @@ export const EscenaRecorte: React.FC<{
   cara: Caja | null;
   persona: React.ReactNode;
 }> = ({ elemento, duracionFrames, cara: caraDada, persona }) => {
+  const marca = useMarca();
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const m = margenesSeguros(width, height);

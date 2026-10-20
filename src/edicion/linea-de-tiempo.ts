@@ -76,6 +76,37 @@ export const palabrasEnElEditado = (
   return captions;
 };
 
+// Silencios más cortos que esto (entre palabras de una misma frase) no cuentan como pausa.
+const PAUSA_MINIMA = 0.4;
+
+// Tramos [desde, hasta) del video editado, en frames, en que la persona habla. Usa todas las
+// palabras, aunque los subtítulos muestren solo las claves.
+export const momentosConVoz = (edicion: Edicion, tramos: Tramo[], fps: number): Array<[number, number]> => {
+  const tramosConVoz: Array<[number, number]> = [];
+  for (const palabra of edicion.palabras) {
+    for (const tramo of tramos) {
+      const inicioTramo = tramo.trimBefore / fps;
+      const finTramo = (tramo.trimBefore + tramo.duracionFrames) / fps;
+      const a = Math.max(palabra.inicio, inicioTramo);
+      const b = Math.min(palabra.fin, finTramo);
+      if (b <= a) continue;
+      tramosConVoz.push([
+        Math.round(tramo.desdeFrame + (a - inicioTramo) * fps),
+        Math.round(tramo.desdeFrame + (b - inicioTramo) * fps),
+      ]);
+    }
+  }
+  // Los tramos pueden ir en otro orden que el original: se ordenan y se unen los cercanos.
+  tramosConVoz.sort((x, y) => x[0] - y[0]);
+  const conVoz: Array<[number, number]> = [];
+  for (const [desde, hasta] of tramosConVoz) {
+    const anterior = conVoz.at(-1);
+    if (anterior && desde - anterior[1] < PAUSA_MINIMA * fps) anterior[1] = Math.max(anterior[1], hasta);
+    else conVoz.push([desde, hasta]);
+  }
+  return conVoz;
+};
+
 // Frame del video editado que corresponde a un segundo del original.
 // Si ese segundo se cortó: para un "inicio" se usa el comienzo del siguiente tramo,
 // para un "fin" el final del tramo anterior. Devuelve null si no queda nada.

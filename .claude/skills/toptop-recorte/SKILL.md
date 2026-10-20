@@ -30,7 +30,7 @@ Cambia el fondo por un momento; la persona sigue igual.
 { "tipo": "fondo", "inicio": 54.4, "fin": 58.2, "estilo": "degradado" }
 { "tipo": "fondo", "inicio": 30.0, "fin": 34.0, "estilo": "imagen", "archivo": "imagenes/oficina.jpg" }
 ```
-- `estilo`: `degradado` (por defecto, colores de `src/marca.ts`), `color` (color primario liso)
+- `estilo`: `degradado` (por defecto, colores del estilo del video), `color` (color primario liso)
   o `imagen` (una foto de `public/imagenes/`; verifica que exista, si no, pídela).
 - Los subtítulos siguen visibles.
 - Úsalo para separar partes del video, para un dato importante o cuando el fondo real distrae.
@@ -57,6 +57,10 @@ cabeza asoma por arriba, con una frase opcional detrás.
 - Los textos dicen lo mismo que la voz; no inventes datos.
 - "Ponle algo tipo revista" sin más detalles: un `detras` con la frase más fuerte y, si el video
   es largo, un `marco` en el cierre. Explica qué pusiste.
+- **Sonido**: cada recorte entra con un whoosh; `"sonido": false` lo apaga en ese elemento
+  (`toptop-produccion`).
+- Los colores de `fondo` y `marco` salen del estilo del video (`src/marca.ts` o el del cliente
+  en `estilos/`).
 
 ## Calcular el recorte
 - `npm run revisar` y `npm run exportar` lo calculan solos si falta (unos 2–3 s por cada segundo

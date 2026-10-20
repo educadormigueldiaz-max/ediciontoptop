@@ -19,11 +19,17 @@ animaciones con [Remotion](https://www.remotion.dev); tú revisas en el navegado
   Mac, sin internet, solo en los momentos que lo necesitan.
 - **Escenas 3D**: montaje en capas, perspectiva, tutorial con capturas en un celular o navegador,
   y objetos que giran con etiquetas.
+- **Música de fondo** que baja sola cuando hablas, sube un poco en las pausas y entra y sale suave.
+- **Efectos de sonido** suaves (whoosh, pop, click) cuando aparecen listas, íconos, textos,
+  recortes y escenas 3D. Hechos desde cero: libres para usar.
+- **Estilos por cliente**: los colores y las fuentes de cada cliente en `estilos/<cliente>.json`.
+- **Trabajo en lote**: prepara y revisa todos los videos nuevos de una vez y te dice cuáles mirar.
+- **Exportar por red social**: WhatsApp (liviano), Instagram, TikTok y YouTube, con nombres claros.
 - **Tu cara nunca se tapa**: el programa detecta dónde está, acomoda textos y gráficos alrededor
   y ajusta el recorte para que siempre quede en cuadro.
 - **Variaciones** de un mismo video para probar anuncios.
 - **Skills de criterio** para Claude Code: estilo, ritmo, subtítulos, elementos, 3D, recorte,
-  movimiento y composición.
+  producción, movimiento y composición.
 
 ## Instalación en Mac (una sola vez)
 
@@ -56,9 +62,12 @@ animaciones con [Remotion](https://www.remotion.dev); tú revisas en el navegado
 4. Revisa en el navegador: en otra terminal ejecuta `npm run dev` y abre http://localhost:3000.
    Cada video aparece en la carpeta **Proyectos** de la izquierda.
 5. Pide cambios ("sube los subtítulos", "pon este gancho…") y cuando te guste:
-   > Exporta el video en todos los formatos.
+   > Exporta el video para todas las redes.
 
-   Los archivos quedan en `salida/`.
+   Los archivos quedan en `salida/` (por ejemplo `take-01-whatsapp.mp4`, `take-01-youtube.mp4`).
+
+¿Muchos videos? Cópialos todos a `entrada/` y pide:
+> Prepara todos los videos nuevos con el estilo de <cliente> y dime cuáles debo mirar.
 
 ## Actualizar
 
@@ -73,7 +82,9 @@ npm run actualizar
 |---|---|
 | `npm run preparar -- entrada/video.mov` | Convierte, transcribe y corta pausas (`--ayuda` para opciones) |
 | `npm run dev` | Vista previa en http://localhost:3000 |
+| `npm run lote` | Prepara y revisa todos los videos nuevos de `entrada/` y deja un resumen |
 | `npm run exportar -- <proyecto>` | Exporta a `salida/` (`--formato 1:1` o `--todos`) |
+| `npm run exportar -- <proyecto> --red todas` | Exporta para WhatsApp, Instagram, TikTok y YouTube (o una sola: `--red whatsapp`) |
 | `npm run duplicar -- <proyecto> <nuevo>` | Copia la edición para hacer otra versión |
 | `npm run revisar -- <proyecto>` | Saca cuadros de revisión a `salida/revision/` |
 | `npm run caras -- <proyecto>` | Vuelve a buscar dónde está la cara |
@@ -86,9 +97,12 @@ entrada/                 Tus grabaciones crudas (no se suben a git)
 salida/                  Videos exportados (no se suben a git)
 public/proyectos/<id>/   Video de trabajo + edicion.json + transcripcion.txt + recorte/ (no se suben a git)
 public/imagenes/         Tus fotos y capturas para insertar en los videos (no se suben a git)
+public/musica/           Tus canciones con permiso de uso (no se suben a git)
+public/sonidos/          Efectos de sonido (whoosh, pop, click; libres, CC0)
 public/fuentes/          Fuentes de los videos
+estilos/                 Colores y fuentes de cada cliente (no se suben a git, salvo el ejemplo)
 modelos/                 Detector de caras (corre en tu computadora)
-src/marca.ts             Colores y fuente de los videos
+src/marca.ts             Colores y fuente del estilo predeterminado
 src/componentes/         Subtítulos, gancho, cierre, encuadre
 src/estilos/             Composiciones: video editado y muestras
 .claude/skills/          Criterio de edición que usa Claude Code
@@ -98,10 +112,19 @@ GUIA-DE-PEDIDOS.md       Pedidos listos para copiar
 
 ## Personalizar el estilo
 
-El nombre y el logo de TopTop Lab **nunca** aparecen en los videos. Los colores y la fuente se
-cambian en `src/marca.ts` (o pídeselo a Claude). Las muestras
-**Muestra-Subtitulos**, **Muestra-Elementos**, **Muestra-3D**, **Muestra-Recorte** y **Muestra-Cierre** en la vista previa sirven
-para ver los cambios sin necesidad de un video.
+El nombre y el logo de TopTop Lab **nunca** aparecen en los videos. Los colores y la fuente de
+siempre se cambian en `src/marca.ts`; los de cada cliente, en `estilos/<cliente>.json` (copia
+`estilos/ejemplo.json`), o pídeselo a Claude: "crea el estilo de Panadería Luna con verde y
+crema". Las muestras **Muestra-Subtitulos**, **Muestra-Elementos**, **Muestra-3D**,
+**Muestra-Recorte** y **Muestra-Cierre** en la vista previa sirven para ver los cambios sin
+necesidad de un video: en el panel de la derecha, el campo `estilo` cambia de cliente. Las de
+elementos, 3D y recorte suenan con sus efectos de sonido.
+
+## Música
+
+Pon tus canciones en `public/musica/` y pide "ponle música con `cancion.mp3`". Usa solo música
+con permiso de uso (bibliotecas libres o compradas): las canciones de artistas conocidos, aunque
+sean instrumentales, pueden hacer que Instagram, TikTok o YouTube silencien o bajen tu video.
 
 ## Licencia de Remotion
 

@@ -10,7 +10,7 @@ import {
 } from "remotion";
 import { centroSubtitulos, mediaFranjaSubtitulos, type Caja } from "../edicion/encuadre";
 import type { Subtitulo } from "../edicion/linea-de-tiempo";
-import { marca } from "../marca";
+import { useMarca } from "../edicion/estilos";
 
 type Estilo = "palabra" | "frase" | "claves";
 
@@ -91,6 +91,7 @@ const Pagina: React.FC<{ page: TikTokPage; estilo: Estilo; centro: number; alter
   centro,
   alterna,
 }) => {
+  const marca = useMarca();
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const ahoraMs = page.startMs + (frame / fps) * 1000;

@@ -23,16 +23,23 @@ import { VideoEnEscena } from "../componentes/Escena3D";
 import { esEscena } from "../edicion/escenas";
 import { esRecorte, recorteCompleto } from "../edicion/recortes";
 import { Recortes } from "../componentes/Recorte";
-import { caraEnSalida, colocarElementos, enfoqueEfectivo } from "../edicion/encuadre";
+import {
+  caraEnSalida,
+  colocarElementos,
+  enfoqueEfectivo,
+} from "../edicion/encuadre";
 import {
   ajustarLetterings,
   calcularTramos,
   elementosEnElEditado,
   framesDeVideo,
   framesTotales,
+  momentosConVoz,
   palabrasEnElEditado,
 } from "../edicion/linea-de-tiempo";
-import { marca } from "../marca";
+import { buscarEstilo, ConEstilo } from "../edicion/estilos";
+import { Musica } from "../componentes/Musica";
+import { golpesDe, Sonidos } from "../componentes/Sonidos";
 
 // Lee public/proyectos/<id>/edicion.json y ajusta duración y tamaño del video.
 export const calcularMetadatos: CalculateMetadataFunction<
@@ -55,6 +62,8 @@ export const calcularMetadatos: CalculateMetadataFunction<
     );
   }
   const edicion = resultado.data;
+  // Un estilo que no existe o tiene un error se avisa aquí, con su nombre.
+  buscarEstilo(edicion.estilo);
   const formato = props.formato ?? edicion.opciones.formato;
   return {
     ...DIMENSIONES[formato],
@@ -110,7 +119,9 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
   const recortes = useMemo(
     () =>
       edicion
-        ? todos.filter(esRecorte).filter((item) => recorteCompleto(edicion.recorte, item, tramos))
+        ? todos
+            .filter(esRecorte)
+            .filter((item) => recorteCompleto(edicion.recorte, item, tramos))
         : [],
     [edicion, todos, tramos],
   );
@@ -127,6 +138,15 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
         : [],
     [edicion, todos, width, height, caraEntre],
   );
+  // Efectos de sonido de lo que de verdad se ve (un recorte incompleto no se dibuja ni suena).
+  const golpes = useMemo(
+    () => golpesDe([...escenas, ...recortes, ...elementos]),
+    [escenas, recortes, elementos],
+  );
+  const conVoz = useMemo(
+    () => (edicion ? momentosConVoz(edicion, tramos, fps) : []),
+    [edicion, tramos, fps],
+  );
   if (!edicion) return null;
 
   const { opciones } = edicion;
@@ -140,83 +160,109 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
     ...recortes.filter((r) => r.elemento.tipo !== "fondo"),
   ].map((e) => [e.desdeFrame, e.desdeFrame + e.duracionFrames] as const);
 
+  const { marca } = buscarEstilo(edicion.estilo);
+
   return (
-    <AbsoluteFill style={{ backgroundColor: marca.colores.fondo }}>
-      <VideoEnEscena escenas={escenas} caraEntre={caraEntre}>
-        <Series>
-          {tramos.map((tramo, i) => (
-            <Series.Sequence
-              key={i}
-              durationInFrames={tramo.duracionFrames}
-              name={`Tramo ${i + 1}`}
-            >
-              <VideoEncuadrado
-                src={edicion.video}
-                anchoOriginal={edicion.ancho}
-                altoOriginal={edicion.alto}
-                trimBefore={tramo.trimBefore}
-                duracionFrames={tramo.duracionFrames}
-                enfoqueX={enfoque.x}
-                enfoqueY={enfoque.y}
-                zoom={tramo.zoom}
-                enfasis={edicion.enfasis}
-              />
-            </Series.Sequence>
-          ))}
-        </Series>
-      </VideoEnEscena>
+    <ConEstilo estilo={edicion.estilo}>
+      <AbsoluteFill style={{ backgroundColor: marca.colores.fondo }}>
+        <VideoEnEscena escenas={escenas} caraEntre={caraEntre}>
+          <Series>
+            {tramos.map((tramo, i) => (
+              <Series.Sequence
+                key={i}
+                durationInFrames={tramo.duracionFrames}
+                name={`Tramo ${i + 1}`}
+              >
+                <VideoEncuadrado
+                  src={edicion.video}
+                  anchoOriginal={edicion.ancho}
+                  altoOriginal={edicion.alto}
+                  trimBefore={tramo.trimBefore}
+                  duracionFrames={tramo.duracionFrames}
+                  enfoqueX={enfoque.x}
+                  enfoqueY={enfoque.y}
+                  zoom={tramo.zoom}
+                  enfasis={edicion.enfasis}
+                />
+              </Series.Sequence>
+            ))}
+          </Series>
+        </VideoEnEscena>
 
-      {recortes.length > 0 ? (
-        <Sequence durationInFrames={finVideo} name="Recortes">
-          <Recortes
-            items={recortes}
-            edicion={edicion}
-            tramos={tramos}
-            enfoque={enfoque}
-            caraEntre={caraEntre}
-          />
-        </Sequence>
-      ) : null}
+        {recortes.length > 0 ? (
+          <Sequence durationInFrames={finVideo} name="Recortes">
+            <Recortes
+              items={recortes}
+              edicion={edicion}
+              tramos={tramos}
+              enfoque={enfoque}
+              caraEntre={caraEntre}
+            />
+          </Sequence>
+        ) : null}
 
-      {elementos.length > 0 ? (
-        <Sequence durationInFrames={finVideo} name="Elementos">
-          <Elementos items={elementos} />
-        </Sequence>
-      ) : null}
+        {elementos.length > 0 ? (
+          <Sequence durationInFrames={finVideo} name="Elementos">
+            <Elementos items={elementos} />
+          </Sequence>
+        ) : null}
 
-      {opciones.subtitulos && captions.length > 0 ? (
-        <Sequence durationInFrames={finVideo} name="Subtítulos">
-          <Subtitulos
-            captions={captions}
-            estilo={opciones.estiloSubtitulos}
-            posicion={opciones.posicionSubtitulos}
-            ocultarEn={sinSubtitulos}
-            caraEntre={caraEntre}
-          />
-        </Sequence>
-      ) : null}
+        {opciones.subtitulos && captions.length > 0 ? (
+          <Sequence durationInFrames={finVideo} name="Subtítulos">
+            <Subtitulos
+              captions={captions}
+              estilo={opciones.estiloSubtitulos}
+              posicion={opciones.posicionSubtitulos}
+              ocultarEn={sinSubtitulos}
+              caraEntre={caraEntre}
+            />
+          </Sequence>
+        ) : null}
 
-      {opciones.gancho ? (
-        <Sequence
-          durationInFrames={Math.round(opciones.duracionGancho * fps)}
-          name="Gancho"
-        >
-          <Gancho
-            texto={opciones.gancho}
-            duracionFrames={Math.round(opciones.duracionGancho * fps)}
-          />
-        </Sequence>
-      ) : null}
+        {opciones.gancho ? (
+          <Sequence
+            durationInFrames={Math.round(opciones.duracionGancho * fps)}
+            name="Gancho"
+          >
+            <Gancho
+              texto={opciones.gancho}
+              duracionFrames={Math.round(opciones.duracionGancho * fps)}
+            />
+          </Sequence>
+        ) : null}
 
-      {opciones.cierre ? (
-        <Sequence
-          from={finVideo}
-          durationInFrames={Math.round(opciones.cierre.duracion * fps)}
-          name="Cierre"
-        >
-          <Cierre texto={opciones.cierre.texto} />
-        </Sequence>
-      ) : null}
-    </AbsoluteFill>
+        {opciones.cierre ? (
+          <Sequence
+            from={finVideo}
+            durationInFrames={Math.round(opciones.cierre.duracion * fps)}
+            name="Cierre"
+          >
+            <Cierre texto={opciones.cierre.texto} />
+          </Sequence>
+        ) : null}
+
+        {edicion.musica ? (
+          <Sequence name="Música">
+            <Musica
+              musica={edicion.musica}
+              conVoz={conVoz}
+              duracionFrames={framesTotales(edicion, fps)}
+            />
+          </Sequence>
+        ) : null}
+
+        {opciones.sonidos &&
+        opciones.volumenSonidos > 0 &&
+        golpes.length > 0 ? (
+          <Sequence name="Efectos de sonido">
+            <Sonidos
+              golpes={golpes}
+              volumen={opciones.volumenSonidos}
+              fps={fps}
+            />
+          </Sequence>
+        ) : null}
+      </AbsoluteFill>
+    </ConEstilo>
   );
 };

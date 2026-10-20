@@ -19,6 +19,14 @@ Abre Claude Code dentro de la carpeta del proyecto (`cd ediciontoptop` y luego `
 **Con brief**
 > Lee `plantillas/brief.md` (ya lo llené) y prepara el video siguiendo el brief.
 
+**Para un cliente**
+> Prepara `entrada/<archivo>` con el estilo de <cliente> y la música `<cancion.mp3>`.
+
+**Varios videos de una vez (lote)**
+> Prepara todos los videos nuevos de `entrada/` con el estilo de <cliente> y dime cuáles necesitan que yo los mire.
+
+> Prepara todos los videos nuevos como anuncios rápidos, con la música `<cancion.mp3>`.
+
 ---
 
 ## 2. Pide
@@ -88,6 +96,20 @@ Abre Claude Code dentro de la carpeta del proyecto (`cd ediciontoptop` y luego `
 
 > En el cierre, ponme saliendo de un círculo de color con la frase "<frase que digo>" detrás.
 
+**Música**
+> Ponle de fondo la canción `<cancion.mp3>` (ya la puse en `public/musica/`).
+
+> La música está muy alta, bájala. / No se oye la música, súbela un poco.
+
+> Empieza la canción desde el segundo <20>, la intro es muy larga.
+
+> Quita la música.
+
+**Efectos de sonido**
+> Quita los efectos de sonido. / Ponlos más bajitos.
+
+> Quita el sonido del ícono de <dinero> y deja los demás.
+
 ---
 
 ## 3. Revisa
@@ -105,6 +127,14 @@ Abre Claude Code dentro de la carpeta del proyecto (`cd ediciontoptop` y luego `
 **Exportar**
 > Exporta el video.
 
+> Exporta el video para WhatsApp. *(archivo liviano, `<id>-whatsapp.mp4`)*
+
+> Exporta para Instagram y TikTok.
+
+> Exporta para YouTube. *(horizontal; o "para YouTube Shorts" si lo quieres vertical)*
+
+> Exporta para todas las redes. *(WhatsApp, Instagram, TikTok y YouTube)*
+
 > Exporta en todos los formatos (vertical, feed, cuadrado y horizontal).
 
 **Variaciones para anuncios**
@@ -113,10 +143,22 @@ Abre Claude Code dentro de la carpeta del proyecto (`cd ediciontoptop` y luego `
 **Rutina semanal**
 > Prepara todos los videos que hay en `entrada/` con el mismo estilo, y cuando termines dime cuáles necesitan revisión.
 
+> Exporta para todas las redes los videos del lote que quedaron listos.
+
 ---
 
 ## Cambiar el estilo (colores y fuente)
 
+**Estilos por cliente**
+> Crea el estilo de <cliente> con estos colores: primario `<#código>`, acento `<#código>`. Usa la fuente que puse en `public/fuentes/`.
+
+> Usa el estilo de <cliente> en este video.
+
+> Cambia el color de acento de <cliente> a `<#código>`.
+
+> Muéstrame cómo se ve el estilo de <cliente> en las muestras.
+
+**Estilo de siempre (predeterminado)**
 > Cambia el color de acento a `<#código>` y el primario a `<#código>`.
 
 > Usa la fuente que puse en `public/fuentes/`.

@@ -13,6 +13,7 @@ import {
   leerJson, redondear,
 } from "./lib/herramientas.mjs";
 import { detectarCaras } from "./lib/caras.mjs";
+import { estilosDisponibles } from "./lib/produccion.mjs";
 import { transcribir } from "./lib/transcribir.mjs";
 
 const AYUDA = `
@@ -31,6 +32,10 @@ Opciones:
   --conservar-muletillas    No corta "eh", "mmm", etc.
   --sin-caras               No busca la cara (los textos no sabrán dónde está)
   --transcripcion <json>    Usa una transcripción ya hecha en vez de Whisper
+  --estilo <cliente>        Colores y fuente de estilos/<cliente>.json (por defecto, el predeterminado)
+  --musica <archivo>        Música de fondo de public/musica/ (por ejemplo musica/cancion.mp3)
+  --volumen-musica <0-1>    Volumen de la música en las pausas (por defecto 0.25)
+  --sin-sonidos             Sin efectos de sonido en los elementos
   --forzar                  Rehace el proyecto aunque ya exista (pierde los cambios a mano)
 `;
 
@@ -49,6 +54,10 @@ const { values: op, positionals } = parseArgs({
     "sin-caras": { type: "boolean", default: false },
     "conservar-muletillas": { type: "boolean", default: false },
     transcripcion: { type: "string" },
+    estilo: { type: "string", default: "predeterminado" },
+    musica: { type: "string" },
+    "volumen-musica": { type: "string", default: "0.25" },
+    "sin-sonidos": { type: "boolean", default: false },
     forzar: { type: "boolean", default: false },
     ayuda: { type: "boolean", short: "h", default: false },
   },
@@ -69,6 +78,22 @@ if (op.transcripcion && !fs.existsSync(op.transcripcion)) {
 }
 if (!["9:16", "4:5", "1:1", "16:9"].includes(op.formato)) {
   console.error(`Formato no válido: ${op.formato}. Usa 9:16, 4:5, 1:1 o 16:9.`);
+  process.exit(1);
+}
+
+if (!estilosDisponibles().includes(op.estilo)) {
+  console.error(`No existe el estilo "${op.estilo}". Hay: ${estilosDisponibles().join(", ")} (carpeta estilos/).`);
+  process.exit(1);
+}
+// La música se puede escribir con o sin "musica/" adelante.
+const musica = op.musica && (op.musica.startsWith("musica/") ? op.musica : `musica/${op.musica}`);
+if (musica && !fs.existsSync(path.join(RAIZ, "public", musica))) {
+  console.error(`No encuentro la música public/${musica}. Ponla en public/musica/.`);
+  process.exit(1);
+}
+const volumenMusica = parseFloat(op["volumen-musica"]);
+if (!(volumenMusica >= 0 && volumenMusica <= 1)) {
+  console.error("--volumen-musica va de 0 a 1 (por ejemplo 0.25).");
   process.exit(1);
 }
 
@@ -153,6 +178,8 @@ const edicion = {
   ancho: flujoVideo.width,
   alto: flujoVideo.height,
   duracion: redondear(duracion),
+  estilo: op.estilo,
+  musica: musica ? { archivo: musica, volumen: volumenMusica, alHablar: 0.3, desde: 0 } : null,
   ajustes: { pausa, margen, umbralDb: redondear(umbralDb, 1), modelo: op.modelo, idioma: op.idioma },
   opciones: {
     formato: op.formato,
@@ -165,6 +192,8 @@ const edicion = {
     gancho: null,
     duracionGancho: 2.5,
     cierre: null,
+    sonidos: !op["sin-sonidos"],
+    volumenSonidos: 0.25,
   },
   segmentos,
   palabras,

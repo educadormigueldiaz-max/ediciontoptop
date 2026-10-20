@@ -6,10 +6,13 @@ description: Flujo completo para convertir una grabación cruda en un video edit
 # De crudo a editado
 
 ## 1. Preparar
-- Busca el video en `entrada/`. Si hay varios y no está claro cuál, pregunta.
+- Busca el video en `entrada/`. Si hay varios y no está claro cuál, pregunta. Si piden
+  "prepara todos", usa `npm run lote` (skill `toptop-produccion`).
 - Elige el ritmo según el pedido (ver skill `toptop-ritmo`) y ejecuta:
   `npm run preparar -- entrada/<archivo> --pausa <seg> --formato <formato>`
 - Si Whisper no está instalado, el script lo instala solo (tarda unos minutos la primera vez).
+- Si es para un cliente con estilo propio, agrega `--estilo <cliente>` (ver `estilos/`). Si
+  piden música, `--musica musica/<archivo>` (o agrégala después en `edicion.json`).
 - Si el proyecto ya existe, NO uses `--forzar` sin preguntar: trabaja sobre el `edicion.json` existente.
 
 ## 2. Leer antes de editar
@@ -24,6 +27,7 @@ description: Flujo completo para convertir una grabación cruda en un video edit
 - Corregir palabras mal transcritas: cambia `palabras[i].texto`. Revisa nombres propios,
   marcas, cifras y precios.
 - Gancho, cierre, formato, subtítulos: en `opciones` (ver skills de estilo y subtítulos).
+- Música, efectos de sonido y estilo del cliente: skill `toptop-produccion`.
 
 ## 4. Revisar
 - Ejecuta `npm run revisar -- <id>` y mira las imágenes de `salida/revision/<id>/`.
@@ -33,5 +37,6 @@ description: Flujo completo para convertir una grabación cruda en un video edit
   y qué palabras corregiste.
 
 ## 5. Exportar
-- `npm run exportar -- <id>`; si es para varias redes: `--todos`.
-- Entrega la ruta del archivo en `salida/`.
+- `npm run exportar -- <id>`. Si dicen para qué red es, usa `--red whatsapp|instagram|tiktok|youtube`
+  (o `--red todas`): cada red tiene su tamaño y calidad (skill `toptop-produccion`).
+- Entrega la ruta del archivo en `salida/` y su peso si es para WhatsApp.

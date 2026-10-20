@@ -14,8 +14,8 @@ export const DIMENSIONES: Record<Formato, { width: number; height: number }> = {
 };
 
 // Elementos gráficos sobre el video. `inicio`, `fin` y `en` son segundos del video original,
-// igual que las palabras, así que siguen a los cortes.
-const tramo = { inicio: z.number().min(0), fin: z.number().positive() };
+// igual que las palabras, así que siguen a los cortes. `sonido: false` apaga su efecto de sonido.
+const tramo = { inicio: z.number().min(0), fin: z.number().positive(), sonido: z.boolean().default(true) };
 
 const nombreIcono = z.string().refine((n) => buscarIcono(n) !== null, {
   message: "Ícono desconocido: usa un nombre en español de src/componentes/iconos.ts o uno de lucide.dev/icons",
@@ -153,6 +153,21 @@ export const esquemaEdicion = z.object({
   ancho: z.number().positive(),
   alto: z.number().positive(),
   duracion: z.number().positive(),
+  // Colores y fuentes: "predeterminado" (src/marca.ts) o un cliente de estilos/<cliente>.json.
+  estilo: z.string().min(1).default("predeterminado"),
+  // Música de fondo (una canción de public/musica/). Baja sola cuando la persona habla.
+  musica: z
+    .object({
+      archivo: z.string().min(1),
+      // Volumen en las pausas, el gancho y el cierre (0 a 1).
+      volumen: z.number().min(0).max(1).default(0.25),
+      // Mientras la persona habla, la música baja a esta parte del volumen (0.3 = 30 %).
+      alHablar: z.number().min(0).max(1).default(0.3),
+      // Segundo de la canción donde empieza (para saltar una introducción larga).
+      desde: z.number().min(0).default(0),
+    })
+    .nullable()
+    .default(null),
   opciones: z.object({
     formato: z.enum(formatos),
     // Punto del video que queda centrado al recortar (0 = izquierda/arriba, 1 = derecha/abajo).
@@ -171,6 +186,10 @@ export const esquemaEdicion = z.object({
     cierre: z
       .object({ texto: z.string(), duracion: z.number().positive() })
       .nullable(),
+    // Efectos de sonido (whoosh, pop, click) al aparecer listas, íconos, lettering, imágenes,
+    // recortes y escenas 3D.
+    sonidos: z.boolean().default(true),
+    volumenSonidos: z.number().min(0).max(1).default(0.25),
   }),
   segmentos: z
     .array(

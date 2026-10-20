@@ -62,6 +62,8 @@ etiquetas a los lados mientras se explica.
 - Los textos dicen lo mismo que la voz; no inventes datos.
 - "Hazlo en 3D" sin más detalles: apertura con `capas` usando el tema del video y una
   `perspectiva` con la frase más fuerte. Explica qué pusiste.
+- **Sonido**: cada escena entra con un whoosh; los pasos del tutorial hacen click y las
+  etiquetas del objeto 3D, pop. `"sonido": false` lo apaga en esa escena (`toptop-produccion`).
 
 ## Revisar
 `npm run revisar -- <id>` deja un cuadro de la mitad de cada escena. Verifica que la cara se vea

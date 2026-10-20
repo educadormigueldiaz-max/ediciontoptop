@@ -17,10 +17,26 @@ loadFont({
   style: "italic",
 });
 
-// Estilo visual de los videos (colores y fuente). Todos los videos leen de aquí:
-// cambia un color o la fuente y se actualizan todos.
+export type Marca = {
+  fuente: string;
+  fuenteAlterna: string;
+  colores: {
+    primario: string;
+    secundario: string;
+    acento: string;
+    textoSobreAcento: string;
+    texto: string;
+    contorno: string;
+    fondo: string;
+  };
+};
+
+// Estilo "predeterminado" de los videos (colores y fuente). Lo usan todos los videos que no
+// eligen otro estilo: cambia un color o la fuente y se actualizan todos.
+// Cada cliente puede tener su propio estilo en estilos/<cliente>.json (ver estilos/ejemplo.json);
+// lo que ese archivo no diga se toma de aquí.
 // TopTop Lab es el nombre de la herramienta: su nombre o logo NUNCA aparecen en los videos.
-export const marca = {
+export const marca: Marca = {
   fuente: FUENTE,
   fuenteAlterna: FUENTE_ALTERNA,
   colores: {

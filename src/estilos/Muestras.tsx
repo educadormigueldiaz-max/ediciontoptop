@@ -14,16 +14,24 @@ import { ImagenInsertada } from "../componentes/ImagenInsertada";
 import { Lettering } from "../componentes/Lettering";
 import { ListaAnimada } from "../componentes/ListaAnimada";
 import { EscenaRecorte } from "../componentes/Recorte";
+import { Cierre } from "../componentes/Cierre";
+import { golpesDe, Sonidos, type Golpe } from "../componentes/Sonidos";
 import { Subtitulos } from "../componentes/Subtitulos";
 import type { EscenaEnEditado } from "../edicion/escenas";
 import type { Caja } from "../edicion/encuadre";
 import { FPS, type ElementoRecorte } from "../edicion/esquema";
+import { ConEstilo, useMarca } from "../edicion/estilos";
 import { marca } from "../marca";
 
-// Composiciones de prueba para ajustar la marca sin necesitar un video.
+// Composiciones de prueba para ajustar la marca sin necesitar un video. En la vista previa,
+// `estilo` muestra cómo se ve cada cliente de estilos/<cliente>.json. Los efectos de sonido
+// suenan igual que en un video real.
+
+// Volumen de los efectos de sonido en las muestras (el predeterminado de edicion.json).
+const VOLUMEN_SONIDOS = 0.25;
 
 const FRASE_DE_MUESTRA =
-  "Así se ven tus subtítulos. Cambia los colores y la fuente en src/marca.ts.";
+  "Así se ven tus subtítulos. Cambia los colores y la fuente en src/marca.ts o en estilos/.";
 
 const captionsDeMuestra = (msPorPalabra: number): Caption[] =>
   FRASE_DE_MUESTRA.split(" ").map((palabra, i) => ({
@@ -36,6 +44,7 @@ const captionsDeMuestra = (msPorPalabra: number): Caption[] =>
   }));
 
 const FondoDeMuestra: React.FC = () => {
+  const marca = useMarca();
   const frame = useCurrentFrame();
   return (
     <AbsoluteFill
@@ -46,25 +55,28 @@ const FondoDeMuestra: React.FC = () => {
   );
 };
 
-export const MuestraSubtitulos: React.FC<{ estilo: "palabra" | "frase" }> = ({
-  estilo,
-}) => {
+export const MuestraSubtitulos: React.FC<{
+  estilo: string;
+  subtitulos: "palabra" | "frase";
+}> = ({ estilo, subtitulos }) => {
   const { fps } = useVideoConfig();
   return (
-    <AbsoluteFill>
-      <FondoDeMuestra />
-      <Sequence durationInFrames={Math.round(2.5 * fps)} name="Gancho">
-        <Gancho
-          texto="Edita videos con IA"
-          duracionFrames={Math.round(2.5 * fps)}
+    <ConEstilo estilo={estilo}>
+      <AbsoluteFill>
+        <FondoDeMuestra />
+        <Sequence durationInFrames={Math.round(2.5 * fps)} name="Gancho">
+          <Gancho
+            texto="Edita videos con IA"
+            duracionFrames={Math.round(2.5 * fps)}
+          />
+        </Sequence>
+        <Subtitulos
+          captions={captionsDeMuestra(380)}
+          estilo={subtitulos}
+          posicion={0.7}
         />
-      </Sequence>
-      <Subtitulos
-        captions={captionsDeMuestra(380)}
-        estilo={estilo}
-        posicion={0.7}
-      />
-    </AbsoluteFill>
+      </AbsoluteFill>
+    </ConEstilo>
   );
 };
 
@@ -80,49 +92,60 @@ const IMAGEN_DE_MUESTRA = `data:image/svg+xml,${encodeURIComponent(
   </svg>`,
 )}`;
 
-// Los 4 estilos de la fase 2, uno tras otro.
-export const MuestraElementos: React.FC = () => {
+// Los 4 estilos de la fase 2, uno tras otro, con sus sonidos: whoosh al entrar la lista, un pop
+// por punto y en el ícono, y whoosh en el lettering y la imagen.
+export const MuestraElementos: React.FC<{ estilo: string }> = ({ estilo }) => {
   const { fps } = useVideoConfig();
   const s = (segundos: number) => Math.round(segundos * fps);
+  const golpes: Golpe[] = [
+    { frame: 0, sonido: "whoosh" },
+    ...[0.5, 1.5, 2.5].map((t) => ({ frame: s(t), sonido: "pop" as const })),
+    { frame: s(4.5), sonido: "pop" },
+    { frame: s(6.5), sonido: "whoosh" },
+    { frame: s(9), sonido: "whoosh" },
+  ];
   return (
-    <AbsoluteFill>
-      <FondoDeMuestra />
-      <Sequence durationInFrames={s(4.5)} name="Lista">
-        <ListaAnimada
-          titulo="3 claves para tu video"
-          puntos={[
-            { texto: "Engancha en 3 segundos", desdeFrame: s(0.5) },
-            { texto: "Una idea por video", desdeFrame: s(1.5) },
-            { texto: "Cierra con una acción", desdeFrame: s(2.5) },
-          ]}
-          duracionFrames={s(4.5)}
-        />
-      </Sequence>
-      <Sequence from={s(4.5)} durationInFrames={s(2)} name="Ícono">
-        <IconoAnimado
-          icono="dinero"
-          texto="Ahorra"
-          posicion="arriba-derecha"
-          duracionFrames={s(2)}
-        />
-      </Sequence>
-      <Sequence from={s(6.5)} durationInFrames={s(2.5)} name="Lettering">
-        <Lettering
-          texto="La idea gana espacio"
-          destacar="espacio"
-          fondo="color"
-          duracionFrames={s(2.5)}
-        />
-      </Sequence>
-      <Sequence from={s(9)} durationInFrames={s(3)} name="Imagen">
-        <ImagenInsertada
-          archivo={IMAGEN_DE_MUESTRA}
-          modo="tarjeta"
-          texto="Así se ve una imagen insertada"
-          duracionFrames={s(3)}
-        />
-      </Sequence>
-    </AbsoluteFill>
+    <ConEstilo estilo={estilo}>
+      <AbsoluteFill>
+        <FondoDeMuestra />
+        <Sonidos golpes={golpes} volumen={VOLUMEN_SONIDOS} fps={fps} />
+        <Sequence durationInFrames={s(4.5)} name="Lista">
+          <ListaAnimada
+            titulo="3 claves para tu video"
+            puntos={[
+              { texto: "Engancha en 3 segundos", desdeFrame: s(0.5) },
+              { texto: "Una idea por video", desdeFrame: s(1.5) },
+              { texto: "Cierra con una acción", desdeFrame: s(2.5) },
+            ]}
+            duracionFrames={s(4.5)}
+          />
+        </Sequence>
+        <Sequence from={s(4.5)} durationInFrames={s(2)} name="Ícono">
+          <IconoAnimado
+            icono="dinero"
+            texto="Ahorra"
+            posicion="arriba-derecha"
+            duracionFrames={s(2)}
+          />
+        </Sequence>
+        <Sequence from={s(6.5)} durationInFrames={s(2.5)} name="Lettering">
+          <Lettering
+            texto="La idea gana espacio"
+            destacar="espacio"
+            fondo="color"
+            duracionFrames={s(2.5)}
+          />
+        </Sequence>
+        <Sequence from={s(9)} durationInFrames={s(3)} name="Imagen">
+          <ImagenInsertada
+            archivo={IMAGEN_DE_MUESTRA}
+            modo="tarjeta"
+            texto="Así se ve una imagen insertada"
+            duracionFrames={s(3)}
+          />
+        </Sequence>
+      </AbsoluteFill>
+    </ConEstilo>
   );
 };
 
@@ -160,33 +183,36 @@ const OBJETO = svg(
   620,
 );
 
-const VideoDeMuestra: React.FC = () => (
-  <AbsoluteFill>
-    <FondoDeMuestra />
-    <AbsoluteFill
-      style={{ justifyContent: "center", alignItems: "center", gap: 40 }}
-    >
-      <div
-        style={{
-          width: "42%",
-          aspectRatio: "1",
-          borderRadius: "50%",
-          backgroundColor: "rgba(255,255,255,0.85)",
-        }}
-      />
-      <div
-        style={{
-          fontFamily: marca.fuente,
-          fontWeight: 900,
-          fontSize: 90,
-          color: "white",
-        }}
+const VideoDeMuestra: React.FC = () => {
+  const marca = useMarca();
+  return (
+    <AbsoluteFill>
+      <FondoDeMuestra />
+      <AbsoluteFill
+        style={{ justifyContent: "center", alignItems: "center", gap: 40 }}
       >
-        Tu video
-      </div>
+        <div
+          style={{
+            width: "42%",
+            aspectRatio: "1",
+            borderRadius: "50%",
+            backgroundColor: "rgba(255,255,255,0.85)",
+          }}
+        />
+        <div
+          style={{
+            fontFamily: marca.fuente,
+            fontWeight: 900,
+            fontSize: 90,
+            color: "white",
+          }}
+        >
+          Tu video
+        </div>
+      </AbsoluteFill>
     </AbsoluteFill>
-  </AbsoluteFill>
-);
+  );
+};
 
 const s = (segundos: number) => Math.round(segundos * FPS);
 
@@ -196,6 +222,7 @@ const ESCENAS_DE_MUESTRA: EscenaEnEditado[] = [
       tipo: "capas",
       inicio: 0,
       fin: 0,
+      sonido: true,
       titulo: "Tu idea en capas",
       iconos: ["video", "idea", "rayo"],
     },
@@ -208,6 +235,7 @@ const ESCENAS_DE_MUESTRA: EscenaEnEditado[] = [
       tipo: "perspectiva",
       inicio: 0,
       fin: 0,
+      sonido: true,
       texto: "Más alcance cada día",
       destacar: "alcance",
       lado: "izquierda",
@@ -221,6 +249,7 @@ const ESCENAS_DE_MUESTRA: EscenaEnEditado[] = [
       tipo: "tutorial",
       inicio: 0,
       fin: 0,
+      sonido: true,
       titulo: "Así se publica",
       marco: "celular",
       pasos: [
@@ -245,6 +274,7 @@ const ESCENAS_DE_MUESTRA: EscenaEnEditado[] = [
       tipo: "objeto3d",
       inicio: 0,
       fin: 0,
+      sonido: true,
       archivo: OBJETO,
       titulo: "Así funciona",
       etiquetas: [
@@ -258,10 +288,17 @@ const ESCENAS_DE_MUESTRA: EscenaEnEditado[] = [
   },
 ];
 
-export const MuestraEscenas3D: React.FC = () => (
-  <VideoEnEscena escenas={ESCENAS_DE_MUESTRA} caraEntre={() => null}>
-    <VideoDeMuestra />
-  </VideoEnEscena>
+export const MuestraEscenas3D: React.FC<{ estilo: string }> = ({ estilo }) => (
+  <ConEstilo estilo={estilo}>
+    <VideoEnEscena escenas={ESCENAS_DE_MUESTRA} caraEntre={() => null}>
+      <VideoDeMuestra />
+    </VideoEnEscena>
+    <Sonidos
+      golpes={golpesDe(ESCENAS_DE_MUESTRA)}
+      volumen={VOLUMEN_SONIDOS}
+      fps={FPS}
+    />
+  </ConEstilo>
 );
 
 // --- Recorte de fondo de la fase 4, con una silueta dibujada en lugar de una persona real. ---
@@ -288,37 +325,104 @@ const Silueta: React.FC = () => (
   </AbsoluteFill>
 );
 
-const RECORTES_DE_MUESTRA: Array<{ elemento: ElementoRecorte; desde: number; duracion: number }> = [
+const RECORTES_DE_MUESTRA: Array<{
+  elemento: ElementoRecorte;
+  desde: number;
+  duracion: number;
+}> = [
   {
-    elemento: { tipo: "detras", inicio: 0, fin: 0, texto: "Edita con IA", destacar: "IA", posicion: "arriba" },
+    elemento: {
+      tipo: "detras",
+      inicio: 0,
+      fin: 0,
+      sonido: true,
+      texto: "Edita con IA",
+      destacar: "IA",
+      posicion: "arriba",
+    },
     desde: 0,
     duracion: 3.5,
   },
   {
-    elemento: { tipo: "fondo", inicio: 0, fin: 0, estilo: "degradado", archivo: null },
+    elemento: {
+      tipo: "fondo",
+      inicio: 0,
+      fin: 0,
+      sonido: true,
+      estilo: "degradado",
+      archivo: null,
+    },
     desde: 4,
     duracion: 3.5,
   },
   {
-    elemento: { tipo: "marco", inicio: 0, fin: 0, forma: "circulo", texto: "Tu marca", destacar: "marca" },
+    elemento: {
+      tipo: "marco",
+      inicio: 0,
+      fin: 0,
+      sonido: true,
+      forma: "circulo",
+      texto: "Tu marca",
+      destacar: "marca",
+    },
     desde: 8,
     duracion: 3.5,
   },
   {
-    elemento: { tipo: "marco", inicio: 0, fin: 0, forma: "tarjeta", texto: null, destacar: null },
+    elemento: {
+      tipo: "marco",
+      inicio: 0,
+      fin: 0,
+      sonido: true,
+      forma: "tarjeta",
+      texto: null,
+      destacar: null,
+    },
     desde: 12,
     duracion: 3.5,
   },
 ];
 
-export const MuestraRecorte: React.FC = () => (
-  <AbsoluteFill>
-    <FondoDeMuestra />
-    <Silueta />
-    {RECORTES_DE_MUESTRA.map(({ elemento, desde, duracion }, i) => (
-      <Sequence key={i} from={s(desde)} durationInFrames={s(duracion)} name={elemento.tipo}>
-        <EscenaRecorte elemento={elemento} duracionFrames={s(duracion)} cara={CARA_SILUETA} persona={<Silueta />} />
-      </Sequence>
-    ))}
-  </AbsoluteFill>
+export const MuestraRecorte: React.FC<{ estilo: string }> = ({ estilo }) => (
+  <ConEstilo estilo={estilo}>
+    <AbsoluteFill>
+      <FondoDeMuestra />
+      <Silueta />
+      {RECORTES_DE_MUESTRA.map(({ elemento, desde, duracion }, i) => (
+        <Sequence
+          key={i}
+          from={s(desde)}
+          durationInFrames={s(duracion)}
+          name={elemento.tipo}
+        >
+          <EscenaRecorte
+            elemento={elemento}
+            duracionFrames={s(duracion)}
+            cara={CARA_SILUETA}
+            persona={<Silueta />}
+          />
+        </Sequence>
+      ))}
+      <Sonidos
+        golpes={golpesDe(
+          RECORTES_DE_MUESTRA.map(({ elemento, desde }) => ({
+            elemento,
+            desdeFrame: s(desde),
+            momentos: [],
+          })),
+        )}
+        volumen={VOLUMEN_SONIDOS}
+        fps={FPS}
+      />
+    </AbsoluteFill>
+  </ConEstilo>
+);
+
+export const MuestraCierre: React.FC<{ estilo: string; texto: string }> = ({
+  estilo,
+  texto,
+}) => (
+  <ConEstilo estilo={estilo}>
+    <Cierre texto={texto} />
+  </ConEstilo>
 );

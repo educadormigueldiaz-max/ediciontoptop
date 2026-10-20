@@ -6,6 +6,9 @@ Llena lo que sepas; lo que dejes vacío lo decide Claude con las skills de edici
 - **Tipo de video:** anuncio / reel de contenido / tutorial / testimonio / otro:
 - **Dónde se publica:** Instagram Reels / TikTok / feed de Instagram / YouTube / LinkedIn / WhatsApp
 - **Formato:** 9:16 / 4:5 / 1:1 / 16:9 / todos
+- **Cliente (estilo de `estilos/`):** predeterminado / nombre del cliente:
+- **Música (archivo de `public/musica/`, con permiso de uso):** sin música / archivo:
+- **Efectos de sonido:** sí / no
 - **Duración máxima:**
 - **Objetivo (una frase):** ¿qué debe hacer o sentir quien lo vea?
 - **Público:**

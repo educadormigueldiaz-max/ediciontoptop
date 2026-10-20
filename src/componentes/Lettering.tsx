@@ -1,6 +1,6 @@
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { elegirZona, type Zona } from "../edicion/encuadre";
-import { marca } from "../marca";
+import { useMarca } from "../edicion/estilos";
 
 export const normalizar = (texto: string) =>
   texto
@@ -54,6 +54,7 @@ export const Lettering: React.FC<{
   duracionFrames: number;
   zona?: Zona;
 }> = ({ texto, destacar, fondo, duracionFrames, zona: zonaDada }) => {
+  const marca = useMarca();
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const base = Math.min(width, height);

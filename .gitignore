@@ -11,6 +11,12 @@ salida/*
 public/proyectos/
 public/imagenes/*
 !public/imagenes/.gitkeep
+public/musica/*
+!public/musica/.gitkeep
+
+# Estilos de los clientes: son de cada quien (solo se sube el ejemplo)
+estilos/*
+!estilos/ejemplo.json
 out
 
 # Generados en cada computadora
