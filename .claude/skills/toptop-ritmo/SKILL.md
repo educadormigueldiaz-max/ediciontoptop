@@ -9,11 +9,17 @@ description: Criterio de ritmo y duración de los videos de TopTop Lab (cuánto 
 | Tipo de video | `--pausa` | Sensación |
 |---|---|---|
 | Anuncio / gancho agresivo | 0.25 | Muy rápido, sin respiros |
-| Reel o TikTok de contenido | 0.35 (por defecto) | Dinámico pero natural |
-| Tutorial, explicación de producto | 0.5 | Calmado, se entiende cada paso |
+| Reel o TikTok de contenido | 0.35 | Dinámico pero natural |
+| Tutorial, explicación de producto, y **por defecto** | 0.5 | Calmado, se entiende cada paso |
 | Testimonio o entrevista | 0.7 | Respeta las pausas emocionales |
 
-- `--margen 0.08` deja aire al inicio y al final de cada frase. Si suena "cortado", súbelo a 0.12.
+- La persona prefiere el **ritmo calmado** (pausa 0.5 y margen 0.12, los valores por defecto):
+  úsalo siempre, salvo que pida algo más rápido para un video concreto ("anuncio agresivo").
+- `--margen 0.12` deja aire al inicio y al final de cada frase. Si suena "cortado", súbelo a 0.15.
+- Los cortes de silencio nunca se comen una palabra (se ajustan a los tiempos de `palabras`).
+- En un proyecto ya preparado, "menos agresivo" = junta los cortes que solo quitan una pausa de
+  menos de 0.4 s y alarga cada tramo hasta el final de su última palabra (+0.06 s), sin
+  rehacer el proyecto.
 - "Más rápido" = baja la pausa un paso. "Más calmado" = súbela un paso. Para rehacer los cortes
   hay que volver a preparar el video (pregunta antes de usar `--forzar`).
 

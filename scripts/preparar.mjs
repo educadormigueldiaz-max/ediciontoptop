@@ -21,8 +21,8 @@ Uso: npm run preparar -- <video> [opciones]
 
 Opciones:
   --id <nombre>             Nombre del proyecto (por defecto, el del archivo)
-  --pausa <seg>             Pausa mínima que se corta (por defecto 0.35)
-  --margen <seg>            Aire que se deja antes y después de cada frase (por defecto 0.08)
+  --pausa <seg>             Pausa mínima que se corta (por defecto 0.5: ritmo calmado)
+  --margen <seg>            Aire que se deja antes y después de cada frase (por defecto 0.12)
   --umbral <dB>             Umbral de silencio fijo (por defecto se calcula solo)
   --modelo <nombre>         Modelo de Whisper: tiny, base, small, medium, large-v3-turbo (por defecto medium)
   --idioma <código>         Idioma del audio (por defecto es)
@@ -43,8 +43,8 @@ const { values: op, positionals } = parseArgs({
   allowPositionals: true,
   options: {
     id: { type: "string" },
-    pausa: { type: "string", default: "0.35" },
-    margen: { type: "string", default: "0.08" },
+    pausa: { type: "string", default: "0.5" },
+    margen: { type: "string", default: "0.12" },
     umbral: { type: "string" },
     modelo: { type: "string", default: "medium" },
     idioma: { type: "string", default: "es" },
@@ -155,7 +155,7 @@ const margen = parseFloat(op.margen);
 const umbralDb = op.umbral ? parseFloat(op.umbral) : medirUmbral(wav).umbralDb;
 const silencios = op["sin-cortes"] ? [] : detectarSilencios({ wav, umbralDb, minDuracion: pausa, duracion });
 const muletillas = op["sin-cortes"] || op["conservar-muletillas"] ? [] : buscarMuletillas(palabras);
-const segmentos = calcularSegmentos({ duracion, silencios, cortesExtra: muletillas, margen });
+const segmentos = calcularSegmentos({ duracion, silencios, cortesExtra: muletillas, margen, palabras });
 fs.rmSync(path.dirname(wav), { recursive: true, force: true });
 
 // 5. Dónde está la cara en cada momento, para que ningún texto o gráfico la tape.

@@ -38,17 +38,30 @@ export const buscarMuletillas = (palabras) =>
     .map((p) => ({ inicio: p.inicio - 0.02, fin: p.fin + 0.02, motivo: "muletilla" }));
 
 // Devuelve los tramos [inicio, fin] (en segundos del video original) que se conservan.
-export const calcularSegmentos = ({ duracion, silencios, cortesExtra, margen, minSegmento = 0.25 }) => {
+export const calcularSegmentos = ({ duracion, silencios, cortesExtra, margen, palabras = [], minSegmento = 0.25 }) => {
   const quitar = [
-    ...silencios.map((s) => ({
-      // El margen deja respirar el principio y el final de cada frase.
-      inicio: s.inicio <= 0.01 ? 0 : s.inicio + margen,
-      fin: s.fin >= duracion - 0.01 ? duracion : s.fin - margen,
-    })),
+    ...silencios
+      .map((s) => ({
+        // El margen deja respirar el principio y el final de cada frase.
+        inicio: s.inicio <= 0.01 ? 0 : s.inicio + margen,
+        fin: s.fin >= duracion - 0.01 ? duracion : s.fin - margen,
+      }))
+      .map((r) => {
+        // Un silencio nunca se come una palabra: si toca una (a veces una palabra larga tiene
+        // un silencio adentro), el corte se achica para dejarla entera, con su margen.
+        let { inicio, fin } = r;
+        for (const p of palabras) {
+          if (p.fin <= inicio || p.inicio >= fin) continue;
+          if (p.inicio + p.fin < inicio + fin) inicio = Math.max(inicio, p.fin + margen);
+          else fin = Math.min(fin, p.inicio - margen);
+        }
+        return { inicio, fin };
+      }),
     ...cortesExtra,
   ]
     .map((r) => ({ inicio: Math.max(0, r.inicio), fin: Math.min(duracion, r.fin) }))
-    .filter((r) => r.fin - r.inicio > 0.05)
+    // Un corte más corto que esto no quita nada que se note y hace saltar la imagen.
+    .filter((r) => r.fin - r.inicio > 0.12)
     .sort((a, b) => a.inicio - b.inicio);
 
   const unidos = [];
