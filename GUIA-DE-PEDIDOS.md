@@ -68,6 +68,17 @@ Abre Claude Code dentro de la carpeta del proyecto (`cd ediciontoptop` y luego `
 
 > Muestra la captura `public/imagenes/<archivo>` a pantalla completa cuando digo "<frase>".
 
+**Escenas 3D**
+> Abre el video con un montaje en capas 3D con el título "<título>".
+
+> Pon la frase "<frase corta>" en perspectiva 3D, con el video plegado al lado.
+
+> Puse capturas en `public/imagenes/` (paso-1.png, paso-2.png…): muéstralas en un celular en 3D cuando explico cada paso.
+
+> Muestra `public/imagenes/<archivo>` girando en 3D cuando hablo de "<tema>", con etiquetas de lo que menciono.
+
+> Hazlo en 3D.
+
 ---
 
 ## 3. Revisa

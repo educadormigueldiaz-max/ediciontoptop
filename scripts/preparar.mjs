@@ -156,8 +156,8 @@ const edicion = {
   ajustes: { pausa, margen, umbralDb: redondear(umbralDb, 1), modelo: op.modelo, idioma: op.idioma },
   opciones: {
     formato: op.formato,
-    enfoqueX: 0.5,
-    enfoqueY: 0.5,
+    enfoqueX: "auto",
+    enfoqueY: "auto",
     subtitulos: palabras.length > 0,
     estiloSubtitulos: "palabra",
     posicionSubtitulos: 0.7,

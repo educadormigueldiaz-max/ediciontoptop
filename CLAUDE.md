@@ -45,7 +45,8 @@ Tiempos en **segundos del video original**. El esquema está en `src/edicion/esq
   y no toques los tiempos. Las palabras de partes cortadas desaparecen solas.
 - `opciones`:
   - `formato`: "9:16", "4:5", "1:1" o "16:9".
-  - `enfoqueX` y `enfoqueY` (0–1): qué parte del video queda al recortar.
+  - `enfoqueX` y `enfoqueY`: `"auto"` (por defecto: el recorte sigue a la cara) o un número 0–1
+    si la persona pide un encuadre fijo.
   - `subtitulos`, `estiloSubtitulos` ("palabra" o "frase"), `posicionSubtitulos` (0 = arriba, 1 = abajo).
   - `zoomEnCortes`: acercamiento alterno en cada corte.
   - `gancho` (texto o null) y `duracionGancho`: frase de los primeros segundos.
@@ -53,8 +54,8 @@ Tiempos en **segundos del video original**. El esquema está en `src/edicion/esq
 - `enfasis`: acercamientos en momentos clave, `[{ "inicio": 12.3, "fin": 13.1, "zoom": 1.15 }]`.
   Para "haz zoom cuando digo X", usa el `inicio` y `fin` de esa palabra en `palabras`.
 - `elementos`: gráficos sobre el video: `lista` (motion explicativo), `lettering`, `icono` e
-  `imagen`. Formato y criterio en la skill `toptop-elementos`. Las imágenes de la persona van
-  en `public/imagenes/`.
+  `imagen` (skill `toptop-elementos`), y escenas 3D: `capas`, `perspectiva`, `tutorial` y
+  `objeto3d` (skill `toptop-3d`). Las imágenes de la persona van en `public/imagenes/`.
 - `caras`: dónde está la cara en cada momento. Lo llena el programa; no se edita a mano.
 - Usa `transcripcion.txt` para ubicar frases por tiempo (por ejemplo, una toma repetida).
 

@@ -20,8 +20,9 @@ description: Criterio de encuadre y composición para TopTop Lab (zonas seguras 
 
 ## Recorte de horizontal a vertical
 - El video llena el formato y se recorta lo que sobra.
-- `enfoqueX` / `enfoqueY` eligen qué parte queda: si la persona está a la izquierda del
-  encuadre original, usa `enfoqueX` 0.3; a la derecha, 0.7.
+- `enfoqueX` / `enfoqueY` en `"auto"` (por defecto) hacen que el recorte siga a la cara: queda
+  centrada a lo ancho y a la altura de los ojos. Solo pon un número (0 = izquierda/arriba,
+  1 = derecha/abajo) si la persona pide un encuadre distinto.
 - Verifica siempre con `npm run revisar -- <id> --formato <formato>` después de cambiar el formato.
 
 ## La cara nunca se tapa

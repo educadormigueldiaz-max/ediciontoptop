@@ -55,10 +55,22 @@ const Elemento: React.FC<{ item: ElementoColocado }> = ({ item }) => {
           zona={zona}
         />
       );
+    default:
+      // Las escenas 3D se dibujan con el video (componentes/Escena3D.tsx).
+      return null;
   }
 };
 
-const NOMBRES = { lista: "Lista", lettering: "Lettering", icono: "Ícono", imagen: "Imagen" };
+const NOMBRES: Record<ElementoColocado["elemento"]["tipo"], string> = {
+  lista: "Lista",
+  lettering: "Lettering",
+  icono: "Ícono",
+  imagen: "Imagen",
+  capas: "Capas 3D",
+  perspectiva: "Perspectiva 3D",
+  tutorial: "Tutorial 3D",
+  objeto3d: "Objeto 3D",
+};
 
 export const Elementos: React.FC<{ items: ElementoColocado[] }> = ({ items }) => (
   <AbsoluteFill>

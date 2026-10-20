@@ -14,7 +14,10 @@ animaciones con [Remotion](https://www.remotion.dev); tú revisas en el navegado
 - **Motion explicativo**: listas de puntos que aparecen al ritmo de lo que dices.
 - **Lettering**: frases clave en letras grandes a pantalla completa.
 - **Íconos animados** y **fotos o capturas** que aparecen justo cuando las mencionas.
-- **Tu cara nunca se tapa**: el programa detecta dónde está y acomoda textos y gráficos alrededor.
+- **Escenas 3D**: montaje en capas, perspectiva, tutorial con capturas en un celular o navegador,
+  y objetos que giran con etiquetas.
+- **Tu cara nunca se tapa**: el programa detecta dónde está, acomoda textos y gráficos alrededor
+  y ajusta el recorte para que siempre quede en cuadro.
 - **Variaciones** de un mismo video para probar anuncios.
 - **5 skills de criterio** para Claude Code: estilo, ritmo, subtítulos, movimiento y composición.
 
@@ -92,7 +95,7 @@ GUIA-DE-PEDIDOS.md       Pedidos listos para copiar
 
 El nombre y el logo de TopTop Lab **nunca** aparecen en los videos. Los colores y la fuente se
 cambian en `src/marca.ts` (o pídeselo a Claude). Las muestras
-**Muestra-Subtitulos**, **Muestra-Elementos** y **Muestra-Cierre** en la vista previa sirven
+**Muestra-Subtitulos**, **Muestra-Elementos**, **Muestra-3D** y **Muestra-Cierre** en la vista previa sirven
 para ver los cambios sin necesidad de un video.
 
 ## Licencia de Remotion
@@ -102,5 +105,5 @@ necesita una licencia: https://www.remotion.pro/license
 
 ## Próximas fases
 
-- Montaje y perspectiva 3D, recorte de fondo.
+- Recorte de fondo (textos detrás de la persona).
 - Video semanal automático con el Top 10 de artistas desde Google Sheets.

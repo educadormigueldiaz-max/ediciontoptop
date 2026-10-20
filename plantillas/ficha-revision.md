@@ -18,6 +18,7 @@
 - [ ] La cara se ve completa en todo momento.
 - [ ] Cada lista, lettering, ícono o imagen aparece cuando se dice lo que muestra.
 - [ ] Ninguna palabra aparece dos veces (en el lettering y en los subtítulos).
+- [ ] En las escenas 3D la cara se ve bien y las capturas o imágenes se entienden.
 - [ ] No chocan con los subtítulos ni entre sí, y el texto se lee.
 - [ ] Los textos en pantalla dicen lo mismo que la voz.
 

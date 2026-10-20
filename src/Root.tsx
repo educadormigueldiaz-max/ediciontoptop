@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Cierre } from "./componentes/Cierre";
 import { FPS, esquemaProps } from "./edicion/esquema";
 import { calcularMetadatos, Editado } from "./estilos/Editado";
-import { MuestraElementos, MuestraSubtitulos } from "./estilos/Muestras";
+import { MuestraElementos, MuestraEscenas3D, MuestraSubtitulos } from "./estilos/Muestras";
 import { proyectos } from "./proyectos";
 
 export const RemotionRoot: React.FC = () => {
@@ -45,6 +45,14 @@ export const RemotionRoot: React.FC = () => {
           width={1080}
           height={1920}
           durationInFrames={12 * FPS}
+        />
+        <Composition
+          id="Muestra-3D"
+          component={MuestraEscenas3D}
+          fps={FPS}
+          width={1080}
+          height={1920}
+          durationInFrames={17 * FPS}
         />
         <Composition
           id="Muestra-Cierre"

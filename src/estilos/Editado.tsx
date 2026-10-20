@@ -12,9 +12,16 @@ import { Cierre } from "../componentes/Cierre";
 import { Gancho } from "../componentes/Gancho";
 import { Subtitulos } from "../componentes/Subtitulos";
 import { VideoEncuadrado } from "../componentes/VideoEncuadrado";
-import { DIMENSIONES, esquemaEdicion, FPS, type PropsEditado } from "../edicion/esquema";
+import {
+  DIMENSIONES,
+  esquemaEdicion,
+  FPS,
+  type PropsEditado,
+} from "../edicion/esquema";
 import { Elementos } from "../componentes/Elementos";
-import { caraEnSalida, colocarElementos } from "../edicion/encuadre";
+import { VideoEnEscena } from "../componentes/Escena3D";
+import { esEscena } from "../edicion/escenas";
+import { caraEnSalida, colocarElementos, enfoqueEfectivo } from "../edicion/encuadre";
 import {
   ajustarLetterings,
   calcularTramos,
@@ -26,18 +33,24 @@ import {
 import { marca } from "../marca";
 
 // Lee public/proyectos/<id>/edicion.json y ajusta duración y tamaño del video.
-export const calcularMetadatos: CalculateMetadataFunction<PropsEditado> = async ({
-  props,
-  abortSignal,
-}) => {
+export const calcularMetadatos: CalculateMetadataFunction<
+  PropsEditado
+> = async ({ props, abortSignal }) => {
   const ruta = `proyectos/${props.proyecto}/edicion.json`;
-  const respuesta = await fetch(staticFile(ruta), { signal: abortSignal, cache: "no-store" });
+  const respuesta = await fetch(staticFile(ruta), {
+    signal: abortSignal,
+    cache: "no-store",
+  });
   if (!respuesta.ok) {
-    throw new Error(`No encuentro public/${ruta}. Corre primero: npm run preparar -- <video>`);
+    throw new Error(
+      `No encuentro public/${ruta}. Corre primero: npm run preparar -- <video>`,
+    );
   }
   const resultado = esquemaEdicion.safeParse(await respuesta.json());
   if (!resultado.success) {
-    throw new Error(`public/${ruta} tiene un error:\n${z.prettifyError(resultado.error)}`);
+    throw new Error(
+      `public/${ruta} tiene un error:\n${z.prettifyError(resultado.error)}`,
+    );
   }
   const edicion = resultado.data;
   const formato = props.formato ?? edicion.opciones.formato;
@@ -53,9 +66,15 @@ export const calcularMetadatos: CalculateMetadataFunction<PropsEditado> = async 
 // Estilo "Crudo → editado": tramos sin pausas, subtítulos, gancho y cierre opcionales.
 export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
   const { fps, width, height } = useVideoConfig();
-  const tramos = useMemo(() => (edicion ? calcularTramos(edicion, fps) : []), [edicion, fps]);
+  const tramos = useMemo(
+    () => (edicion ? calcularTramos(edicion, fps) : []),
+    [edicion, fps],
+  );
   // Los lettering se alinean con las palabras que repiten, y esas palabras salen de los subtítulos.
-  const letterings = useMemo(() => (edicion ? ajustarLetterings(edicion) : null), [edicion]);
+  const letterings = useMemo(
+    () => (edicion ? ajustarLetterings(edicion) : null),
+    [edicion],
+  );
   const captions = useMemo(
     () =>
       edicion && letterings
@@ -65,52 +84,75 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
   );
   const caraEntre = useCallback(
     (desde: number, hasta: number) =>
-      edicion ? caraEnSalida(edicion, tramos, fps, width, height, desde, hasta) : null,
+      edicion
+        ? caraEnSalida(edicion, tramos, fps, width, height, desde, hasta)
+        : null,
     [edicion, tramos, fps, width, height],
   );
-  // Cada elemento va en el espacio libre que deja la cara.
-  const elementos = useMemo(
+  const todos = useMemo(
     () =>
       edicion && letterings
+        ? elementosEnElEditado(
+            { ...edicion, elementos: letterings.elementos },
+            tramos,
+            fps,
+          )
+        : [],
+    [edicion, letterings, tramos, fps],
+  );
+  // Las escenas 3D transforman el video entero; el resto va encima, en el espacio libre que
+  // deja la cara.
+  const escenas = useMemo(() => todos.filter(esEscena), [todos]);
+  const elementos = useMemo(
+    () =>
+      edicion
         ? colocarElementos({
-            items: elementosEnElEditado({ ...edicion, elementos: letterings.elementos }, tramos, fps),
+            items: todos.filter((item) => !esEscena(item)),
             edicion,
             width,
             height,
             caraEntre,
           })
         : [],
-    [edicion, letterings, tramos, fps, width, height, caraEntre],
+    [edicion, todos, width, height, caraEntre],
   );
   if (!edicion) return null;
 
   const { opciones } = edicion;
   const finVideo = framesDeVideo(tramos);
-  // Sin subtítulos durante un lettering (la frase ya está en pantalla) o cuando un elemento
-  // necesita su espacio.
-  const sinSubtitulos = elementos
-    .filter((e) => e.ocultaSubtitulos)
-    .map((e) => [e.desdeFrame, e.desdeFrame + e.duracionFrames] as const);
+  const enfoque = enfoqueEfectivo(edicion, width, height);
+  // Sin subtítulos durante un lettering (la frase ya está en pantalla), una escena 3D (tiene
+  // sus propios textos) o cuando un elemento necesita su espacio.
+  const sinSubtitulos = [
+    ...elementos.filter((e) => e.ocultaSubtitulos),
+    ...escenas,
+  ].map((e) => [e.desdeFrame, e.desdeFrame + e.duracionFrames] as const);
 
   return (
     <AbsoluteFill style={{ backgroundColor: marca.colores.fondo }}>
-      <Series>
-        {tramos.map((tramo, i) => (
-          <Series.Sequence key={i} durationInFrames={tramo.duracionFrames} name={`Tramo ${i + 1}`}>
-            <VideoEncuadrado
-              src={edicion.video}
-              anchoOriginal={edicion.ancho}
-              altoOriginal={edicion.alto}
-              trimBefore={tramo.trimBefore}
-              duracionFrames={tramo.duracionFrames}
-              enfoqueX={opciones.enfoqueX}
-              enfoqueY={opciones.enfoqueY}
-              zoom={tramo.zoom}
-              enfasis={edicion.enfasis}
-            />
-          </Series.Sequence>
-        ))}
-      </Series>
+      <VideoEnEscena escenas={escenas} caraEntre={caraEntre}>
+        <Series>
+          {tramos.map((tramo, i) => (
+            <Series.Sequence
+              key={i}
+              durationInFrames={tramo.duracionFrames}
+              name={`Tramo ${i + 1}`}
+            >
+              <VideoEncuadrado
+                src={edicion.video}
+                anchoOriginal={edicion.ancho}
+                altoOriginal={edicion.alto}
+                trimBefore={tramo.trimBefore}
+                duracionFrames={tramo.duracionFrames}
+                enfoqueX={enfoque.x}
+                enfoqueY={enfoque.y}
+                zoom={tramo.zoom}
+                enfasis={edicion.enfasis}
+              />
+            </Series.Sequence>
+          ))}
+        </Series>
+      </VideoEnEscena>
 
       {elementos.length > 0 ? (
         <Sequence durationInFrames={finVideo} name="Elementos">
@@ -131,7 +173,10 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
       ) : null}
 
       {opciones.gancho ? (
-        <Sequence durationInFrames={Math.round(opciones.duracionGancho * fps)} name="Gancho">
+        <Sequence
+          durationInFrames={Math.round(opciones.duracionGancho * fps)}
+          name="Gancho"
+        >
           <Gancho
             texto={opciones.gancho}
             duracionFrames={Math.round(opciones.duracionGancho * fps)}

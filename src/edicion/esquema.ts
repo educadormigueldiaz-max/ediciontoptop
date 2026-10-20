@@ -17,6 +17,10 @@ export const DIMENSIONES: Record<Formato, { width: number; height: number }> = {
 // igual que las palabras, así que siguen a los cortes.
 const tramo = { inicio: z.number().min(0), fin: z.number().positive() };
 
+const nombreIcono = z.string().refine((n) => buscarIcono(n) !== null, {
+  message: "Ícono desconocido: usa un nombre en español de src/componentes/iconos.ts o uno de lucide.dev/icons",
+});
+
 export const esquemaElemento = z.discriminatedUnion("tipo", [
   // Motion explicativo: título + puntos que aparecen uno a uno.
   z.object({
@@ -43,9 +47,7 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
   z.object({
     tipo: z.literal("icono"),
     ...tramo,
-    icono: z.string().refine((n) => buscarIcono(n) !== null, {
-      message: "Ícono desconocido: usa un nombre en español de src/componentes/iconos.ts o uno de lucide.dev/icons",
-    }),
+    icono: nombreIcono,
     texto: z.string().nullable().default(null),
     posicion: z.enum(["arriba-derecha", "arriba-izquierda", "arriba", "centro"]).default("arriba-derecha"),
   }),
@@ -57,9 +59,57 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
     modo: z.enum(["tarjeta", "pantalla-completa"]).default("tarjeta"),
     texto: z.string().nullable().default(null),
   }),
+
+  // --- Escenas 3D: el video entero se transforma (la cara siempre queda a la vista). ---
+
+  // Montaje en capas 3D: el video se vuelve una tarjeta que gira, con título e íconos en capas.
+  z.object({
+    tipo: z.literal("capas"),
+    ...tramo,
+    titulo: z.string().min(1),
+    iconos: z.array(nombreIcono).max(3).default([]),
+  }),
+  // Perspectiva 3D: el video se pliega hacia un lado y una frase grande ocupa el otro.
+  z.object({
+    tipo: z.literal("perspectiva"),
+    ...tramo,
+    texto: z.string().min(1),
+    destacar: z.string().nullable().default(null),
+    // Lado donde va la frase.
+    lado: z.enum(["izquierda", "derecha"]).default("izquierda"),
+  }),
+  // Tutorial 3D: capturas dentro de un celular o navegador en 3D; la persona en una ventana.
+  z.object({
+    tipo: z.literal("tutorial"),
+    ...tramo,
+    titulo: z.string().nullable().default(null),
+    marco: z.enum(["celular", "navegador"]).default("celular"),
+    pasos: z
+      .array(
+        z.object({
+          archivo: z.string().min(1),
+          texto: z.string().nullable().default(null),
+          en: z.number(),
+        }),
+      )
+      .min(1)
+      .max(6),
+  }),
+  // 3D explicativo: una imagen (objeto, maqueta, producto) que gira en 3D, con etiquetas.
+  z.object({
+    tipo: z.literal("objeto3d"),
+    ...tramo,
+    archivo: z.string().min(1),
+    titulo: z.string().nullable().default(null),
+    etiquetas: z.array(z.object({ texto: z.string(), en: z.number() })).max(5).default([]),
+  }),
 ]);
 
 export type Elemento = z.infer<typeof esquemaElemento>;
+
+export const TIPOS_ESCENA = ["capas", "perspectiva", "tutorial", "objeto3d"] as const;
+export type ElementoEscena = Extract<Elemento, { tipo: (typeof TIPOS_ESCENA)[number] }>;
+export type ElementoSobreVideo = Exclude<Elemento, ElementoEscena>;
 
 // Estructura de public/proyectos/<id>/edicion.json (la crea `npm run preparar`).
 // Tiempos en segundos del video original.
@@ -73,8 +123,9 @@ export const esquemaEdicion = z.object({
   opciones: z.object({
     formato: z.enum(formatos),
     // Punto del video que queda centrado al recortar (0 = izquierda/arriba, 1 = derecha/abajo).
-    enfoqueX: z.number().min(0).max(1),
-    enfoqueY: z.number().min(0).max(1),
+    // "auto" = sigue a la cara (necesita `caras`); sin cara, centra.
+    enfoqueX: z.union([z.number().min(0).max(1), z.literal("auto")]),
+    enfoqueY: z.union([z.number().min(0).max(1), z.literal("auto")]),
     subtitulos: z.boolean(),
     estiloSubtitulos: z.enum(["palabra", "frase"]),
     // Altura del centro de los subtítulos (0 = arriba, 1 = abajo).

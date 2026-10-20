@@ -1,11 +1,20 @@
 import type { Caption } from "@remotion/captions";
-import { AbsoluteFill, interpolate, Sequence, useCurrentFrame, useVideoConfig } from "remotion";
+import {
+  AbsoluteFill,
+  interpolate,
+  Sequence,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
+import { VideoEnEscena } from "../componentes/Escena3D";
 import { Gancho } from "../componentes/Gancho";
 import { IconoAnimado } from "../componentes/IconoAnimado";
 import { ImagenInsertada } from "../componentes/ImagenInsertada";
 import { Lettering } from "../componentes/Lettering";
 import { ListaAnimada } from "../componentes/ListaAnimada";
 import { Subtitulos } from "../componentes/Subtitulos";
+import type { EscenaEnEditado } from "../edicion/escenas";
+import { FPS } from "../edicion/esquema";
 import { marca } from "../marca";
 
 // Composiciones de prueba para ajustar la marca sin necesitar un video.
@@ -34,15 +43,24 @@ const FondoDeMuestra: React.FC = () => {
   );
 };
 
-export const MuestraSubtitulos: React.FC<{ estilo: "palabra" | "frase" }> = ({ estilo }) => {
+export const MuestraSubtitulos: React.FC<{ estilo: "palabra" | "frase" }> = ({
+  estilo,
+}) => {
   const { fps } = useVideoConfig();
   return (
     <AbsoluteFill>
       <FondoDeMuestra />
       <Sequence durationInFrames={Math.round(2.5 * fps)} name="Gancho">
-        <Gancho texto="Edita videos con IA" duracionFrames={Math.round(2.5 * fps)} />
+        <Gancho
+          texto="Edita videos con IA"
+          duracionFrames={Math.round(2.5 * fps)}
+        />
       </Sequence>
-      <Subtitulos captions={captionsDeMuestra(380)} estilo={estilo} posicion={0.7} />
+      <Subtitulos
+        captions={captionsDeMuestra(380)}
+        estilo={estilo}
+        posicion={0.7}
+      />
     </AbsoluteFill>
   );
 };
@@ -78,10 +96,20 @@ export const MuestraElementos: React.FC = () => {
         />
       </Sequence>
       <Sequence from={s(4.5)} durationInFrames={s(2)} name="Ícono">
-        <IconoAnimado icono="dinero" texto="Ahorra" posicion="arriba-derecha" duracionFrames={s(2)} />
+        <IconoAnimado
+          icono="dinero"
+          texto="Ahorra"
+          posicion="arriba-derecha"
+          duracionFrames={s(2)}
+        />
       </Sequence>
       <Sequence from={s(6.5)} durationInFrames={s(2.5)} name="Lettering">
-        <Lettering texto="La idea gana espacio" destacar="espacio" fondo="color" duracionFrames={s(2.5)} />
+        <Lettering
+          texto="La idea gana espacio"
+          destacar="espacio"
+          fondo="color"
+          duracionFrames={s(2.5)}
+        />
       </Sequence>
       <Sequence from={s(9)} durationInFrames={s(3)} name="Imagen">
         <ImagenInsertada
@@ -94,3 +122,141 @@ export const MuestraElementos: React.FC = () => {
     </AbsoluteFill>
   );
 };
+
+// --- Escenas 3D de la fase 3, con un "video" dibujado en lugar de una grabación. ---
+
+const svg = (contenido: string, ancho: number, alto: number) =>
+  `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${ancho}" height="${alto}">${contenido}</svg>`,
+  )}`;
+
+const PANTALLA = (color: string, titulo: string) =>
+  svg(
+    `<rect width="540" height="1170" fill="#f4f4f5"/>
+     <rect width="540" height="150" fill="${color}"/>
+     <text x="40" y="105" font-family="sans-serif" font-size="46" font-weight="bold" fill="white">${titulo}</text>
+     ${[0, 1, 2, 3]
+       .map(
+         (i) =>
+           `<rect x="40" y="${200 + i * 230}" width="460" height="190" rx="28" fill="white" stroke="#e4e4e7" stroke-width="4"/>
+            <rect x="70" y="${230 + i * 230}" width="120" height="120" rx="20" fill="${color}" opacity="0.25"/>
+            <rect x="215" y="${245 + i * 230}" width="250" height="26" rx="13" fill="#a1a1aa"/>
+            <rect x="215" y="${290 + i * 230}" width="180" height="22" rx="11" fill="#d4d4d8"/>`,
+       )
+       .join("")}`,
+    540,
+    1170,
+  );
+
+const OBJETO = svg(
+  `<polygon points="300,60 540,190 300,320 60,190" fill="${marca.colores.secundario}"/>
+   <polygon points="60,190 300,320 300,560 60,430" fill="${marca.colores.primario}"/>
+   <polygon points="540,190 300,320 300,560 540,430" fill="#4c1d95"/>
+   <rect x="120" y="300" width="70" height="90" fill="white" opacity="0.85" transform="skewY(28) translate(0,-60)"/>`,
+  600,
+  620,
+);
+
+const VideoDeMuestra: React.FC = () => (
+  <AbsoluteFill>
+    <FondoDeMuestra />
+    <AbsoluteFill
+      style={{ justifyContent: "center", alignItems: "center", gap: 40 }}
+    >
+      <div
+        style={{
+          width: "42%",
+          aspectRatio: "1",
+          borderRadius: "50%",
+          backgroundColor: "rgba(255,255,255,0.85)",
+        }}
+      />
+      <div
+        style={{
+          fontFamily: marca.fuente,
+          fontWeight: 900,
+          fontSize: 90,
+          color: "white",
+        }}
+      >
+        Tu video
+      </div>
+    </AbsoluteFill>
+  </AbsoluteFill>
+);
+
+const s = (segundos: number) => Math.round(segundos * FPS);
+
+const ESCENAS_DE_MUESTRA: EscenaEnEditado[] = [
+  {
+    elemento: {
+      tipo: "capas",
+      inicio: 0,
+      fin: 0,
+      titulo: "Tu idea en capas",
+      iconos: ["video", "idea", "rayo"],
+    },
+    desdeFrame: s(0.5),
+    duracionFrames: s(3.5),
+    momentos: [],
+  },
+  {
+    elemento: {
+      tipo: "perspectiva",
+      inicio: 0,
+      fin: 0,
+      texto: "Más alcance cada día",
+      destacar: "alcance",
+      lado: "izquierda",
+    },
+    desdeFrame: s(4.5),
+    duracionFrames: s(3.5),
+    momentos: [],
+  },
+  {
+    elemento: {
+      tipo: "tutorial",
+      inicio: 0,
+      fin: 0,
+      titulo: "Así se publica",
+      marco: "celular",
+      pasos: [
+        {
+          archivo: PANTALLA(marca.colores.primario, "Inicio"),
+          texto: "Abre la app",
+          en: 0,
+        },
+        {
+          archivo: PANTALLA(marca.colores.secundario, "Subir"),
+          texto: "Sube el video",
+          en: 0,
+        },
+      ],
+    },
+    desdeFrame: s(8.5),
+    duracionFrames: s(4),
+    momentos: [0, s(2)],
+  },
+  {
+    elemento: {
+      tipo: "objeto3d",
+      inicio: 0,
+      fin: 0,
+      archivo: OBJETO,
+      titulo: "Así funciona",
+      etiquetas: [
+        { texto: "Entrada", en: 0 },
+        { texto: "Salida", en: 0 },
+      ],
+    },
+    desdeFrame: s(13),
+    duracionFrames: s(4),
+    momentos: [s(0.8), s(1.6)],
+  },
+];
+
+export const MuestraEscenas3D: React.FC = () => (
+  <VideoEnEscena escenas={ESCENAS_DE_MUESTRA} caraEntre={() => null}>
+    <VideoDeMuestra />
+  </VideoEnEscena>
+);

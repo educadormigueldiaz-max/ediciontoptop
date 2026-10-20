@@ -50,6 +50,47 @@ export const geometriaVideo = (p: {
   };
 };
 
+const mediana = (valores: number[]) => {
+  const orden = [...valores].sort((a, b) => a - b);
+  return orden[Math.floor(orden.length / 2)];
+};
+
+// Punto de enfoque del recorte. Con "auto", el recorte deja la cara centrada a lo ancho y a la
+// altura de los ojos (40 % desde arriba), usando dónde está la cara la mayor parte del video.
+export const enfoqueEfectivo = (edicion: Edicion, width: number, height: number) => {
+  const { enfoqueX, enfoqueY } = edicion.opciones;
+  const caras = (edicion.caras?.cuadros ?? []).filter((c) => c !== null);
+  const escala = Math.max(width / edicion.ancho, height / edicion.alto);
+  const resolver = (
+    valor: number | "auto",
+    centroCara: number | null,
+    tamano: number,
+    total: number,
+    objetivo: number,
+  ) => {
+    if (valor !== "auto") return valor;
+    // Sin cara, o si en este eje no se recorta nada, se centra.
+    if (centroCara === null || tamano - total < 1) return 0.5;
+    return Math.min(1, Math.max(0, (objetivo - centroCara * tamano) / (total - tamano)));
+  };
+  return {
+    x: resolver(
+      enfoqueX,
+      caras.length ? mediana(caras.map((c) => c[0] + c[2] / 2)) : null,
+      edicion.ancho * escala,
+      width,
+      width / 2,
+    ),
+    y: resolver(
+      enfoqueY,
+      caras.length ? mediana(caras.map((c) => c[1] + c[3] / 2)) : null,
+      edicion.alto * escala,
+      height,
+      height * 0.4,
+    ),
+  };
+};
+
 // El detector marca de la frente al mentón: se agrega espacio para el pelo, el cuello y los lados.
 const AIRE_CARA = { arriba: 0.4, abajo: 0.2, lados: 0.15 };
 
@@ -65,6 +106,7 @@ export const caraEnSalida = (
 ): Caja | null => {
   const { caras } = edicion;
   if (!caras || caras.cuadros.length === 0) return null;
+  const enfoque = enfoqueEfectivo(edicion, width, height);
   let x1 = Infinity;
   let y1 = Infinity;
   let x2 = -Infinity;
@@ -85,8 +127,8 @@ export const caraEnSalida = (
       height,
       anchoOriginal: edicion.ancho,
       altoOriginal: edicion.alto,
-      enfoqueX: edicion.opciones.enfoqueX,
-      enfoqueY: edicion.opciones.enfoqueY,
+      enfoqueX: enfoque.x,
+      enfoqueY: enfoque.y,
       zoom: tramo.zoom * zoomEnfasisEn(segundo, edicion.enfasis),
     });
     const cx = g.left + c[0] * g.ancho;
@@ -185,6 +227,8 @@ const altoNecesario = ({ elemento }: ElementoEnEditado, base: number) => {
       return base * 0.4;
     case "lettering":
       return base * 0.35;
+    default:
+      return 0;
   }
 };
 

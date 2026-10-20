@@ -11,7 +11,8 @@ import { elegirZona, type Zona } from "../edicion/encuadre";
 import { marca } from "../marca";
 
 // Acepta rutas de public/ ("imagenes/foto.jpg") o direcciones completas (https://, data:).
-const fuente = (archivo: string) => (/^(https?:|data:)/.test(archivo) ? archivo : staticFile(archivo));
+export const fuenteImagen = (archivo: string) =>
+  /^(https?:|data:)/.test(archivo) ? archivo : staticFile(archivo);
 
 // Imagen de apoyo: como tarjeta flotante en el espacio libre que deja la cara (`zona`),
 // o a pantalla completa con un zoom lento (tapa a la persona: solo si se pide).
@@ -57,7 +58,7 @@ export const ImagenInsertada: React.FC<{
         }}
       >
         <Img
-          src={fuente(archivo)}
+          src={fuenteImagen(archivo)}
           style={{
             width: "100%",
             height: "100%",
@@ -97,7 +98,7 @@ export const ImagenInsertada: React.FC<{
         }}
       >
         <Img
-          src={fuente(archivo)}
+          src={fuenteImagen(archivo)}
           style={{
             maxWidth: zona.ancho,
             maxHeight: Math.max(base * 0.15, zona.alto - altoLeyenda - base * 0.02),

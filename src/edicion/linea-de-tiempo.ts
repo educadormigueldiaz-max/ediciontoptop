@@ -100,8 +100,21 @@ export type ElementoEnEditado = {
   elemento: Elemento;
   desdeFrame: number;
   duracionFrames: number;
-  // Solo para listas: frame (relativo al elemento) en que aparece cada punto.
+  // Frames (relativos al elemento) en que aparece cada punto, paso o etiqueta.
   momentos: number[];
+};
+
+const momentosDe = (e: Elemento): number[] => {
+  switch (e.tipo) {
+    case "lista":
+      return e.puntos.map((p) => p.en);
+    case "tutorial":
+      return e.pasos.map((p) => p.en);
+    case "objeto3d":
+      return e.etiquetas.map((p) => p.en);
+    default:
+      return [];
+  }
 };
 
 // Duración mínima para que un elemento alcance a leerse.
@@ -116,13 +129,10 @@ export const elementosEnElEditado = (
     const desde = aFrameEditado(elemento.inicio, tramos, fps, "inicio");
     const hasta = aFrameEditado(elemento.fin, tramos, fps, "fin");
     if (desde === null || hasta === null || hasta - desde < MIN_FRAMES_ELEMENTO) return [];
-    const momentos =
-      elemento.tipo === "lista"
-        ? elemento.puntos.map((p) => {
-            const f = aFrameEditado(p.en, tramos, fps, "inicio");
-            return Math.max(0, Math.min((f ?? desde) - desde, hasta - desde - 1));
-          })
-        : [];
+    const momentos = momentosDe(elemento).map((en) => {
+      const f = aFrameEditado(en, tramos, fps, "inicio");
+      return Math.max(0, Math.min((f ?? desde) - desde, hasta - desde - 1));
+    });
     return [{ elemento, desdeFrame: desde, duracionFrames: hasta - desde, momentos }];
   });
 
