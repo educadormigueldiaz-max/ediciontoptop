@@ -100,6 +100,9 @@ const Pagina: React.FC<{ page: TikTokPage; estilo: Estilo; centro: number; alter
     base * ({ palabra: 0.078, frase: 0.056, claves: 0.1 } as const)[estilo] * (alterna ? 1.15 : 1);
   const mayusculas = estilo !== "frase" && !alterna;
   const margen = Math.round(width * 0.083);
+  // La palabra pintada es la última que empezó: el color pasa a la siguiente y nunca vuelve a
+  // blanco (ni en las pausas entre palabras ni mientras la página se queda al final).
+  const activa = page.tokens.filter((t) => t.fromMs <= ahoraMs).length - 1;
 
   return (
     <div
@@ -137,7 +140,6 @@ const Pagina: React.FC<{ page: TikTokPage; estilo: Estilo; centro: number; alter
       }}
     >
       {page.tokens.map((token, i) => {
-        const activa = token.fromMs <= ahoraMs && token.toMs > ahoraMs;
         const texto = token.text.trim();
         return (
           <span key={`${token.fromMs}-${i}`}>
@@ -145,8 +147,8 @@ const Pagina: React.FC<{ page: TikTokPage; estilo: Estilo; centro: number; alter
             <span
               style={{
                 display: "inline-block",
-                color: activa ? marca.colores.acento : marca.colores.texto,
-                scale: activa && estilo !== "frase" ? 1.08 : 1,
+                color: i === activa ? marca.colores.acento : marca.colores.texto,
+                scale: i === activa && estilo !== "frase" ? 1.08 : 1,
               }}
             >
               {texto}
