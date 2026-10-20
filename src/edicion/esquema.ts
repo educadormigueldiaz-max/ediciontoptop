@@ -127,7 +127,8 @@ export const esquemaEdicion = z.object({
     enfoqueX: z.union([z.number().min(0).max(1), z.literal("auto")]),
     enfoqueY: z.union([z.number().min(0).max(1), z.literal("auto")]),
     subtitulos: z.boolean(),
-    estiloSubtitulos: z.enum(["palabra", "frase"]),
+    // "claves" = solo las palabras marcadas con `clave` en `palabras`.
+    estiloSubtitulos: z.enum(["palabra", "frase", "claves"]),
     // Altura del centro de los subtítulos (0 = arriba, 1 = abajo).
     posicionSubtitulos: z.number().min(0).max(1),
     // Alterna un acercamiento en cada corte para disimular los saltos.
@@ -148,7 +149,17 @@ export const esquemaEdicion = z.object({
       }),
     )
     .min(1),
-  palabras: z.array(z.object({ texto: z.string(), inicio: z.number(), fin: z.number() })),
+  palabras: z.array(
+    z.object({
+      texto: z.string(),
+      inicio: z.number(),
+      fin: z.number(),
+      // Palabra clave: es la que se muestra con el estilo de subtítulos "claves".
+      clave: z.boolean().optional(),
+      // "alterna" = se muestra con la segunda letra (marca.fuenteAlterna).
+      letra: z.literal("alterna").optional(),
+    }),
+  ),
   // Acercamientos de énfasis (por ejemplo, cuando se dice una palabra clave).
   enfasis: z
     .array(z.object({ inicio: z.number(), fin: z.number(), zoom: z.number().min(1).max(2) }))

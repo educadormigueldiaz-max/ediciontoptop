@@ -94,7 +94,7 @@ export const ListaAnimada: React.FC<{
                   height: base * 0.085,
                   borderRadius: "50%",
                   backgroundColor: marca.colores.acento,
-                  color: marca.colores.contorno,
+                  color: marca.colores.textoSobreAcento,
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",

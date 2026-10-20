@@ -82,7 +82,7 @@ export const IconoAnimado: React.FC<{
                 padding: `${base * 0.01}px ${base * 0.024}px`,
                 borderRadius: base * 0.016,
                 backgroundColor: marca.colores.acento,
-                color: marca.colores.contorno,
+                color: marca.colores.textoSobreAcento,
                 fontFamily: marca.fuente,
                 fontWeight: 900,
                 fontSize: base * 0.042,

@@ -47,7 +47,8 @@ Tiempos en **segundos del video original**. El esquema está en `src/edicion/esq
   - `formato`: "9:16", "4:5", "1:1" o "16:9".
   - `enfoqueX` y `enfoqueY`: `"auto"` (por defecto: el recorte sigue a la cara) o un número 0–1
     si la persona pide un encuadre fijo.
-  - `subtitulos`, `estiloSubtitulos` ("palabra" o "frase"), `posicionSubtitulos` (0 = arriba, 1 = abajo).
+  - `subtitulos`, `estiloSubtitulos` ("palabra", "frase" o "claves": solo las palabras con
+    `"clave": true`; `"letra": "alterna"` usa la segunda letra), `posicionSubtitulos` (0 = arriba, 1 = abajo).
   - `zoomEnCortes`: acercamiento alterno en cada corte.
   - `gancho` (texto o null) y `duracionGancho`: frase de los primeros segundos.
   - `cierre`: `{ "texto": "...", "duracion": 2 }` o null.

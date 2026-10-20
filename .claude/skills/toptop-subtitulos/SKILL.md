@@ -10,6 +10,11 @@ description: Criterio para los subtítulos de TopTop Lab (estilo, posición, cor
   acento. Para reels, TikTok y anuncios.
 - `"frase"`: frases completas, más pequeñas, sin mayúsculas. Para tutoriales, LinkedIn,
   YouTube horizontal (16:9) y videos largos.
+- `"claves"`: solo palabras clave, grandes y sueltas; el resto del video va sin texto.
+  Marca en `palabras` las que se muestran con `"clave": true` (una idea cada 2–4 s: nombres,
+  cifras, verbos fuertes; nada que ya diga un elemento en pantalla). Para jugar con una segunda
+  letra (`marca.fuenteAlterna`, cursiva elegante) agrega `"letra": "alterna"` a más o menos 1 de
+  cada 3 grupos de palabras clave, sobre todo frases con tono ("palabras más, palabras menos").
 
 ## Posición (`opciones.posicionSubtitulos`, 0 = arriba, 1 = abajo)
 | Formato | Valor recomendado | Motivo |

@@ -37,6 +37,9 @@ export const framesTotales = (edicion: Edicion, fps: number) =>
 
 const FIN_DE_FRASE = /[.!?…]["»”]?$/;
 
+// Palabra de los subtítulos; `alterna` = va con la segunda letra.
+export type Subtitulo = Caption & { alterna?: boolean };
+
 // Lleva cada palabra a su momento en el video editado. Las palabras de partes
 // cortadas desaparecen, así que los subtítulos siempre siguen a los cortes.
 export const palabrasEnElEditado = (
@@ -45,10 +48,12 @@ export const palabrasEnElEditado = (
   fps: number,
   // Índices de `palabras` que no van en los subtítulos (por ejemplo, las que muestra un lettering).
   ocultas: ReadonlySet<number> = new Set(),
-): Caption[] => {
-  const captions: Caption[] = [];
+): Subtitulo[] => {
+  const soloClaves = edicion.opciones.estiloSubtitulos === "claves";
+  const captions: Subtitulo[] = [];
   for (const [indice, palabra] of edicion.palabras.entries()) {
     if (ocultas.has(indice)) continue;
+    if (soloClaves && !palabra.clave) continue;
     for (const tramo of tramos) {
       const inicioTramo = tramo.trimBefore / fps;
       const finTramo = (tramo.trimBefore + tramo.duracionFrames) / fps;
@@ -63,6 +68,7 @@ export const palabrasEnElEditado = (
         timestampMs: null,
         confidence: null,
         pageBreakAfter: FIN_DE_FRASE.test(palabra.texto.trim()),
+        alterna: palabra.letra === "alterna",
       });
       break;
     }

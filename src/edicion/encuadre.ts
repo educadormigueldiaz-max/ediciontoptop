@@ -157,8 +157,11 @@ export const margenesSeguros = (width: number, height: number) => {
 };
 
 // Media altura de la franja que ocupan los subtítulos.
-export const mediaFranjaSubtitulos = (width: number, height: number, estilo: "palabra" | "frase") =>
-  Math.min(width, height) * (estilo === "palabra" ? 0.1 : 0.075);
+export const mediaFranjaSubtitulos = (
+  width: number,
+  height: number,
+  estilo: "palabra" | "frase" | "claves",
+) => Math.min(width, height) * ({ palabra: 0.1, frase: 0.075, claves: 0.12 } as const)[estilo];
 
 const seSolapan = (a1: number, a2: number, b1: number, b2: number) => a1 < b2 && b1 < a2;
 

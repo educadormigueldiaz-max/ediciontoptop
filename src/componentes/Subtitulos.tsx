@@ -1,4 +1,4 @@
-import { createTikTokStyleCaptions, type Caption, type TikTokPage } from "@remotion/captions";
+import { createTikTokStyleCaptions, type TikTokPage } from "@remotion/captions";
 import { useMemo } from "react";
 import {
   AbsoluteFill,
@@ -9,19 +9,21 @@ import {
   useVideoConfig,
 } from "remotion";
 import { centroSubtitulos, mediaFranjaSubtitulos, type Caja } from "../edicion/encuadre";
+import type { Subtitulo } from "../edicion/linea-de-tiempo";
 import { marca } from "../marca";
 
-type Estilo = "palabra" | "frase";
+type Estilo = "palabra" | "frase" | "claves";
 
 // Cuánto tiempo de habla se agrupa en cada "página" de subtítulos.
-const AGRUPAR_MS: Record<Estilo, number> = { palabra: 900, frase: 2200 };
+const AGRUPAR_MS: Record<Estilo, number> = { palabra: 900, frase: 2200, claves: 1200 };
 // La página se queda un poco más en pantalla si no hay otra inmediatamente después.
-const PERMANENCIA_MS = 300;
+// Las palabras clave van sueltas, así que se quedan más para que se alcancen a leer.
+const PERMANENCIA_MS: Record<Estilo, number> = { palabra: 300, frase: 300, claves: 700 };
 // Si entre dos palabras pasa más que esto (por ejemplo, palabras quitadas), empieza otra página.
 const CORTAR_EN_SILENCIO_MS = 500;
 
 export const Subtitulos: React.FC<{
-  captions: Caption[];
+  captions: Subtitulo[];
   estilo: Estilo;
   posicion: number;
   // Rangos de frames [desde, hasta) en los que no se muestran.
@@ -41,6 +43,11 @@ export const Subtitulos: React.FC<{
       }),
     [captions, estilo],
   );
+  // Momentos (ms) en que empieza una palabra que va con la segunda letra.
+  const alternas = useMemo(
+    () => new Set(captions.filter((c) => c.alterna).map((c) => c.startMs)),
+    [captions],
+  );
   const oculto = ocultarEn.some(([desde, hasta]) => frame >= desde && frame < hasta);
 
   return (
@@ -49,7 +56,9 @@ export const Subtitulos: React.FC<{
         const siguiente = pages[i + 1];
         const finMs = Math.min(
           siguiente ? siguiente.startMs : Infinity,
-          page.startMs + page.durationMs + PERMANENCIA_MS,
+          // Con palabras sueltas la página dura hasta la siguiente clave; se corta al terminar la última.
+          (estilo === "claves" ? page.tokens[page.tokens.length - 1].toMs : page.startMs + page.durationMs) +
+            PERMANENCIA_MS[estilo],
         );
         const desde = Math.round((page.startMs / 1000) * fps);
         const hasta = Math.round((finMs / 1000) * fps);
@@ -63,7 +72,12 @@ export const Subtitulos: React.FC<{
         });
         return (
           <Sequence key={i} from={desde} durationInFrames={hasta - desde} name={page.text.trim()}>
-            <Pagina page={page} estilo={estilo} centro={centro} />
+            <Pagina
+              page={page}
+              estilo={estilo}
+              centro={centro}
+              alterna={page.tokens.some((t) => alternas.has(t.fromMs))}
+            />
           </Sequence>
         );
       })}
@@ -71,16 +85,19 @@ export const Subtitulos: React.FC<{
   );
 };
 
-const Pagina: React.FC<{ page: TikTokPage; estilo: Estilo; centro: number }> = ({
+const Pagina: React.FC<{ page: TikTokPage; estilo: Estilo; centro: number; alterna: boolean }> = ({
   page,
   estilo,
   centro,
+  alterna,
 }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const ahoraMs = page.startMs + (frame / fps) * 1000;
   const base = Math.min(width, height);
-  const tamano = base * (estilo === "palabra" ? 0.078 : 0.056);
+  const tamano =
+    base * ({ palabra: 0.078, frase: 0.056, claves: 0.1 } as const)[estilo] * (alterna ? 1.15 : 1);
+  const mayusculas = estilo !== "frase" && !alterna;
   const margen = Math.round(width * 0.083);
 
   return (
@@ -92,17 +109,19 @@ const Pagina: React.FC<{ page: TikTokPage; estilo: Estilo; centro: number }> = (
         top: centro,
         translate: "0 -50%",
         textAlign: "center",
-        fontFamily: marca.fuente,
+        fontFamily: alterna ? marca.fuenteAlterna : marca.fuente,
+        fontStyle: alterna ? "italic" : "normal",
         fontWeight: 900,
         fontSize: tamano,
         lineHeight: 1.15,
         color: marca.colores.texto,
-        textTransform: estilo === "palabra" ? "uppercase" : "none",
+        textTransform: mayusculas ? "uppercase" : "none",
         whiteSpace: "pre-wrap",
         textWrap: "balance",
         // El contorno grueso "come" el espacio entre palabras; esto lo compensa.
         wordSpacing: "0.18em",
-        WebkitTextStroke: `${tamano * 0.14}px ${marca.colores.contorno}`,
+        // La letra alterna es más fina: con menos contorno se ve más elegante.
+        WebkitTextStroke: `${tamano * (alterna ? 0.09 : 0.14)}px ${marca.colores.contorno}`,
         paintOrder: "stroke fill",
         textShadow: `0 ${tamano * 0.06}px ${tamano * 0.18}px rgba(0,0,0,0.45)`,
         opacity: interpolate(frame, [0, 3], [0, 1], {
@@ -126,7 +145,7 @@ const Pagina: React.FC<{ page: TikTokPage; estilo: Estilo; centro: number }> = (
               style={{
                 display: "inline-block",
                 color: activa ? marca.colores.acento : marca.colores.texto,
-                scale: activa && estilo === "palabra" ? 1.08 : 1,
+                scale: activa && estilo !== "frase" ? 1.08 : 1,
               }}
             >
               {texto}
