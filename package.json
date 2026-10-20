@@ -46,6 +46,7 @@
     "lint": "eslint src && tsc"
   },
   "allowScripts": {
-    "esbuild": false
+    "esbuild": false,
+    "onnxruntime-node": false
   }
 }
