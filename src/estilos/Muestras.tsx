@@ -11,7 +11,7 @@ import { marca } from "../marca";
 // Composiciones de prueba para ajustar la marca sin necesitar un video.
 
 const FRASE_DE_MUESTRA =
-  "Así se ven tus subtítulos con la marca de TopTop Lab. Cambia colores y fuente en src/marca.ts.";
+  "Así se ven tus subtítulos. Cambia los colores y la fuente en src/marca.ts.";
 
 const captionsDeMuestra = (msPorPalabra: number): Caption[] =>
   FRASE_DE_MUESTRA.split(" ").map((palabra, i) => ({
@@ -81,7 +81,7 @@ export const MuestraElementos: React.FC = () => {
         <IconoAnimado icono="dinero" texto="Ahorra" posicion="arriba-derecha" duracionFrames={s(2)} />
       </Sequence>
       <Sequence from={s(6.5)} durationInFrames={s(2.5)} name="Lettering">
-        <Lettering texto="La idea gana espacio" destacar="espacio" fondo="marca" duracionFrames={s(2.5)} />
+        <Lettering texto="La idea gana espacio" destacar="espacio" fondo="color" duracionFrames={s(2.5)} />
       </Sequence>
       <Sequence from={s(9)} durationInFrames={s(3)} name="Imagen">
         <ImagenInsertada

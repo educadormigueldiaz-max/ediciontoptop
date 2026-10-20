@@ -32,8 +32,12 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
     texto: z.string().min(1),
     // Palabra(s) que van en color de acento.
     destacar: z.string().nullable().default(null),
-    // "marca" = fondo de color; "video" = el video se ve oscurecido detrás.
-    fondo: z.enum(["marca", "video"]).default("video"),
+    // "video" = sobre el video, junto a la cara; "color" = tarjeta de color a pantalla completa.
+    // ("marca" es el nombre anterior de "color".)
+    fondo: z
+      .enum(["video", "color", "marca"])
+      .default("video")
+      .transform((f) => (f === "marca" ? "color" : f)),
   }),
   // Ícono animado con etiqueta opcional.
   z.object({

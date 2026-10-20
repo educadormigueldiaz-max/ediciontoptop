@@ -40,11 +40,11 @@ const tamanoQueCabe = (palabras: string[], ancho: number, alto: number, base: nu
 
 // Frase grande: las palabras "caen" una tras otra.
 // fondo "video": sobre el video, en el espacio libre que deja la cara (nunca la tapa).
-// fondo "marca": tarjeta de color a pantalla completa (solo si se pide explícitamente).
+// fondo "color": tarjeta de color a pantalla completa (solo si se pide explícitamente).
 export const Lettering: React.FC<{
   texto: string;
   destacar: string | null;
-  fondo: "marca" | "video";
+  fondo: "color" | "video";
   duracionFrames: number;
   zona?: Zona;
 }> = ({ texto, destacar, fondo, duracionFrames, zona: zonaDada }) => {
@@ -55,7 +55,7 @@ export const Lettering: React.FC<{
   const palabras = texto.trim().split(/\s+/);
   const destacadas = new Set((destacar ?? "").split(/\s+/).map(normalizar).filter(Boolean));
 
-  const pantallaCompleta = fondo === "marca";
+  const pantallaCompleta = fondo === "color";
   const zona: Zona = pantallaCompleta
     ? { x: margen, y: margen, ancho: width - margen * 2, alto: height - margen * 2, lado: "libre" }
     : (zonaDada ?? elegirZona({ width, height, cara: null, limiteAbajo: null }));

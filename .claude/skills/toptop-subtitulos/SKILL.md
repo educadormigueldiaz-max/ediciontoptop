@@ -26,7 +26,7 @@ description: Criterio para los subtítulos de TopTop Lab (estilo, posición, cor
 
 ## Corregir lo que dicen
 - Cambia solo `palabras[i].texto` en `edicion.json`; no toques `inicio` ni `fin`.
-- Revisa siempre: nombre de la marca ("TopTop Lab"), nombres de personas, productos, precios,
+- Revisa siempre: nombres de personas, lugares, marcas o productos que se mencionen, precios,
   cifras, siglas y palabras en inglés.
 - Si una palabra quedó partida en dos entradas ("Top" + "Top"), únelas en una sola:
   texto "TopTop", `inicio` de la primera, `fin` de la segunda, y borra la segunda.

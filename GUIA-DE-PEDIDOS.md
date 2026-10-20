@@ -95,10 +95,8 @@ Abre Claude Code dentro de la carpeta del proyecto (`cd ediciontoptop` y luego `
 
 ---
 
-## Cambiar la marca
+## Cambiar el estilo (colores y fuente)
 
 > Cambia el color de acento a `<#código>` y el primario a `<#código>`.
-
-> Usa el logo que puse en `public/marca/logo.png` en los cierres.
 
 > Usa la fuente que puse en `public/fuentes/`.

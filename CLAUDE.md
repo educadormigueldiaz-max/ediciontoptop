@@ -5,7 +5,7 @@ pide en español lo que quiere ver ("corta las pausas y pon subtítulos") y tú 
 
 - Responde siempre en español, con frases cortas y sin jerga técnica.
 - Antes de editar, lee las skills de `.claude/skills/` que apliquen (ritmo, subtítulos, estilo,
-  elementos, movimiento, composición). Son el criterio de edición de la marca.
+  elementos, 3d, movimiento, composición). Son el criterio de edición.
 - Si el pedido es ambiguo ("déjalo bonito"), aplica las skills y explica en una línea qué decidiste.
 
 ## Flujo de trabajo: Prepara → Pide → Revisa → Reutiliza
@@ -61,12 +61,14 @@ Tiempos en **segundos del video original**. El esquema está en `src/edicion/esq
 ## Reglas
 
 - **La cara de la persona nunca se tapa.** Subtítulos y elementos se acomodan solos alrededor
-  de ella. No uses imagen `pantalla-completa` ni lettering con `fondo: "marca"` salvo que lo pidan.
+  de ella. No uses imagen `pantalla-completa` ni lettering con `fondo: "color"` salvo que lo pidan.
+- **TopTop Lab nunca aparece en los videos**: ni su nombre ni un logo, en ningún texto, gancho
+  o cierre. TopTop Lab es la herramienta, no la marca de los videos.
 
 - **Nunca** ejecutes `preparar --forzar` sobre un proyecto existente sin preguntar: borra las
   ediciones hechas a mano.
 - `src/proyectos.ts` se genera solo; no lo edites.
-- La marca (colores, fuente, logo, nombre) vive en `src/marca.ts`. Si piden cambiar la marca,
+- El estilo visual (colores y fuente) vive en `src/marca.ts`. Si piden cambiar colores o fuente,
   cambia ese archivo, no los componentes.
 - No inventes datos en ganchos o cierres (precios, cifras, promesas). Si faltan, pregunta.
 - Animaciones: solo con `useCurrentFrame()`, `interpolate()` y `spring()`. Las transiciones o

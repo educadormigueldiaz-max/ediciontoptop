@@ -10,7 +10,7 @@ animaciones con [Remotion](https://www.remotion.dev); tú revisas en el navegado
 - **Crudo → editado**: quita silencios y muletillas, ajusta a vertical, cuadrado u horizontal.
 - **Subtítulos automáticos** (Whisper, en tu computadora, sin subir nada a internet), palabra por
   palabra con la palabra activa resaltada, o por frases.
-- **Gancho** al inicio, **cierre** con la marca, **zoom** en los cortes y en palabras clave.
+- **Gancho** al inicio, **cierre** con una llamada a la acción, **zoom** en los cortes y en palabras clave.
 - **Motion explicativo**: listas de puntos que aparecen al ritmo de lo que dices.
 - **Lettering**: frases clave en letras grandes a pantalla completa.
 - **Íconos animados** y **fotos o capturas** que aparecen justo cuando las mencionas.
@@ -78,10 +78,9 @@ entrada/                 Tus grabaciones crudas (no se suben a git)
 salida/                  Videos exportados (no se suben a git)
 public/proyectos/<id>/   Video de trabajo + edicion.json + transcripcion.txt (no se suben a git)
 public/imagenes/         Tus fotos y capturas para insertar en los videos (no se suben a git)
-public/fuentes/          Fuentes de la marca
+public/fuentes/          Fuentes de los videos
 modelos/                 Detector de caras (corre en tu computadora)
-public/marca/            Logo y recursos de la marca
-src/marca.ts             Colores, fuente y logo de TopTop Lab
+src/marca.ts             Colores y fuente de los videos
 src/componentes/         Subtítulos, gancho, cierre, encuadre
 src/estilos/             Composiciones: video editado y muestras
 .claude/skills/          Criterio de edición que usa Claude Code
@@ -89,9 +88,10 @@ plantillas/              Brief y ficha de revisión
 GUIA-DE-PEDIDOS.md       Pedidos listos para copiar
 ```
 
-## Personalizar la marca
+## Personalizar el estilo
 
-Edita `src/marca.ts` (o pídeselo a Claude): nombre, colores, fuente y logo. Las muestras
+El nombre y el logo de TopTop Lab **nunca** aparecen en los videos. Los colores y la fuente se
+cambian en `src/marca.ts` (o pídeselo a Claude). Las muestras
 **Muestra-Subtitulos**, **Muestra-Elementos** y **Muestra-Cierre** en la vista previa sirven
 para ver los cambios sin necesidad de un video.
 

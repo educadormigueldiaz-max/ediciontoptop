@@ -1,6 +1,6 @@
 # Brief de video — TopTop Lab
 
-Llena lo que sepas; lo que dejes vacío lo decide Claude con las skills de la marca.
+Llena lo que sepas; lo que dejes vacío lo decide Claude con las skills de edición.
 
 - **Archivo(s) en `entrada/`:**
 - **Tipo de video:** anuncio / reel de contenido / tutorial / testimonio / otro:

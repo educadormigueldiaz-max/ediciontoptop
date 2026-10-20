@@ -1,22 +1,12 @@
-import {
-  AbsoluteFill,
-  Easing,
-  Img,
-  interpolate,
-  spring,
-  staticFile,
-  useCurrentFrame,
-  useVideoConfig,
-} from "remotion";
+import { AbsoluteFill, Easing, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { marca } from "../marca";
 
-// Tarjeta final con la marca y una llamada a la acción.
+// Tarjeta final con una llamada a la acción (sin nombre ni logo de TopTop Lab).
 export const Cierre: React.FC<{ texto: string }> = ({ texto }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const base = Math.min(width, height);
   const entrada = spring({ frame, fps, config: { damping: 15 } });
-  const entradaTexto = spring({ frame: frame - 8, fps, config: { damping: 15 } });
 
   return (
     <AbsoluteFill
@@ -31,16 +21,18 @@ export const Cierre: React.FC<{ texto: string }> = ({ texto }) => {
         padding: width * 0.083,
       }}
     >
-      {marca.logo ? (
-        <Img
-          src={staticFile(marca.logo)}
-          style={{ width: base * 0.45, objectFit: "contain", scale: entrada }}
-        />
-      ) : (
-        <div style={{ fontSize: base * 0.11, fontWeight: 900, letterSpacing: "-0.03em", scale: entrada }}>
-          {marca.nombre}
-        </div>
-      )}
+      <div
+        style={{
+          fontSize: base * 0.085,
+          fontWeight: 900,
+          lineHeight: 1.1,
+          textWrap: "balance",
+          opacity: entrada,
+          scale: interpolate(entrada, [0, 1], [0.85, 1]),
+        }}
+      >
+        {texto}
+      </div>
       <div
         style={{
           width: interpolate(frame, [6, 20], [0, base * 0.25], {
@@ -53,16 +45,6 @@ export const Cierre: React.FC<{ texto: string }> = ({ texto }) => {
           backgroundColor: marca.colores.acento,
         }}
       />
-      <div
-        style={{
-          fontSize: base * 0.055,
-          fontWeight: 800,
-          opacity: entradaTexto,
-          translate: `0 ${interpolate(entradaTexto, [0, 1], [base * 0.03, 0])}px`,
-        }}
-      >
-        {texto}
-      </div>
     </AbsoluteFill>
   );
 };

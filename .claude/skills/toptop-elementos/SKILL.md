@@ -16,7 +16,7 @@ en horizontal. Si no cabe junto a los subtítulos, los subtítulos se esconden m
 elemento; la cara nunca.
 - Si `edicion.json` no tiene `caras`, ejecuta `npm run caras -- <id>` antes de agregar elementos.
 - No hace falta (ni sirve) acomodar posiciones a mano: no inventes coordenadas.
-- Lo único que tapa a la persona es `"modo": "pantalla-completa"` en imágenes y `"fondo": "marca"`
+- Lo único que tapa a la persona es `"modo": "pantalla-completa"` en imágenes y `"fondo": "color"`
   en lettering. Úsalos **solo** si la persona lo pide con esas palabras.
 
 ## Los 4 tipos
@@ -44,7 +44,7 @@ Una frase corta y potente en letras grandes. Máximo 1 cada 20–30 s.
   quitan de los subtítulos (no aparecen dos veces).
 - `inicio` aproximado (el de la primera palabra) basta; `fin`, cuando termina la frase.
 - `fondo`: `"video"` (por defecto: sobre el video, en el espacio libre junto a la cara) o
-  `"marca"` (tarjeta de color a pantalla completa; solo si la piden).
+  `"color"` (tarjeta de color a pantalla completa; solo si la piden).
 - Los subtítulos se ocultan solos mientras dura.
 - Dura entre 1.5 y 3 s.
 
