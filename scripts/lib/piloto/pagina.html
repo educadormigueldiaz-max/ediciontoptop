@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ByDzyne · Videos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..900&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Una columna pensada para el celular: arriba la marca, luego "Subir video" y "Mis videos". */
+:root {
+  --papel: #EEF0F3;
+  --superficie: #FFFFFF;
+  --tinta: #151A21;
+  --tinta-suave: #5B6370;
+  --linea: #D7DBE1;
+  --pizarra: #4A515D;
+  --degradado: linear-gradient(135deg, #808897 0%, #5F6673 55%, #4A515D 100%);
+  --sobre-pizarra: #FFFFFF;
+  --boton: #1E2229;
+  --sobre-boton: #FFFFFF;
+  --elegido: #1E2229;
+  --bien: #0E7C6B;
+  --bien-suave: #E1F2EE;
+  --espera: #8A5A00;
+  --espera-suave: #FBF0D9;
+  --mal: #B42318;
+  --mal-suave: #FDECEA;
+  --trabajando: #2457C5;
+  --trabajando-suave: #E6EDFB;
+  --f-titulo: "Archivo", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-texto: "Source Sans 3", "Helvetica Neue", Arial, system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --papel: #12151A; --superficie: #1B2028; --tinta: #E9ECF0; --tinta-suave: #A2AAB5; --linea: #2E3540;
+    --pizarra: #2A2F38; --degradado: linear-gradient(135deg, #3E4450 0%, #2A2F38 55%, #1E2229 100%);
+    --boton: #E9ECF0; --sobre-boton: #12151A; --elegido: #E9ECF0;
+    --bien: #4CC3AE; --bien-suave: #133029; --espera: #F0B64A; --espera-suave: #33270E;
+    --mal: #F97066; --mal-suave: #3A1715; --trabajando: #7FA6FF; --trabajando-suave: #17233F;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--papel); color: var(--tinta); font-family: var(--f-texto); font-size: 17px; line-height: 1.5; }
+h1, h2, h3 { font-family: var(--f-titulo); margin: 0; line-height: 1.15; text-wrap: balance; }
+p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+.centro { max-width: 46rem; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+
+/* Marca */
+.barra { background: var(--degradado); background-color: var(--pizarra); color: var(--sobre-pizarra); padding-top: env(safe-area-inset-top); }
+.barra .centro { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 18px; flex-wrap: wrap; }
+.marca { display: inline-flex; align-items: center; gap: 0.6em; font-size: 22px; line-height: 1; color: var(--sobre-pizarra); }
+.marca svg { width: 1.55em; height: 1.55em; flex: none; }
+.marca .palabra { font-family: var(--f-titulo); font-weight: 800; font-stretch: 125%; letter-spacing: 0.04em; }
+.marca .contorno { color: transparent; -webkit-text-stroke: 0.06em var(--sobre-pizarra); }
+.quien { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+.quien button { background: transparent; border: 1px solid rgba(255,255,255,0.5); color: var(--sobre-pizarra); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+
+main { padding-block: 24px 64px; display: grid; gap: 24px; }
+.tarjeta { background: var(--superficie); border: 1px solid var(--linea); border-radius: 16px; padding: 20px; display: grid; gap: 18px; }
+.tarjeta > h2 { font-size: 24px; font-weight: 800; }
+.ayuda { color: var(--tinta-suave); font-size: 15px; }
+label.titulo, .titulo { font-weight: 700; display: block; margin-bottom: 8px; }
+.campo { display: grid; gap: 0; }
+input[type=text], input[type=password], textarea, select {
+  width: 100%; border: 1.5px solid var(--linea); border-radius: 12px; background: var(--papel); padding: 14px; font-size: 17px;
+}
+textarea { min-height: 90px; resize: vertical; }
+input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, .archivo:focus-within { outline: 3px solid var(--trabajando); outline-offset: 2px; }
+
+/* Botones grandes */
+.boton { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; padding: 0 24px; border-radius: 14px; border: 0; background: var(--boton); color: var(--sobre-boton); font-weight: 700; font-size: 18px; cursor: pointer; text-decoration: none; }
+.boton.ancho { width: 100%; }
+.boton.suave { background: transparent; color: var(--tinta); border: 1.5px solid var(--linea); min-height: 48px; font-size: 16px; }
+.boton[disabled] { opacity: 0.5; cursor: wait; }
+
+/* Elegir archivo */
+.archivo { position: relative; border: 2px dashed var(--linea); border-radius: 14px; padding: 22px; text-align: center; background: var(--papel); cursor: pointer; }
+.archivo input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.archivo strong { display: block; font-size: 19px; }
+.archivo.lleno { border-style: solid; border-color: var(--bien); background: var(--bien-suave); }
+
+/* Opciones como botones */
+.opciones { display: flex; flex-wrap: wrap; gap: 10px; }
+.opciones label { position: relative; }
+.opciones input { position: absolute; opacity: 0; inset: 0; }
+.opciones span { display: inline-flex; align-items: center; min-height: 48px; padding: 0 18px; border-radius: 999px; border: 1.5px solid var(--linea); background: var(--papel); font-weight: 600; cursor: pointer; }
+.opciones input:checked + span { background: var(--elegido); color: var(--sobre-boton); border-color: var(--elegido); }
+.opciones input:focus-visible + span { outline: 3px solid var(--trabajando); outline-offset: 2px; }
+
+.barra-progreso { height: 10px; border-radius: 999px; background: var(--linea); overflow: hidden; }
+.barra-progreso div { height: 100%; width: 0; background: var(--bien); }
+.aviso { border-radius: 12px; padding: 12px 14px; font-size: 16px; }
+.aviso.mal { background: var(--mal-suave); color: var(--mal); }
+.aviso.bien { background: var(--bien-suave); color: var(--bien); }
+
+/* Mis videos */
+.lista { display: grid; gap: 14px; }
+.video { border: 1px solid var(--linea); border-radius: 14px; padding: 16px; display: grid; gap: 12px; background: var(--superficie); }
+.video .cabeza { display: flex; justify-content: space-between; align-items: start; gap: 10px; flex-wrap: wrap; }
+.video h3 { font-size: 18px; font-weight: 700; word-break: break-word; }
+.video .detalle { color: var(--tinta-suave); font-size: 14px; }
+.estado { font-weight: 700; font-size: 14px; padding: 4px 12px; border-radius: 999px; white-space: nowrap; }
+.estado.listo { background: var(--bien-suave); color: var(--bien); }
+.estado.en-cola, .estado.subiendo { background: var(--espera-suave); color: var(--espera); }
+.estado.editando, .estado.revisando, .estado.exportando { background: var(--trabajando-suave); color: var(--trabajando); }
+.estado.problema { background: var(--mal-suave); color: var(--mal); }
+.pasos { display: flex; gap: 6px; }
+.pasos i { flex: 1; height: 6px; border-radius: 999px; background: var(--linea); }
+.pasos i.hecho { background: var(--bien); }
+.pasos i.ahora { background: var(--trabajando); }
+.version { border-top: 1px solid var(--linea); padding-top: 12px; display: grid; gap: 10px; }
+.version video { width: 100%; max-height: 70vh; border-radius: 12px; background: #000; }
+.descargas { display: flex; flex-wrap: wrap; gap: 8px; }
+.cambios { display: grid; gap: 8px; }
+details summary { cursor: pointer; font-weight: 700; padding: 6px 0; }
+.vacio { text-align: center; color: var(--tinta-suave); padding: 18px; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--linea); }
+.tabla { overflow-x: auto; }
+.pestanas { display: flex; gap: 8px; }
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: no-preference) { .barra-progreso div { transition: width 0.3s; } }
+</style>
+</head>
+<body>
+<header class="barra">
+  <div class="centro">
+    <span class="marca" role="img" aria-label="ByDzyne">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="21.5" fill="none" stroke="currentColor" stroke-width="3.5"/><path d="M17 13.5h9.2a5.3 5.3 0 0 1 0 10.6H17zM17 24.1h10.4a5.2 5.2 0 0 1 0 10.4H17z" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round"/><path d="M21.5 18.6h4.4M21.5 29.3h5.4" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+      <span class="palabra"><span class="contorno">BY</span>DZYNE</span>
+    </span>
+    <div class="quien" id="quien" hidden>
+      <span id="nombre"></span>
+      <button id="salir" type="button">Salir</button>
+    </div>
+  </div>
+</header>
+
+<main class="centro">
+  <!-- Entrar -->
+  <section class="tarjeta" id="entrar" hidden>
+    <h2>Entra a tu cuenta</h2>
+    <p class="ayuda">Sube tu video grabado con el celular y recíbelo editado y listo para publicar.</p>
+    <div class="aviso mal" id="entrar-aviso" hidden></div>
+    <form id="form-entrar" class="tarjeta" style="border:0;padding:0">
+      <div class="campo"><label class="titulo" for="usuario">Usuario</label><input type="text" id="usuario" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
+      <div class="campo"><label class="titulo" for="clave">Contraseña</label><input type="password" id="clave" autocomplete="current-password" required></div>
+      <button class="boton ancho" type="submit">Entrar</button>
+    </form>
+  </section>
+
+  <!-- Subir -->
+  <section class="tarjeta" id="subir" hidden>
+    <h2>Subir un video</h2>
+    <form id="form-subir" class="tarjeta" style="border:0;padding:0">
+      <div class="campo">
+        <span class="titulo">1. Tu video</span>
+        <label class="archivo" id="caja-video">
+          <input type="file" id="video" accept="video/*" required>
+          <strong id="texto-video">Toca para elegir el video</strong>
+          <span class="ayuda">De la galería del celular o del computador</span>
+        </label>
+      </div>
+      <div class="campo">
+        <span class="titulo">2. ¿Qué tipo de video es?</span>
+        <div class="opciones" id="tipos"></div>
+      </div>
+      <div class="campo">
+        <span class="titulo">3. ¿Dónde lo vas a publicar?</span>
+        <div class="opciones" id="redes"></div>
+      </div>
+      <div class="campo" id="campo-estilo" hidden>
+        <label class="titulo" for="estilo">4. Estilo (colores y letras)</label>
+        <select id="estilo"></select>
+      </div>
+      <details>
+        <summary>Más opciones (fotos, llamada a la acción, notas)</summary>
+        <div class="tarjeta" style="border:0;padding:12px 0 0">
+          <div class="campo">
+            <span class="titulo">Fotos para mostrar en el video (opcional)</span>
+            <label class="archivo" id="caja-fotos">
+              <input type="file" id="fotos" accept="image/*" multiple>
+              <strong id="texto-fotos">Toca para elegir fotos</strong>
+              <span class="ayuda">Hasta 6: productos, capturas, logos</span>
+            </label>
+          </div>
+          <div class="campo">
+            <label class="titulo" for="cta">Llamada a la acción al final (opcional)</label>
+            <input type="text" id="cta" maxlength="200" placeholder="Por ejemplo: Escríbeme al WhatsApp">
+            <span class="ayuda">Si la dejas vacía, el video no lleva cierre.</span>
+          </div>
+          <div class="campo">
+            <label class="titulo" for="notas">Notas para la edición (opcional)</label>
+            <textarea id="notas" maxlength="1000" placeholder="Por ejemplo: quita la parte donde me equivoco al principio"></textarea>
+          </div>
+        </div>
+      </details>
+      <div class="aviso mal" id="subir-aviso" hidden></div>
+      <div id="progreso" hidden>
+        <p class="ayuda" id="progreso-texto">Subiendo…</p>
+        <div class="barra-progreso"><div id="progreso-barra"></div></div>
+      </div>
+      <button class="boton ancho" type="submit" id="boton-subir">Enviar a editar</button>
+    </form>
+  </section>
+
+  <!-- Mis videos -->
+  <section class="tarjeta" id="mis-videos" hidden>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <h2 id="titulo-lista">Mis videos</h2>
+      <div class="pestanas" id="pestanas-admin" hidden>
+        <button class="boton suave" type="button" id="ver-mios">Míos</button>
+        <button class="boton suave" type="button" id="ver-todos">De todos</button>
+      </div>
+    </div>
+    <div class="lista" id="lista"></div>
+  </section>
+
+  <!-- Personas (solo administración) -->
+  <section class="tarjeta" id="personas" hidden>
+    <h2>Personas</h2>
+    <p class="ayuda">Cada persona tiene su propia cuenta. Si entra desde otro equipo, la sesión anterior se cierra.</p>
+    <form id="form-persona" class="tarjeta" style="border:0;padding:0">
+      <div class="campo"><label class="titulo" for="p-usuario">Usuario</label><input type="text" id="p-usuario" autocapitalize="none" spellcheck="false" placeholder="maria.gomez" required></div>
+      <div class="campo"><label class="titulo" for="p-nombre">Nombre</label><input type="text" id="p-nombre" placeholder="María Gómez"></div>
+      <div class="campo"><label class="titulo" for="p-estilo">Estilo fijo</label><select id="p-estilo"></select></div>
+      <div class="aviso" id="persona-aviso" hidden></div>
+      <button class="boton" type="submit">Crear o dar clave nueva</button>
+    </form>
+    <div class="tabla"><table><thead><tr><th>Usuario</th><th>Nombre</th><th>Estilo</th><th>Videos</th><th></th></tr></thead><tbody id="tabla-personas"></tbody></table></div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let yo = null;
+let verTodos = false;
+let refresco = null;
+const abiertos = new Set();
+
+const api = async (ruta, opciones = {}) => {
+  const r = await fetch(ruta, {
+    ...opciones,
+    headers: { "X-ByDzyne": "1", ...(opciones.body && typeof opciones.body === "string" ? { "Content-Type": "application/json" } : {}), ...(opciones.headers || {}) },
+  });
+  const datos = await r.json().catch(() => ({}));
+  if (r.status === 401) { mostrarEntrar(datos.error); throw new Error(datos.error || "Entra de nuevo."); }
+  if (!r.ok) throw new Error(datos.error || "Algo falló. Intenta de nuevo.");
+  return datos;
+};
+const avisar = (el, texto, clase = "mal") => { el.textContent = texto; el.className = `aviso ${clase}`; el.hidden = !texto; };
+const fecha = (iso) => new Date(iso).toLocaleString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function mostrarEntrar(mensaje) {
+  clearInterval(refresco);
+  yo = null;
+  for (const id of ["subir", "mis-videos", "personas", "quien"]) $(id).hidden = true;
+  $("entrar").hidden = false;
+  avisar($("entrar-aviso"), mensaje && mensaje !== "Entra con tu usuario y contraseña." ? mensaje : "");
+}
+
+async function iniciar() {
+  try { yo = await api("/api/yo"); } catch { return; }
+  $("entrar").hidden = true;
+  $("quien").hidden = false;
+  $("nombre").textContent = yo.nombre;
+  $("subir").hidden = false;
+  $("mis-videos").hidden = false;
+  $("tipos").innerHTML = Object.entries(yo.tipos).map(([k, v], i) => `<label><input type="radio" name="tipo" value="${k}" ${i === 0 ? "checked" : ""}><span>${esc(v)}</span></label>`).join("");
+  $("redes").innerHTML = Object.entries(yo.redes).map(([k, v], i) => `<label><input type="radio" name="red" value="${k}" ${i === 0 ? "checked" : ""}><span>${esc(v)}</span></label>`).join("");
+  $("campo-estilo").hidden = Boolean(yo.estiloFijo);
+  $("estilo").innerHTML = yo.estilos.map((e) => `<option value="${esc(e)}">${esc(e === "predeterminado" ? "Predeterminado" : e)}</option>`).join("");
+  $("pestanas-admin").hidden = !yo.admin;
+  $("personas").hidden = !yo.admin;
+  if (yo.admin) cargarPersonas();
+  await cargarVideos();
+  clearInterval(refresco);
+  refresco = setInterval(cargarVideos, 5000);
+}
+
+$("form-entrar").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  try {
+    await api("/api/entrar", { method: "POST", body: JSON.stringify({ usuario: $("usuario").value, clave: $("clave").value }) });
+    $("clave").value = "";
+    iniciar();
+  } catch (err) { avisar($("entrar-aviso"), err.message); }
+});
+$("salir").addEventListener("click", async () => { await api("/api/salir", { method: "POST" }).catch(() => {}); mostrarEntrar(); });
+
+// ---------- Subir ----------
+$("video").addEventListener("change", () => {
+  const f = $("video").files[0];
+  $("texto-video").textContent = f ? `✓ ${f.name} (${(f.size / 1e6).toFixed(0)} MB)` : "Toca para elegir el video";
+  $("caja-video").classList.toggle("lleno", Boolean(f));
+});
+$("fotos").addEventListener("change", () => {
+  const n = $("fotos").files.length;
+  $("texto-fotos").textContent = n ? `✓ ${n} foto${n > 1 ? "s" : ""}` : "Toca para elegir fotos";
+  $("caja-fotos").classList.toggle("lleno", n > 0);
+});
+
+const subirArchivo = (id, archivo, clase, alAvanzar) => new Promise((resolve, reject) => {
+  const x = new XMLHttpRequest();
+  x.open("PUT", `/api/trabajos/${id}/archivo?clase=${clase}&nombre=${encodeURIComponent(archivo.name)}`);
+  x.setRequestHeader("X-ByDzyne", "1");
+  x.upload.onprogress = (e) => e.lengthComputable && alAvanzar(e.loaded / e.total);
+  x.onload = () => {
+    let datos = {};
+    try { datos = JSON.parse(x.responseText); } catch {}
+    x.status < 300 ? resolve() : reject(new Error(datos.error || "No se pudo subir el archivo."));
+  };
+  x.onerror = () => reject(new Error("Se cortó la conexión. Revisa el wifi e intenta de nuevo."));
+  x.send(archivo);
+});
+
+$("form-subir").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const video = $("video").files[0];
+  if (!video) return avisar($("subir-aviso"), "Elige el video primero.");
+  const fotos = [...$("fotos").files];
+  if (fotos.length > 6) return avisar($("subir-aviso"), "Puedes subir hasta 6 fotos.");
+  avisar($("subir-aviso"), "");
+  $("boton-subir").disabled = true;
+  $("progreso").hidden = false;
+  try {
+    const { id } = await api("/api/trabajos", {
+      method: "POST",
+      body: JSON.stringify({
+        tipo: document.querySelector("input[name=tipo]:checked").value,
+        red: document.querySelector("input[name=red]:checked").value,
+        estilo: $("estilo").value,
+        cta: $("cta").value,
+        notas: $("notas").value,
+        nombreVideo: video.name,
+        fotos: fotos.map((f) => f.name),
+      }),
+    });
+    const total = video.size + fotos.reduce((t, f) => t + f.size, 0);
+    let hecho = 0;
+    const avanzar = (base, tamano) => (p) => {
+      const pct = Math.round(((base + p * tamano) / total) * 100);
+      $("progreso-barra").style.width = `${pct}%`;
+      $("progreso-texto").textContent = `Subiendo… ${pct} %`;
+    };
+    await subirArchivo(id, video, "video", avanzar(0, video.size));
+    hecho = video.size;
+    for (const f of fotos) { await subirArchivo(id, f, "foto", avanzar(hecho, f.size)); hecho += f.size; }
+    await api(`/api/trabajos/${id}/enviar`, { method: "POST" });
+    $("form-subir").reset();
+    $("video").dispatchEvent(new Event("change"));
+    $("fotos").dispatchEvent(new Event("change"));
+    avisar($("subir-aviso"), "¡Recibido! Tu video ya está en la cola. Aquí abajo ves cómo va.", "bien");
+    abiertos.add(id);
+    cargarVideos();
+  } catch (err) {
+    avisar($("subir-aviso"), err.message);
+  } finally {
+    $("boton-subir").disabled = false;
+    $("progreso").hidden = true;
+    $("progreso-barra").style.width = "0";
+  }
+});
+
+// ---------- Mis videos ----------
+const ORDEN = ["en-cola", "editando", "revisando", "exportando", "listo"];
+
+function tarjetaVideo(t) {
+  const paso = ORDEN.indexOf(t.estado);
+  const pasos = ORDEN.slice(1).map((_, i) => `<i class="${paso > i + 1 || t.estado === "listo" ? "hecho" : paso === i + 1 ? "ahora" : ""}"></i>`).join("");
+  const trabajando = ["en-cola", "editando", "revisando", "exportando"].includes(t.estado);
+  const versiones = [...t.versiones].reverse().map((v, i) => `
+    <div class="version">
+      <p><strong>Versión ${v.n}</strong> · ${fecha(v.fecha)}${v.pedido ? ` · pediste: “${esc(v.pedido)}”` : ""}</p>
+      ${v.resumen ? `<p class="ayuda">${esc(v.resumen)}</p>` : ""}
+      ${i === 0 ? `<video controls playsinline preload="metadata" src="/api/trabajos/${t.id}/archivo?nombre=${encodeURIComponent(v.archivos[0].archivo)}"></video>` : ""}
+      <div class="descargas">${v.archivos.map((a) => `<a class="boton ${i === 0 ? "" : "suave"}" href="/api/trabajos/${t.id}/archivo?nombre=${encodeURIComponent(a.archivo)}&descargar=1">Descargar ${esc(a.red)} <small>(${a.megas} MB)</small></a>`).join("")}</div>
+    </div>`).join("");
+  return `
+    <article class="video" data-id="${t.id}">
+      <div class="cabeza">
+        <div>
+          <h3>${esc(t.nombre)}</h3>
+          <p class="detalle">${esc(t.tipo)} · ${esc(t.red)} · ${fecha(t.creado)}${t.usuario ? ` · <strong>${esc(t.usuario)}</strong>${t.costo ? ` · ≈ ${t.costo} USD` : ""}` : ""}</p>
+        </div>
+        <span class="estado ${t.estado}">${esc(t.estadoTexto)}</span>
+      </div>
+      ${trabajando ? `<div class="pasos" aria-hidden="true">${pasos}</div><p class="ayuda">${esc(t.enCola ? (t.enCola === 1 ? "Eres el siguiente." : `Hay ${t.enCola - 1} video${t.enCola > 2 ? "s" : ""} antes que el tuyo.`) : t.paso)}${t.pedidoEnCurso ? ` · Cambio: “${esc(t.pedidoEnCurso)}”` : ""}</p>` : ""}
+      ${t.error ? `<div class="aviso mal">${esc(t.error)}</div>` : ""}
+      ${t.estado === "problema" ? `<button class="boton suave" type="button" data-accion="reintentar">Intentar de nuevo</button>` : ""}
+      ${versiones}
+      ${t.estado === "listo" ? `
+        <details class="cambios" ${abiertos.has(t.id + "-c") ? "open" : ""} data-cambios>
+          <summary>Pedir cambios</summary>
+          <textarea placeholder="Escribe qué cambiar. Por ejemplo: quita el inicio, otro gancho, sin música" maxlength="600"></textarea>
+          <button class="boton" type="button" data-accion="cambios">Enviar cambios</button>
+        </details>` : ""}
+      ${!trabajando ? `<button class="boton suave" type="button" data-accion="borrar" style="justify-self:start">Borrar</button>` : ""}
+    </article>`;
+}
+
+async function cargarVideos() {
+  // No redibujar mientras alguien escribe un pedido de cambios o mira un video.
+  const activo = document.activeElement;
+  if (activo && activo.closest(".video") && (activo.tagName === "TEXTAREA" || activo.tagName === "VIDEO")) return;
+  if ([...document.querySelectorAll(".video video")].some((v) => !v.paused)) return;
+  let datos;
+  try { datos = await api(`/api/trabajos${verTodos ? "?todos=1" : ""}`); } catch { return; }
+  $("titulo-lista").textContent = verTodos ? "Videos de todos" : "Mis videos";
+  $("lista").innerHTML = datos.trabajos.length ? datos.trabajos.map(tarjetaVideo).join("") : `<p class="vacio">Todavía no has subido videos.</p>`;
+}
+
+$("lista").addEventListener("toggle", (e) => {
+  const art = e.target.closest(".video");
+  if (art && e.target.matches("[data-cambios]")) e.target.open ? abiertos.add(art.dataset.id + "-c") : abiertos.delete(art.dataset.id + "-c");
+}, true);
+
+$("lista").addEventListener("click", async (e) => {
+  const boton = e.target.closest("button[data-accion]");
+  if (!boton) return;
+  const art = boton.closest(".video");
+  const id = art.dataset.id;
+  const accion = boton.dataset.accion;
+  try {
+    if (accion === "cambios") {
+      const pedido = art.querySelector("textarea").value;
+      boton.disabled = true;
+      await api(`/api/trabajos/${id}/cambios`, { method: "POST", body: JSON.stringify({ pedido }) });
+      abiertos.delete(id + "-c");
+    } else if (accion === "reintentar") {
+      await api(`/api/trabajos/${id}/reintentar`, { method: "POST" });
+    } else if (accion === "borrar") {
+      if (boton.dataset.seguro !== "1") { boton.dataset.seguro = "1"; boton.textContent = "Toca otra vez para borrar"; return; }
+      await api(`/api/trabajos/${id}`, { method: "DELETE" });
+    }
+    cargarVideos();
+  } catch (err) {
+    boton.disabled = false;
+    const aviso = document.createElement("div");
+    aviso.className = "aviso mal";
+    aviso.textContent = err.message;
+    boton.after(aviso);
+  }
+});
+
+$("ver-mios").addEventListener("click", () => { verTodos = false; cargarVideos(); });
+$("ver-todos").addEventListener("click", () => { verTodos = true; cargarVideos(); });
+
+// ---------- Personas ----------
+function pintarPersonas(datos) {
+  $("p-estilo").innerHTML = `<option value="">Puede elegir</option>` + datos.estilos.map((e) => `<option value="${esc(e)}">${esc(e)}</option>`).join("");
+  $("tabla-personas").innerHTML = datos.personas.map((p) => `
+    <tr><td>${esc(p.usuario)}${p.admin ? " (admin)" : ""}</td><td>${esc(p.nombre)}</td><td>${esc(p.estilo || "Puede elegir")}</td><td>${p.videos}</td>
+    <td>${p.admin ? "" : `<button class="boton suave" type="button" data-borrar="${esc(p.usuario)}">Borrar</button>`}</td></tr>`).join("");
+}
+async function cargarPersonas() { try { pintarPersonas(await api("/api/personas")); } catch {} }
+$("form-persona").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  try {
+    const r = await api("/api/personas", { method: "POST", body: JSON.stringify({ usuario: $("p-usuario").value, nombre: $("p-nombre").value, estilo: $("p-estilo").value }) });
+    avisar($("persona-aviso"), `Listo. Usuario: ${r.usuario} · Contraseña: ${r.clave} (cópiala ahora: no se vuelve a mostrar).`, "bien");
+    $("form-persona").reset();
+    const estilos = [...$("p-estilo").options].slice(1).map((o) => o.value);
+    pintarPersonas({ personas: r.personas, estilos });
+  } catch (err) { avisar($("persona-aviso"), err.message); }
+});
+$("tabla-personas").addEventListener("click", async (e) => {
+  const b = e.target.closest("button[data-borrar]");
+  if (!b) return;
+  if (b.dataset.seguro !== "1") { b.dataset.seguro = "1"; b.textContent = "¿Seguro?"; return; }
+  try { const r = await api(`/api/personas?usuario=${encodeURIComponent(b.dataset.borrar)}`, { method: "DELETE" }); cargarPersonas(); } catch (err) { avisar($("persona-aviso"), err.message); }
+});
+
+iniciar();
+</script>
+</body>
+</html>

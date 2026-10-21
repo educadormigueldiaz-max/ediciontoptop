@@ -13,6 +13,8 @@ public/imagenes/*
 !public/imagenes/.gitkeep
 public/musica/*
 !public/musica/.gitkeep
+# Piloto automático: videos, cuentas y resultados de otras personas
+/piloto/
 
 # Estilos de los clientes: son de cada quien (solo se sube el ejemplo)
 estilos/*

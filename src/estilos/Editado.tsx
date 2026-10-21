@@ -9,7 +9,7 @@ import {
 } from "remotion";
 import { z } from "zod";
 import { Cierre } from "../componentes/Cierre";
-import { Gancho } from "../componentes/Gancho";
+import { Gancho, colocarGancho } from "../componentes/Gancho";
 import { Subtitulos } from "../componentes/Subtitulos";
 import { VideoEncuadrado } from "../componentes/VideoEncuadrado";
 import {
@@ -159,6 +159,13 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
     ...escenas,
     ...recortes.filter((r) => r.elemento.tipo !== "fondo"),
   ].map((e) => [e.desdeFrame, e.desdeFrame + e.duracionFrames] as const);
+  // Gancho y cara de los primeros segundos: si el gancho no cabe encima de la cara, va debajo y
+  // los subtítulos se ocultan mientras dura.
+  const framesGancho = Math.round(opciones.duracionGancho * fps);
+  const caraGancho = opciones.gancho ? caraEntre(0, framesGancho) : null;
+  if (opciones.gancho && colocarGancho({ texto: opciones.gancho, width, height, cara: caraGancho }).debajo) {
+    sinSubtitulos.push([0, framesGancho]);
+  }
 
   const { marca } = buscarEstilo(edicion.estilo);
 
@@ -220,14 +227,8 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
         ) : null}
 
         {opciones.gancho ? (
-          <Sequence
-            durationInFrames={Math.round(opciones.duracionGancho * fps)}
-            name="Gancho"
-          >
-            <Gancho
-              texto={opciones.gancho}
-              duracionFrames={Math.round(opciones.duracionGancho * fps)}
-            />
+          <Sequence durationInFrames={framesGancho} name="Gancho">
+            <Gancho texto={opciones.gancho} duracionFrames={framesGancho} cara={caraGancho} />
           </Sequence>
         ) : null}
 

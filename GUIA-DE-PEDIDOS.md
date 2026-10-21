@@ -3,6 +3,40 @@
 Copia el pedido, cambia lo que está entre `<…>` y pégalo en Claude Code.
 Abre Claude Code dentro de la carpeta del proyecto (`cd ediciontoptop` y luego `claude`).
 
+## Si solo subes videos (sin Terminal ni Claude)
+
+Te dieron una dirección (por ejemplo `http://192.168.1.23:8080`), un usuario y una contraseña.
+
+1. **Entra** desde el celular o el computador. Tienes que estar en el mismo wifi que la Mac de ByDzyne.
+2. **Sube tu video**: toca *Toca para elegir el video* y escoge el de tu galería.
+3. **Elige** qué tipo de video es (reel, anuncio, tutorial o testimonio) y dónde lo vas a publicar.
+4. **Opcional** (en *Más opciones*):
+   - **Fotos** para mostrar en el video, por ejemplo un producto o una captura.
+   - **Llamada a la acción** del final ("Escríbeme al WhatsApp"). Si la dejas vacía, no hay cierre.
+   - **Notas** para la edición ("quita la parte donde me equivoco").
+5. Toca **Enviar a editar**. En *Mis videos* ves cómo va: *En cola* → *Editando* → *Revisando* →
+   *Exportando* → *Listo*. Puedes cerrar la página y volver después.
+6. Cuando diga **Listo**, míralo ahí mismo y toca **Descargar**.
+7. ¿Algo no te gustó? Toca **Pedir cambios** y escríbelo con tus palabras:
+   - "Quita el inicio".
+   - "Pon otro gancho".
+   - "Más corto".
+   - "Corrige el nombre: es Dzyne, no Diseñ".
+   - "Sin gráficos".
+
+   Llega una versión nueva y las anteriores se guardan.
+
+Bueno saber:
+- **Tu cuenta es solo tuya.** Si entras desde otro equipo, se cierra la sesión anterior.
+- **Graba con buena luz**, el celular quieto y sin ruido de fondo: los subtítulos salen mejor.
+- **Si dice "Con problema"**, lee el mensaje. Muchas veces basta con tocar *Intentar de nuevo* o
+  subir el video otra vez.
+- **El video no promete lo que no dijiste.** No se inventan cifras ni resultados. Si en el video
+  dices algo riesgoso (ingresos o salud), te avisa.
+
+**Para quien administra:** `npm run piloto` enciende la página. Las cuentas se crean en la sección
+*Personas* (entrando como `admin`) o con `npm run piloto -- --usuario <nombre>`.
+
 ---
 
 ## 1. Prepara

@@ -25,6 +25,8 @@ animaciones con [Remotion](https://www.remotion.dev); tú revisas en el navegado
 - **Estilos por cliente**: los colores y las fuentes de cada cliente en `estilos/<cliente>.json`.
 - **Trabajo en lote**: prepara y revisa todos los videos nuevos de una vez y te dice cuáles mirar.
 - **Exportar por red social**: WhatsApp (liviano), Instagram, TikTok y YouTube, con nombres claros.
+- **Piloto automático**: una página con usuario y contraseña donde cualquiera sube su video desde el
+  celular y lo recibe editado, sin Terminal y sin hablar con Claude. Puede pedir cambios escribiendo.
 - **Tu cara nunca se tapa**: el programa detecta dónde está, acomoda textos y gráficos alrededor
   y ajusta el recorte para que siempre quede en cuadro.
 - **Variaciones** de un mismo video para probar anuncios.
@@ -76,6 +78,32 @@ Cuando haya mejoras nuevas, dentro de la carpeta del proyecto:
 npm run actualizar
 ```
 
+## Piloto automático (para quienes solo suben videos)
+
+```bash
+npm run piloto
+```
+
+Enciende una página en esta Mac. La Terminal muestra la dirección para abrirla aquí
+(http://localhost:8080) y desde otros equipos o celulares conectados al mismo wifi.
+
+- **La primera vez** crea la cuenta `admin` y muestra su contraseña (guárdala).
+- **Crear una cuenta** para alguien: en la página (sección *Personas*, solo admin) o con
+  `npm run piloto -- --usuario maria.gomez --nombre "María Gómez"`. Con `--estilo <cliente>` esa
+  persona siempre usa el estilo de ese cliente. La contraseña se muestra una sola vez.
+- **Una sesión por persona**: si alguien entra con la misma cuenta desde otro equipo, la sesión
+  anterior se cierra. Así cada quien necesita su propia cuenta.
+- **Qué hace con cada video**, uno a la vez: cortes y subtítulos → Claude decide gancho y pocos
+  gráficos (skill `bydzyne-piloto`) → revisa los cuadros y corrige → exporta para la red elegida.
+- **Mientras edita**, la Mac no se duerme. Si un video falla, los demás siguen y la página explica
+  el problema en palabras simples. Todo queda anotado en `piloto/` (no se sube a git).
+- **Que arranque solo al prender la Mac**: `npm run piloto -- --al-iniciar` (para quitarlo:
+  `--no-iniciar`).
+- **Tope de gasto**: cada paso de edición con Claude se detiene si pasa de 2 USD
+  (`npm run piloto -- --tope 1` lo cambia).
+- Usa la cuenta de Claude Code con la que entraste en esta Mac. Para un servicio a otras
+  personas o empresas, usa una clave de API (console.anthropic.com), no una suscripción personal.
+
 ## Comandos (si prefieres hacerlo sin Claude)
 
 | Comando | Qué hace |
@@ -89,6 +117,7 @@ npm run actualizar
 | `npm run revisar -- <proyecto>` | Saca cuadros de revisión a `salida/revision/` |
 | `npm run caras -- <proyecto>` | Vuelve a buscar dónde está la cara |
 | `npm run recortar -- <proyecto>` | Separa a la persona del fondo donde haga falta |
+| `npm run piloto` | Enciende la página para subir videos y recibirlos editados |
 
 ## Carpetas
 
@@ -108,6 +137,7 @@ src/estilos/             Composiciones: video editado y muestras
 .claude/skills/          Criterio de edición que usa Claude Code
 plantillas/              Brief y ficha de revisión
 GUIA-DE-PEDIDOS.md       Pedidos listos para copiar
+piloto/                  Cuentas, videos subidos y resultados del piloto automático (no se suben a git)
 ```
 
 ## Personalizar el estilo

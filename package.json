@@ -43,6 +43,7 @@
     "revisar": "node scripts/revisar.mjs",
     "exportar": "node scripts/exportar.mjs",
     "lote": "node scripts/lote.mjs",
+    "piloto": "node scripts/piloto.mjs",
     "build": "remotion bundle",
     "upgrade": "remotion upgrade",
     "lint": "eslint src && tsc"
