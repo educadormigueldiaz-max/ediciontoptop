@@ -1,4 +1,4 @@
-# Guía de pedidos de TopTop Lab
+# Guía de pedidos de ByDzyne
 
 Copia el pedido, cambia lo que está entre `<…>` y pégalo en Claude Code.
 Abre Claude Code dentro de la carpeta del proyecto (`cd ediciontoptop` y luego `claude`).

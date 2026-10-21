@@ -1,6 +1,6 @@
 ---
-name: toptop-recorte
-description: Recorte de fondo en TopTop Lab - texto detrás de la persona (portada de revista), cambiar el fondo por un color, degradado o imagen, y persona saliendo de un marco (círculo o tarjeta) con lettering detrás. Úsala cuando pidan "texto detrás de mí", "quitar o cambiar el fondo", "fondo de color", "recortarme", "salir de un círculo o marco" o "estilo portada de revista".
+name: bydzyne-recorte
+description: Recorte de fondo en ByDzyne - texto detrás de la persona (portada de revista), cambiar el fondo por un color, degradado o imagen, y persona saliendo de un marco (círculo o tarjeta) con lettering detrás. Úsala cuando pidan "texto detrás de mí", "quitar o cambiar el fondo", "fondo de color", "recortarme", "salir de un círculo o marco" o "estilo portada de revista".
 ---
 
 # Recorte de fondo
@@ -58,7 +58,7 @@ cabeza asoma por arriba, con una frase opcional detrás.
 - "Ponle algo tipo revista" sin más detalles: un `detras` con la frase más fuerte y, si el video
   es largo, un `marco` en el cierre. Explica qué pusiste.
 - **Sonido**: cada recorte entra con un whoosh; `"sonido": false` lo apaga en ese elemento
-  (`toptop-produccion`).
+  (`bydzyne-produccion`).
 - Los colores de `fondo` y `marco` salen del estilo del video (`src/marca.ts` o el del cliente
   en `estilos/`).
 

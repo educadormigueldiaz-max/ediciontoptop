@@ -90,7 +90,7 @@ actualizarListaDeProyectos();
 const carpeta = path.join(CARPETA_SALIDA, "revision", id);
 fs.rmSync(carpeta, { recursive: true, force: true });
 fs.mkdirSync(carpeta, { recursive: true });
-const props = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "toptop-")), "props.json");
+const props = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "bydzyne-")), "props.json");
 fs.writeFileSync(props, JSON.stringify({ proyecto: id, formato: op.formato ?? null }));
 const remotion = path.join(RAIZ, "node_modules", ".bin", "remotion");
 const puerto = await puertoLibre();

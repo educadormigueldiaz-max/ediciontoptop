@@ -1,12 +1,12 @@
 ---
-name: toptop-estilo
+name: bydzyne-estilo
 description: Estilo visual y tono de los videos (colores, fuente, ganchos, cierres y textos en pantalla). Úsala para cualquier texto que aparezca en el video, al crear ganchos o cierres, o cuando pidan cambiar colores o fuente.
 ---
 
 # Estilo visual y tono
 
 ## Regla fija
-TopTop Lab es la herramienta con la que se edita: **su nombre y su logo nunca aparecen en un
+ByDzyne es la herramienta con la que se edita: **su nombre y su logo nunca aparecen en un
 video** (ni en ganchos, cierres, listas, lettering ni marcas de agua). Si alguien lo pide,
 confirma antes, porque va contra esta regla.
 
@@ -15,7 +15,7 @@ confirma antes, porque va contra esta regla.
   videos que no tienen un estilo de cliente.
 - `estilos/<cliente>.json`: estilo de un cliente; el video lo elige con `"estilo": "<cliente>"`
   en `edicion.json`. "Los colores de este cliente" se cambian ahí, no en `src/marca.ts`.
-  Formato y criterio en la skill `toptop-produccion`.
+  Formato y criterio en la skill `bydzyne-produccion`.
 - Otra fuente: copia los `.woff2` o `.ttf` a `public/fuentes/` (con su licencia) y nómbrala en el
   estilo del cliente, o cambia la carga en `marca.ts` para el predeterminado.
 - No uses colores sueltos en los componentes: siempre `const marca = useMarca()` y

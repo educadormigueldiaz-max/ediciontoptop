@@ -1,6 +1,6 @@
 ---
-name: toptop-composicion
-description: Criterio de encuadre y composición para TopTop Lab (zonas seguras por red social, tamaños de texto, recorte de horizontal a vertical, foco visual). Úsala al cambiar el formato, el encuadre, posiciones de textos o al diseñar cualquier escena nueva.
+name: bydzyne-composicion
+description: Criterio de encuadre y composición para ByDzyne (zonas seguras por red social, tamaños de texto, recorte de horizontal a vertical, foco visual). Úsala al cambiar el formato, el encuadre, posiciones de textos o al diseñar cualquier escena nueva.
 ---
 
 # Composición

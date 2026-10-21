@@ -1,4 +1,4 @@
-// Utilidades compartidas por los scripts de TopTop Lab.
+// Utilidades compartidas por los scripts de ByDzyne.
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";

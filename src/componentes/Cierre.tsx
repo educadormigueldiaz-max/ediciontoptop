@@ -1,7 +1,7 @@
 import { AbsoluteFill, Easing, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { useMarca } from "../edicion/estilos";
 
-// Tarjeta final con una llamada a la acción (sin nombre ni logo de TopTop Lab).
+// Tarjeta final con una llamada a la acción (sin nombre ni logo de ByDzyne).
 export const Cierre: React.FC<{ texto: string }> = ({ texto }) => {
   const marca = useMarca();
   const frame = useCurrentFrame();

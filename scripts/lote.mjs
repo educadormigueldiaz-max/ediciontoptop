@@ -48,7 +48,7 @@ const normalizar = (t) =>
 
 // Nivel de la voz (dB) en las partes que se conservan: avisa si está muy bajo o satura.
 const nivelDeVoz = (edicion) => {
-  const wav = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "toptop-")), "voz.wav");
+  const wav = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "bydzyne-")), "voz.wav");
   try {
     ffmpeg(["-y", "-i", path.join(RAIZ, "public", edicion.video), "-vn", "-ac", "1", "-ar", "8000", "-c:a", "pcm_s16le", wav]);
     // Las muestras están en el bloque "data" del WAV.

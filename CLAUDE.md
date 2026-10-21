@@ -1,4 +1,4 @@
-# TopTop Lab — instrucciones para Claude Code
+# ByDzyne — instrucciones para Claude Code
 
 Este proyecto edita videos con Remotion. La persona que lo usa **no es editora ni programadora**:
 pide en español lo que quiere ver ("corta las pausas y pon subtítulos") y tú haces la edición.
@@ -45,7 +45,7 @@ pide en español lo que quiere ver ("corta las pausas y pon subtítulos") y tú 
 Tiempos en **segundos del video original**. El esquema está en `src/edicion/esquema.ts`.
 
 - `estilo`: colores y fuentes. `"predeterminado"` (`src/marca.ts`) o el nombre de un cliente con
-  archivo en `estilos/<cliente>.json` (skill `toptop-produccion`).
+  archivo en `estilos/<cliente>.json` (skill `bydzyne-produccion`).
 - `musica`: `{ "archivo": "musica/cancion.mp3", "volumen": 0.25, "alHablar": 0.3, "desde": 0 }` o
   null. La canción va en `public/musica/`. Baja sola cuando la persona habla.
 
@@ -67,10 +67,10 @@ Tiempos en **segundos del video original**. El esquema está en `src/edicion/esq
 - `enfasis`: acercamientos en momentos clave, `[{ "inicio": 12.3, "fin": 13.1, "zoom": 1.15 }]`.
   Para "haz zoom cuando digo X", usa el `inicio` y `fin` de esa palabra en `palabras`.
 - `elementos`: gráficos sobre el video: `lista` (motion explicativo), `lettering`, `icono` e
-  `imagen` (skill `toptop-elementos`), y escenas 3D: `capas`, `perspectiva`, `tutorial` y
-  `objeto3d` (skill `toptop-3d`), y recorte de fondo: `detras` (texto detrás de la persona),
+  `imagen` (skill `bydzyne-elementos`), y escenas 3D: `capas`, `perspectiva`, `tutorial` y
+  `objeto3d` (skill `bydzyne-3d`), y recorte de fondo: `detras` (texto detrás de la persona),
   `fondo` (color, degradado o imagen) y `marco` (persona saliendo de un círculo o tarjeta)
-  (skill `toptop-recorte`). Las imágenes de la persona van en `public/imagenes/`.
+  (skill `bydzyne-recorte`). Las imágenes de la persona van en `public/imagenes/`.
 - `caras`: dónde está la cara en cada momento. Lo llena el programa; no se edita a mano.
 - `recorte`: qué momentos ya tienen a la persona separada del fondo. Lo llena el programa
   (`npm run recortar`, revisar o exportar); no se edita a mano.
@@ -80,8 +80,8 @@ Tiempos en **segundos del video original**. El esquema está en `src/edicion/esq
 
 - **La cara de la persona nunca se tapa.** Subtítulos y elementos se acomodan solos alrededor
   de ella. No uses imagen `pantalla-completa` ni lettering con `fondo: "color"` salvo que lo pidan.
-- **TopTop Lab nunca aparece en los videos**: ni su nombre ni un logo, en ningún texto, gancho
-  o cierre. TopTop Lab es la herramienta, no la marca de los videos.
+- **ByDzyne nunca aparece en los videos**: ni su nombre ni un logo, en ningún texto, gancho
+  o cierre. ByDzyne es la herramienta, no la marca de los videos.
 
 - **Nunca** ejecutes `preparar --forzar` sobre un proyecto existente sin preguntar: borra las
   ediciones hechas a mano.

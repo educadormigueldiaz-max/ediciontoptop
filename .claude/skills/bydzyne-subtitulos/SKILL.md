@@ -1,6 +1,6 @@
 ---
-name: toptop-subtitulos
-description: Criterio para los subtítulos de TopTop Lab (estilo, posición, corrección de palabras, nombres propios). Úsala cuando pidan subtítulos, corregir lo que dicen, moverlos o cambiar cómo se ven.
+name: bydzyne-subtitulos
+description: Criterio para los subtítulos de ByDzyne (estilo, posición, corrección de palabras, nombres propios). Úsala cuando pidan subtítulos, corregir lo que dicen, moverlos o cambiar cómo se ven.
 ---
 
 # Subtítulos
@@ -33,8 +33,8 @@ description: Criterio para los subtítulos de TopTop Lab (estilo, posición, cor
 - Cambia solo `palabras[i].texto` en `edicion.json`; no toques `inicio` ni `fin`.
 - Revisa siempre: nombres de personas, lugares, marcas o productos que se mencionen, precios,
   cifras, siglas y palabras en inglés.
-- Si una palabra quedó partida en dos entradas ("Top" + "Top"), únelas en una sola:
-  texto "TopTop", `inicio` de la primera, `fin` de la segunda, y borra la segunda.
+- Si una palabra quedó partida en dos entradas ("By" + "Dzyne"), únelas en una sola:
+  texto "ByDzyne", `inicio` de la primera, `fin` de la segunda, y borra la segunda.
 - Si Whisper juntó o separó mal varias palabras, puedes reescribir el texto de una entrada
   con varias palabras ("Top Lab"): se muestran juntas durante el tiempo de esa entrada.
 - Signos: deja `.`, `?` y `!` al final de las frases (cortan la página del subtítulo).

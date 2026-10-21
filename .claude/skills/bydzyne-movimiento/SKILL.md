@@ -1,6 +1,6 @@
 ---
-name: toptop-movimiento
-description: Criterio de animación y movimiento en Remotion para TopTop Lab (entradas, salidas, zooms, velocidad, curvas). Úsala al crear o modificar cualquier animación, componente nuevo o efecto de movimiento.
+name: bydzyne-movimiento
+description: Criterio de animación y movimiento en Remotion para ByDzyne (entradas, salidas, zooms, velocidad, curvas). Úsala al crear o modificar cualquier animación, componente nuevo o efecto de movimiento.
 ---
 
 # Movimiento

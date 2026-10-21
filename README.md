@@ -1,4 +1,4 @@
-# TopTop Lab
+# ByDzyne
 
 Edita videos pidiéndolo en español. Claude Code hace los cortes, los subtítulos y las
 animaciones con [Remotion](https://www.remotion.dev); tú revisas en el navegador y exportas.
@@ -112,7 +112,7 @@ GUIA-DE-PEDIDOS.md       Pedidos listos para copiar
 
 ## Personalizar el estilo
 
-El nombre y el logo de TopTop Lab **nunca** aparecen en los videos. Los colores y la fuente de
+El nombre y el logo de ByDzyne **nunca** aparecen en los videos. Los colores y la fuente de
 siempre se cambian en `src/marca.ts`; los de cada cliente, en `estilos/<cliente>.json` (copia
 `estilos/ejemplo.json`), o pídeselo a Claude: "crea el estilo de Panadería Luna con verde y
 crema". Las muestras **Muestra-Subtitulos**, **Muestra-Elementos**, **Muestra-3D**,

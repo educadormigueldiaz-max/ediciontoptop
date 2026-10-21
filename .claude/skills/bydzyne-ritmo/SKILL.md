@@ -1,6 +1,6 @@
 ---
-name: toptop-ritmo
-description: Criterio de ritmo y duración de los videos de TopTop Lab (cuánto cortar, pausas, tomas, duración ideal por tipo de video). Úsala al preparar un video, al cortar pausas o cuando pidan "más rápido", "más dinámico" o "más calmado".
+name: bydzyne-ritmo
+description: Criterio de ritmo y duración de los videos de ByDzyne (cuánto cortar, pausas, tomas, duración ideal por tipo de video). Úsala al preparar un video, al cortar pausas o cuando pidan "más rápido", "más dinámico" o "más calmado".
 ---
 
 # Ritmo
@@ -30,7 +30,7 @@ description: Criterio de ritmo y duración de los videos de TopTop Lab (cuánto 
 
 ## Los primeros 3 segundos
 - El video empieza en la primera palabra útil, nunca con "hola, ¿qué tal?" ni silencio.
-- Si los primeros segundos no enganchan, propone un `gancho` (ver `toptop-estilo`).
+- Si los primeros segundos no enganchan, propone un `gancho` (ver `bydzyne-estilo`).
 
 ## Tomas y errores
 - Quita tomas repetidas, frases abandonadas a la mitad y comentarios fuera de guion.

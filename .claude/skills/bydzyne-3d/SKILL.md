@@ -1,6 +1,6 @@
 ---
-name: toptop-3d
-description: Escenas 3D de TopTop Lab - montaje en capas 3D, perspectiva 3D, tutorial 3D (capturas en un celular o navegador) y 3D explicativo (objeto que gira con etiquetas). Úsala cuando pidan algo "en 3D", "en capas", "con profundidad", mostrar una app o página paso a paso, o explicar un objeto, producto o maqueta.
+name: bydzyne-3d
+description: Escenas 3D de ByDzyne - montaje en capas 3D, perspectiva 3D, tutorial 3D (capturas en un celular o navegador) y 3D explicativo (objeto que gira con etiquetas). Úsala cuando pidan algo "en 3D", "en capas", "con profundidad", mostrar una app o página paso a paso, o explicar un objeto, producto o maqueta.
 ---
 
 # Escenas 3D
@@ -56,14 +56,14 @@ etiquetas a los lados mientras se explica.
 - Las imágenes las pone la persona en `public/imagenes/`. Verifica que existan; si faltan, pídelas.
 - **Duración**: capas y perspectiva, 2.5–4 s. Tutorial, 2–4 s por paso. Objeto, 4–8 s.
 - **Densidad**: máximo una escena 3D cada 15–20 s. No pongas otros elementos (lista, ícono,
-  lettering, recortes de la skill `toptop-recorte`) al mismo tiempo que una escena 3D, ni
+  lettering, recortes de la skill `bydzyne-recorte`) al mismo tiempo que una escena 3D, ni
   durante el gancho.
 - Deja al menos 0.5 s de video normal entre dos escenas.
 - Los textos dicen lo mismo que la voz; no inventes datos.
 - "Hazlo en 3D" sin más detalles: apertura con `capas` usando el tema del video y una
   `perspectiva` con la frase más fuerte. Explica qué pusiste.
 - **Sonido**: cada escena entra con un whoosh; los pasos del tutorial hacen click y las
-  etiquetas del objeto 3D, pop. `"sonido": false` lo apaga en esa escena (`toptop-produccion`).
+  etiquetas del objeto 3D, pop. `"sonido": false` lo apaga en esa escena (`bydzyne-produccion`).
 
 ## Revisar
 `npm run revisar -- <id>` deja un cuadro de la mitad de cada escena. Verifica que la cara se vea

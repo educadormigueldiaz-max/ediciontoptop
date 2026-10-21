@@ -1,4 +1,4 @@
-# Brief de video — TopTop Lab
+# Brief de video — ByDzyne
 
 Llena lo que sepas; lo que dejes vacío lo decide Claude con las skills de edición.
 

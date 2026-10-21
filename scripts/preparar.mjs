@@ -132,7 +132,7 @@ if (!info.streams.some((s) => s.codec_type === "audio")) {
 
 // 2. Audio a 16 kHz mono, el formato que usa Whisper.
 paso(2, "Extrayendo el audio…");
-const wav = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "toptop-")), "audio.wav");
+const wav = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "bydzyne-")), "audio.wav");
 ffmpeg(["-y", "-i", video, "-vn", "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le", wav]);
 
 // 3. Transcripción.

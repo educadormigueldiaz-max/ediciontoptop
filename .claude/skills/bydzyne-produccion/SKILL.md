@@ -1,6 +1,6 @@
 ---
-name: toptop-produccion
-description: Producción en TopTop Lab - música de fondo que baja sola cuando la persona habla, efectos de sonido (whoosh, pop, click), estilos por cliente (colores y fuentes en estilos/<cliente>.json), trabajo en lote de varios videos (npm run lote) y exportar por red social (WhatsApp, Instagram, TikTok, YouTube). Úsala cuando pidan "ponle música", "sin sonidos", "el estilo de <cliente>", "crea el estilo de un cliente", "prepara todos los videos", "exporta para WhatsApp/Instagram/TikTok/YouTube" o "para todas las redes".
+name: bydzyne-produccion
+description: Producción en ByDzyne - música de fondo que baja sola cuando la persona habla, efectos de sonido (whoosh, pop, click), estilos por cliente (colores y fuentes en estilos/<cliente>.json), trabajo en lote de varios videos (npm run lote) y exportar por red social (WhatsApp, Instagram, TikTok, YouTube). Úsala cuando pidan "ponle música", "sin sonidos", "el estilo de <cliente>", "crea el estilo de un cliente", "prepara todos los videos", "exporta para WhatsApp/Instagram/TikTok/YouTube" o "para todas las redes".
 ---
 
 # Producción
@@ -56,7 +56,7 @@ Lo que no diga se toma del estilo **predeterminado** (`src/marca.ts`).
   de las letras encima del acento (blanco u oscuro, el que se lea mejor).
 - Los estilos de clientes no se suben a git (solo `estilos/ejemplo.json`).
 - Para verlo sin video: cualquier **Muestra-** de la vista previa tiene el campo `estilo`.
-- TopTop Lab nunca aparece en los videos: ni en el nombre de un estilo que se vea en pantalla.
+- ByDzyne nunca aparece en los videos: ni en el nombre de un estilo que se vea en pantalla.
 
 ## Trabajo en lote
 ```bash

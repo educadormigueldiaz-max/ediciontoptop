@@ -104,7 +104,7 @@ for (const { formato, nombre, red, opciones, aviso } of exportaciones) {
   if (igual) {
     fs.copyFileSync(igual.salida, salida);
   } else {
-    const props = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "toptop-")), "props.json");
+    const props = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "bydzyne-")), "props.json");
     fs.writeFileSync(props, JSON.stringify({ proyecto: id, formato }));
     console.log(`\nExportando ${id} ${red ? `para ${REDES[red].nombre} ` : ""}en ${formato}…`);
     const r = spawnSync(

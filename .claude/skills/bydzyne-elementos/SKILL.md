@@ -1,6 +1,6 @@
 ---
-name: toptop-elementos
-description: Cómo y cuándo agregar elementos gráficos sobre el video en TopTop Lab - motion explicativo (lista de puntos), lettering (frase grande), íconos animados e imágenes insertadas. Úsala cuando pidan explicar con puntos, destacar una frase, poner íconos, mostrar fotos o capturas, o "hacerlo más visual".
+name: bydzyne-elementos
+description: Cómo y cuándo agregar elementos gráficos sobre el video en ByDzyne - motion explicativo (lista de puntos), lettering (frase grande), íconos animados e imágenes insertadas. Úsala cuando pidan explicar con puntos, destacar una frase, poner íconos, mostrar fotos o capturas, o "hacerlo más visual".
 ---
 
 # Elementos gráficos
@@ -84,7 +84,7 @@ Fotos de producto, capturas, logos de clientes, documentos que se mencionan.
   la frase más fuerte (→ lettering) y 2 o 3 palabras concretas (→ íconos). Explica qué pusiste.
 - **Sonido**: cada elemento suena solo al aparecer (whoosh en lettering e imagen, pop en cada
   punto de una lista y en los íconos). `"sonido": false` lo apaga en ese elemento; detalles en
-  `toptop-produccion`.
+  `bydzyne-produccion`.
 
 ## Revisar
 Ejecuta `npm run revisar -- <id>`: deja un cuadro de cada elemento en `salida/revision/<id>/`.

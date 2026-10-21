@@ -17,7 +17,7 @@ const LADO_MAXIMO = 1280;
 const VERSION = "2";
 
 const FUENTE_SWIFT = path.join(RAIZ, "scripts", "lib", "recorte.swift");
-const PROGRAMA = path.join(RAIZ, "node_modules", ".cache", "toptop-lab", "recortar");
+const PROGRAMA = path.join(RAIZ, "node_modules", ".cache", "bydzyne", "recortar");
 
 // Carpeta de las máscaras, relativa a public/ (va junto al video, así las copias hechas con
 // `npm run duplicar` las comparten).
