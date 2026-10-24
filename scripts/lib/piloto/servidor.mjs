@@ -6,7 +6,7 @@ import http from "node:http";
 import path from "node:path";
 import { CARPETA_PROYECTOS, CARPETA_SALIDA, RAIZ, aId } from "../herramientas.mjs";
 import { estilosDisponibles } from "../produccion.mjs";
-import { posicionEnCola, siguiente } from "./cola.mjs";
+import { archivoProgreso, posicionEnCola, siguiente } from "./cola.mjs";
 import {
   ESTADOS, REDES_PILOTO, TIPOS, abrirSesion, actualizarTrabajo, anotar, borrarPersona, carpetaTrabajo,
   cerrarSesion, comprobarClave, guardarPersona, leerSesion, leerTrabajo, nombreValido, nuevoTrabajo,
@@ -14,6 +14,7 @@ import {
 } from "./datos.mjs";
 
 const PAGINA = path.join(path.dirname(new URL(import.meta.url).pathname), "pagina.html");
+const PANEL_CLIPS = path.join(path.dirname(PAGINA), "clips.html");
 const COOKIE = "bydzyne";
 const EXT_VIDEO = ["mp4", "mov", "m4v", "webm", "mkv", "avi", "3gp"];
 const EXT_FOTO = ["jpg", "jpeg", "png", "webp", "heic", "heif"];
@@ -68,6 +69,17 @@ const ENLACE_YOUTUBE = /^https:\/\/(www\.|m\.)?(youtube\.com\/(watch\?v=|shorts\
 
 const extension = (nombre) => path.extname(String(nombre)).slice(1).toLowerCase();
 
+// Avance de unos clips (lo escribe npm run clips mientras trabaja), o null.
+const leerProgreso = (t) => {
+  try {
+    const p = JSON.parse(fs.readFileSync(archivoProgreso(t.id), "utf8"));
+    if (p.video) p.video = path.basename(p.video, path.extname(p.video)).replace(/_/g, " ");
+    return p;
+  } catch {
+    return null;
+  }
+};
+
 // Lo que la página ve de un trabajo (sin rutas internas).
 const vista = (t, posiciones, conDueno) => ({
   id: t.id,
@@ -86,6 +98,7 @@ const vista = (t, posiciones, conDueno) => ({
   enCola: posiciones.get(t.id) ?? null,
   pedidoEnCurso: t.pendiente?.tipo === "cambio" ? t.pendiente.pedido : null,
   versiones: t.versiones,
+  progreso: t.tipo === "clips" ? leerProgreso(t) : null,
   ...(conDueno ? { usuario: t.usuario, costo: t.costo ?? 0 } : {}),
 });
 
@@ -120,6 +133,11 @@ const manejar = async (req, res) => {
   if (metodo === "GET" && (ruta === "/" || ruta === "/index.html")) {
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
     res.end(fs.readFileSync(PAGINA));
+    return;
+  }
+  if (metodo === "GET" && ruta === "/clips") {
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+    res.end(fs.readFileSync(PANEL_CLIPS));
     return;
   }
   if (!ruta.startsWith("/api/")) return error(res, 404, "No existe.");
@@ -338,6 +356,15 @@ const manejar = async (req, res) => {
 
   if (metodo === "GET" && accion === "archivo") {
     const nombre = url.searchParams.get("nombre");
+    // Un clip que ya terminó mientras los demás se siguen creando (todavía está en salida/).
+    if (t.tipo === "clips" && url.searchParams.get("parcial") === "1") {
+      const listo = leerProgreso(t)?.clips?.some((c) => c.archivos?.includes(nombre));
+      const archivo = path.join(CARPETA_SALIDA, String(nombre));
+      if (!listo || !String(nombre).startsWith(`${t.proyecto}-clip-`) || !fs.existsSync(archivo)) {
+        return error(res, 404, "Ese clip ya no está aquí: recarga la página.");
+      }
+      return servirArchivo(req, res, archivo, url.searchParams.get("descargar") === "1");
+    }
     const version = t.versiones.find((v) => v.archivos.some((a) => a.archivo === nombre));
     if (!version) return error(res, 404, "Ese archivo no existe.");
     const archivo = path.join(carpetaTrabajo(t.id), "resultados", `v${version.n}`, nombre);

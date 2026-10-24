@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ByDzyne · Clips</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..900&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Una columna pensada para el celular: arriba la marca, luego "Subir video" y "Mis videos". */
+:root {
+  --papel: #EEF0F3;
+  --superficie: #FFFFFF;
+  --tinta: #151A21;
+  --tinta-suave: #5B6370;
+  --linea: #D7DBE1;
+  --pizarra: #4A515D;
+  --degradado: linear-gradient(135deg, #808897 0%, #5F6673 55%, #4A515D 100%);
+  --sobre-pizarra: #FFFFFF;
+  --boton: #1E2229;
+  --sobre-boton: #FFFFFF;
+  --elegido: #1E2229;
+  --bien: #0E7C6B;
+  --bien-suave: #E1F2EE;
+  --espera: #8A5A00;
+  --espera-suave: #FBF0D9;
+  --mal: #B42318;
+  --mal-suave: #FDECEA;
+  --trabajando: #2457C5;
+  --trabajando-suave: #E6EDFB;
+  --f-titulo: "Archivo", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-texto: "Source Sans 3", "Helvetica Neue", Arial, system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --papel: #12151A; --superficie: #1B2028; --tinta: #E9ECF0; --tinta-suave: #A2AAB5; --linea: #2E3540;
+    --pizarra: #2A2F38; --degradado: linear-gradient(135deg, #3E4450 0%, #2A2F38 55%, #1E2229 100%);
+    --boton: #E9ECF0; --sobre-boton: #12151A; --elegido: #E9ECF0;
+    --bien: #4CC3AE; --bien-suave: #133029; --espera: #F0B64A; --espera-suave: #33270E;
+    --mal: #F97066; --mal-suave: #3A1715; --trabajando: #7FA6FF; --trabajando-suave: #17233F;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--papel); color: var(--tinta); font-family: var(--f-texto); font-size: 17px; line-height: 1.5; }
+h1, h2, h3 { font-family: var(--f-titulo); margin: 0; line-height: 1.15; text-wrap: balance; }
+p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+.centro { max-width: 46rem; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+
+/* Marca */
+.barra { background: var(--degradado); background-color: var(--pizarra); color: var(--sobre-pizarra); padding-top: env(safe-area-inset-top); }
+.barra .centro { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 18px; flex-wrap: wrap; }
+.marca { display: inline-flex; align-items: center; gap: 0.6em; font-size: 22px; line-height: 1; color: var(--sobre-pizarra); }
+.marca svg { width: 1.55em; height: 1.55em; flex: none; }
+.marca .palabra { font-family: var(--f-titulo); font-weight: 800; font-stretch: 125%; letter-spacing: 0.04em; }
+.marca .contorno { color: transparent; -webkit-text-stroke: 0.06em var(--sobre-pizarra); }
+.quien { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+.quien button { background: transparent; border: 1px solid rgba(255,255,255,0.5); color: var(--sobre-pizarra); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+
+main { padding-block: 24px 64px; display: grid; gap: 24px; }
+.tarjeta { background: var(--superficie); border: 1px solid var(--linea); border-radius: 16px; padding: 20px; display: grid; gap: 18px; }
+.tarjeta > h2 { font-size: 24px; font-weight: 800; }
+.ayuda { color: var(--tinta-suave); font-size: 15px; }
+label.titulo, .titulo { font-weight: 700; display: block; margin-bottom: 8px; }
+.campo { display: grid; gap: 0; }
+input[type=text], input[type=password], textarea, select {
+  width: 100%; border: 1.5px solid var(--linea); border-radius: 12px; background: var(--papel); padding: 14px; font-size: 17px;
+}
+textarea { min-height: 90px; resize: vertical; }
+input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, .archivo:focus-within { outline: 3px solid var(--trabajando); outline-offset: 2px; }
+
+/* Botones grandes */
+.boton { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; padding: 0 24px; border-radius: 14px; border: 0; background: var(--boton); color: var(--sobre-boton); font-weight: 700; font-size: 18px; cursor: pointer; text-decoration: none; }
+.boton.ancho { width: 100%; }
+.boton.suave { background: transparent; color: var(--tinta); border: 1.5px solid var(--linea); min-height: 48px; font-size: 16px; }
+.boton[disabled] { opacity: 0.5; cursor: wait; }
+
+/* Elegir archivo */
+.archivo { position: relative; border: 2px dashed var(--linea); border-radius: 14px; padding: 22px; text-align: center; background: var(--papel); cursor: pointer; }
+.archivo input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.archivo strong { display: block; font-size: 19px; }
+.archivo.lleno { border-style: solid; border-color: var(--bien); background: var(--bien-suave); }
+
+/* Opciones como botones */
+.opciones { display: flex; flex-wrap: wrap; gap: 10px; }
+.opciones label { position: relative; }
+.opciones input { position: absolute; opacity: 0; inset: 0; }
+.opciones span { display: inline-flex; align-items: center; min-height: 48px; padding: 0 18px; border-radius: 999px; border: 1.5px solid var(--linea); background: var(--papel); font-weight: 600; cursor: pointer; }
+.opciones input:checked + span { background: var(--elegido); color: var(--sobre-boton); border-color: var(--elegido); }
+.opciones input:focus-visible + span { outline: 3px solid var(--trabajando); outline-offset: 2px; }
+
+.barra-progreso { height: 10px; border-radius: 999px; background: var(--linea); overflow: hidden; }
+.barra-progreso div { height: 100%; width: 0; background: var(--bien); }
+.aviso { border-radius: 12px; padding: 12px 14px; font-size: 16px; }
+.aviso.mal { background: var(--mal-suave); color: var(--mal); }
+.aviso.bien { background: var(--bien-suave); color: var(--bien); }
+
+/* Mis videos */
+.lista { display: grid; gap: 14px; }
+.video { border: 1px solid var(--linea); border-radius: 14px; padding: 16px; display: grid; gap: 12px; background: var(--superficie); }
+.video .cabeza { display: flex; justify-content: space-between; align-items: start; gap: 10px; flex-wrap: wrap; }
+.video h3 { font-size: 18px; font-weight: 700; word-break: break-word; }
+.video .detalle { color: var(--tinta-suave); font-size: 14px; }
+.estado { font-weight: 700; font-size: 14px; padding: 4px 12px; border-radius: 999px; white-space: nowrap; }
+.estado.listo { background: var(--bien-suave); color: var(--bien); }
+.estado.en-cola, .estado.subiendo { background: var(--espera-suave); color: var(--espera); }
+.estado.editando, .estado.revisando, .estado.exportando { background: var(--trabajando-suave); color: var(--trabajando); }
+.estado.problema { background: var(--mal-suave); color: var(--mal); }
+.pasos { display: flex; gap: 6px; }
+.pasos i { flex: 1; height: 6px; border-radius: 999px; background: var(--linea); }
+.pasos i.hecho { background: var(--bien); }
+.pasos i.ahora { background: var(--trabajando); }
+.version { border-top: 1px solid var(--linea); padding-top: 12px; display: grid; gap: 10px; }
+.version video { width: 100%; max-height: 70vh; border-radius: 12px; background: #000; }
+.descargas { display: flex; flex-wrap: wrap; gap: 8px; }
+.cambios { display: grid; gap: 8px; }
+details summary { cursor: pointer; font-weight: 700; padding: 6px 0; }
+.vacio { text-align: center; color: var(--tinta-suave); padding: 18px; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--linea); }
+.tabla { overflow-x: auto; }
+.pestanas { display: flex; gap: 8px; }
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: no-preference) { .barra-progreso div { transition: width 0.3s; } }
+/* Panel de clips: pegar el enlace (o subir el video) y ver cómo avanza cada etapa y cada clip. */
+.centro { max-width: 72rem; }
+.barra nav { display: flex; align-items: center; gap: 14px; font-size: 15px; }
+.barra nav a { color: var(--sobre-pizarra); }
+.marca small { font-family: var(--f-texto); font-weight: 600; font-size: 15px; opacity: 0.85; margin-left: 4px; }
+.formulario { display: grid; grid-template-columns: 1fr; gap: 18px; }
+.enlace-fila { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+input[type=url] { width: 100%; border: 1.5px solid var(--linea); border-radius: 12px; background: var(--papel); padding: 14px; font-size: 18px; }
+.o { text-align: center; color: var(--tinta-suave); font-size: 15px; }
+.archivo { padding: 16px; }
+
+/* Etapas */
+.trabajo { border: 1px solid var(--linea); border-radius: 16px; padding: 18px; display: grid; gap: 16px; background: var(--superficie); }
+.trabajo .cabeza { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: start; }
+.trabajo h3 { font-size: 20px; font-weight: 800; word-break: break-word; }
+.etapas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.etapa { border: 1.5px solid var(--linea); border-radius: 12px; padding: 12px; display: grid; gap: 8px; align-content: start; background: var(--papel); min-width: 0; }
+.etapa .nombre { font-weight: 700; display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.etapa .punto { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--linea); display: grid; place-items: center; font-size: 13px; flex: none; color: transparent; }
+.etapa .dato { font-size: 14px; color: var(--tinta-suave); font-variant-numeric: tabular-nums; }
+.etapa.hecha .punto { background: var(--bien); border-color: var(--bien); color: #fff; }
+.etapa.ahora { border-color: var(--trabajando); background: var(--trabajando-suave); }
+.etapa.ahora .punto { border-color: var(--trabajando); border-top-color: transparent; }
+.etapa .barra-progreso { height: 8px; }
+.etapa.ahora .barra-progreso div { background: var(--trabajando); }
+.barra-progreso.sin-fin div { width: 35% !important; }
+@media (prefers-reduced-motion: no-preference) {
+  .etapa.ahora .punto { animation: girar 0.9s linear infinite; }
+  .barra-progreso.sin-fin div { animation: ir 1.4s ease-in-out infinite; }
+}
+@keyframes girar { to { transform: rotate(360deg); } }
+@keyframes ir { from { transform: translateX(-100%); } to { transform: translateX(290%); } }
+
+/* Clips */
+.clips { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+.clip { border: 1px solid var(--linea); border-radius: 14px; overflow: hidden; display: grid; grid-template-rows: auto 1fr; background: var(--superficie); }
+.clip .pantalla { aspect-ratio: 9 / 16; background: var(--papel); display: grid; place-items: center; position: relative; width: 100%; overflow: hidden; }
+.clip video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+.clip .espera { text-align: center; color: var(--tinta-suave); font-size: 15px; padding: 16px; display: grid; gap: 6px; justify-items: center; }
+.clip .numero { font-family: var(--f-titulo); font-size: 44px; font-weight: 800; color: var(--linea); line-height: 1; }
+.clip .info { padding: 12px 14px 14px; display: grid; gap: 6px; align-content: start; }
+.clip h4 { margin: 0; font-family: var(--f-titulo); font-size: 16px; font-weight: 800; line-height: 1.2; }
+.clip .gancho { font-size: 14px; }
+.clip .porque { font-size: 13px; color: var(--tinta-suave); }
+.clip .boton { min-height: 44px; font-size: 15px; margin-top: 4px; }
+.clip.preparando .pantalla, .clip.exportando .pantalla { background: var(--trabajando-suave); }
+.clip.error .pantalla { background: var(--mal-suave); }
+.estado.preparando, .estado.exportando { background: var(--trabajando-suave); color: var(--trabajando); }
+.estado.esperando { background: var(--papel); color: var(--tinta-suave); border: 1px solid var(--linea); }
+.estado.error { background: var(--mal-suave); color: var(--mal); }
+.historial { display: grid; gap: 18px; }
+@media (max-width: 760px) {
+  .etapas { grid-template-columns: repeat(2, 1fr); }
+  .enlace-fila { grid-template-columns: 1fr; }
+}
+@media (max-width: 420px) { .clips { grid-template-columns: 1fr 1fr; gap: 10px; } .clip .info { padding: 10px; } }
+</style>
+</head>
+<body>
+<header class="barra">
+  <div class="centro">
+    <span class="marca" role="img" aria-label="ByDzyne">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="21.5" fill="none" stroke="currentColor" stroke-width="3.5"/><path d="M17 13.5h9.2a5.3 5.3 0 0 1 0 10.6H17zM17 24.1h10.4a5.2 5.2 0 0 1 0 10.4H17z" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round"/><path d="M21.5 18.6h4.4M21.5 29.3h5.4" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+      <span class="palabra"><span class="contorno">BY</span>DZYNE</span><small>Clips</small>
+    </span>
+    <nav id="quien" hidden>
+      <a href="/">Videos</a>
+      <span id="nombre"></span>
+      <div class="quien"><button id="salir" type="button">Salir</button></div>
+    </nav>
+  </div>
+</header>
+
+<main class="centro">
+  <section class="tarjeta" id="entrar" hidden>
+    <h2>Entrar</h2>
+    <div class="aviso mal" id="entrar-aviso" hidden></div>
+    <form id="form-entrar" class="tarjeta" style="border:0;padding:0">
+      <div class="campo"><label class="titulo" for="usuario">Usuario</label><input type="text" id="usuario" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
+      <div class="campo"><label class="titulo" for="clave">Contraseña</label><input type="password" id="clave" autocomplete="current-password" required></div>
+      <button class="boton ancho" type="submit">Entrar</button>
+    </form>
+  </section>
+
+  <section class="tarjeta" id="nuevo" hidden>
+    <div>
+      <h2>Clips de un video largo</h2>
+      <p class="ayuda">Claude elige los mejores momentos y cada uno sale vertical, con subtítulos y gancho.</p>
+    </div>
+    <form id="form-clips" class="formulario">
+      <div class="campo">
+        <label class="titulo" for="enlace">Enlace de YouTube</label>
+        <div class="enlace-fila">
+          <input type="url" id="enlace" inputmode="url" placeholder="https://www.youtube.com/watch?v=…" autocomplete="off">
+          <button class="boton" type="submit" id="boton-clips">Sacar clips</button>
+        </div>
+        <span class="ayuda">Solo videos tuyos o con permiso. Un video de 1 hora tarda de 30 a 60 minutos.</span>
+      </div>
+      <p class="o">o</p>
+      <label class="archivo" id="caja-video">
+        <input type="file" id="video" accept="video/*">
+        <strong id="texto-video">Sube el video desde tu equipo</strong>
+        <span class="ayuda">Se envía al tocar «Sacar clips»</span>
+      </label>
+      <div class="campo">
+        <span class="titulo">¿Dónde los vas a publicar?</span>
+        <div class="opciones" id="redes"></div>
+      </div>
+      <div class="campo" id="campo-estilo" hidden>
+        <label class="titulo" for="estilo">Estilo (colores y letra)</label>
+        <select id="estilo"></select>
+      </div>
+      <div class="aviso mal" id="aviso" hidden></div>
+    </form>
+  </section>
+
+  <section class="tarjeta" id="en-curso" hidden>
+    <h2>Creándose ahora</h2>
+    <div class="historial" id="lista-en-curso"></div>
+  </section>
+
+  <section class="tarjeta" id="listos" hidden>
+    <h2>Clips listos</h2>
+    <div class="historial" id="lista-listos"></div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let yo = null;
+let reloj = null;
+let subiendo = null; // { nombre, pct } mientras se sube un video desde el equipo
+
+const api = async (ruta, opciones = {}) => {
+  const r = await fetch(ruta, {
+    ...opciones,
+    headers: { "X-ByDzyne": "1", ...(typeof opciones.body === "string" ? { "Content-Type": "application/json" } : {}), ...(opciones.headers || {}) },
+  });
+  const datos = await r.json().catch(() => ({}));
+  if (r.status === 401) { mostrarEntrar(datos.error); throw new Error(datos.error || "Entra de nuevo."); }
+  if (!r.ok) throw new Error(datos.error || "Algo falló. Intenta de nuevo.");
+  return datos;
+};
+const avisar = (texto, clase = "mal") => { const el = $("aviso"); el.textContent = texto; el.className = `aviso ${clase}`; el.hidden = !texto; };
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fecha = (iso) => new Date(iso).toLocaleString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const hora = (s) => {
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), seg = Math.floor(s % 60);
+  return h ? `${h}:${String(m).padStart(2, "0")}:${String(seg).padStart(2, "0")}` : `${m}:${String(seg).padStart(2, "0")}`;
+};
+const minutos = (ms) => {
+  const m = Math.round(ms / 60000);
+  return m < 1 ? "menos de 1 min" : m === 1 ? "1 min" : `${m} min`;
+};
+
+function mostrarEntrar(mensaje) {
+  clearTimeout(reloj);
+  for (const id of ["nuevo", "en-curso", "listos", "quien"]) $(id).hidden = true;
+  $("entrar").hidden = false;
+  const el = $("entrar-aviso");
+  el.textContent = mensaje && mensaje !== "Entra con tu usuario y contraseña." ? mensaje : "";
+  el.hidden = !el.textContent;
+}
+
+async function iniciar() {
+  try { yo = await api("/api/yo"); } catch { return; }
+  $("entrar").hidden = true;
+  $("quien").hidden = false;
+  $("nuevo").hidden = false;
+  $("nombre").textContent = yo.nombre;
+  $("redes").innerHTML = Object.entries(yo.redes).map(([k, v], i) => `<label><input type="radio" name="red" value="${k}" ${i === 0 ? "checked" : ""}><span>${esc(v)}</span></label>`).join("");
+  $("campo-estilo").hidden = Boolean(yo.estiloFijo);
+  $("estilo").innerHTML = yo.estilos.map((e) => `<option value="${esc(e)}">${esc(e === "predeterminado" ? "Predeterminado" : e)}</option>`).join("");
+  cargar();
+}
+
+$("form-entrar").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  try {
+    await api("/api/entrar", { method: "POST", body: JSON.stringify({ usuario: $("usuario").value, clave: $("clave").value }) });
+    $("clave").value = "";
+    iniciar();
+  } catch (err) { const el = $("entrar-aviso"); el.textContent = err.message; el.hidden = false; }
+});
+$("salir").addEventListener("click", async () => { await api("/api/salir", { method: "POST" }).catch(() => {}); mostrarEntrar(); });
+
+// ---------- Pedir clips ----------
+$("video").addEventListener("change", () => {
+  const f = $("video").files[0];
+  $("texto-video").textContent = f ? `✓ ${f.name} (${(f.size / 1e6).toFixed(0)} MB)` : "Sube el video desde tu equipo";
+  $("caja-video").classList.toggle("lleno", Boolean(f));
+  if (f) $("enlace").value = "";
+});
+$("enlace").addEventListener("input", () => {
+  if ($("enlace").value && $("video").files.length) { $("video").value = ""; $("video").dispatchEvent(new Event("change")); }
+});
+
+const subirArchivo = (id, archivo, alAvanzar) => new Promise((resolve, reject) => {
+  const x = new XMLHttpRequest();
+  x.open("PUT", `/api/trabajos/${id}/archivo?clase=video&nombre=${encodeURIComponent(archivo.name)}`);
+  x.setRequestHeader("X-ByDzyne", "1");
+  x.upload.onprogress = (e) => e.lengthComputable && alAvanzar(e.loaded / e.total);
+  x.onload = () => {
+    let datos = {};
+    try { datos = JSON.parse(x.responseText); } catch {}
+    x.status < 300 ? resolve() : reject(new Error(datos.error || "No se pudo subir el video."));
+  };
+  x.onerror = () => reject(new Error("Se cortó la conexión. Revisa el internet e intenta de nuevo."));
+  x.send(archivo);
+});
+
+$("form-clips").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const enlace = $("enlace").value.trim();
+  const video = $("video").files[0];
+  if (!enlace && !video) return avisar("Pega el enlace de YouTube o elige un video.");
+  avisar("");
+  $("boton-clips").disabled = true;
+  try {
+    const { id } = await api("/api/trabajos", {
+      method: "POST",
+      body: JSON.stringify({
+        tipo: "clips",
+        enlace: video ? "" : enlace,
+        red: document.querySelector("input[name=red]:checked").value,
+        estilo: $("estilo").value,
+        nombreVideo: video?.name ?? "",
+        fotos: [],
+      }),
+    });
+    if (video) {
+      subiendo = { id, nombre: video.name, pct: 0 };
+      cargar();
+      await subirArchivo(id, video, (p) => { subiendo.pct = p; pintarSubida(); });
+      await api(`/api/trabajos/${id}/enviar`, { method: "POST" });
+    }
+    $("form-clips").reset();
+    $("video").dispatchEvent(new Event("change"));
+    avisar("¡Recibido! Abajo ves cómo avanza.", "bien");
+  } catch (err) {
+    avisar(err.message);
+  } finally {
+    subiendo = null;
+    $("boton-clips").disabled = false;
+    cargar();
+  }
+});
+
+// ---------- Avance ----------
+const ETAPAS = [
+  { clave: "descargando", nombre: "Traer el video" },
+  { clave: "transcribiendo", nombre: "Escuchar todo" },
+  { clave: "eligiendo", nombre: "Elegir momentos" },
+  { clave: "creando", nombre: "Crear clips" },
+];
+const ESTADO_CLIP = { esperando: "En espera", preparando: "Cortando y subtitulando", exportando: "Creando el video", listo: "Listo", error: "No se pudo" };
+
+function tiempoRestante(p) {
+  if (!p || p.pct < 3 || p.pct >= 100) return "";
+  const falta = ((Date.now() - p.desde) * (100 - p.pct)) / p.pct;
+  return falta < 60000 ? " · falta menos de 1 min" : ` · faltan ~${minutos(falta)}`;
+}
+
+function etapasHtml(t) {
+  const p = t.progreso;
+  const actual = t.estado === "listo" ? 4 : p ? ETAPAS.findIndex((e) => e.clave === p.etapa) : -1;
+  return `<div class="etapas">${ETAPAS.map((e, i) => {
+    const clase = i < actual ? "hecha" : i === actual ? "ahora" : "";
+    let dato = i < actual ? "Hecho" : "";
+    let barra = "";
+    if (i === actual) {
+      if (e.clave === "eligiendo") {
+        dato = "Claude está leyendo todo lo que se dijo";
+        barra = `<div class="barra-progreso sin-fin"><div></div></div>`;
+      } else if (e.clave === "creando") {
+        const listos = p.clips.filter((c) => c.estado === "listo").length;
+        dato = `${listos} de ${p.clips.length} clips${tiempoRestante(p)}`;
+        barra = `<div class="barra-progreso"><div style="width:${p.pct}%"></div></div>`;
+      } else {
+        dato = `${Math.round(p.pct)} %${tiempoRestante(p)}`;
+        barra = `<div class="barra-progreso"><div style="width:${p.pct}%"></div></div>`;
+      }
+    }
+    if (e.clave === "descargando" && i < actual && p?.duracion) dato = `Video de ${hora(p.duracion)}`;
+    return `<div class="etapa ${clase}"><span class="nombre"><span class="punto">✓</span>${e.nombre}</span>${barra}<span class="dato">${esc(dato)}</span></div>`;
+  }).join("")}</div>`;
+}
+
+// Cada clip: mientras se crea, su estado; cuando está listo, el video para verlo y descargarlo.
+function clipHtml(t, c, archivo) {
+  const url = archivo ? `/api/trabajos/${t.id}/archivo?nombre=${encodeURIComponent(archivo.nombre)}${archivo.parcial ? "&parcial=1" : ""}` : null;
+  return `
+    <article class="clip ${c.estado}">
+      <div class="pantalla">${url
+        ? `<video controls playsinline preload="metadata" src="${url}#t=1.2"></video>`
+        : `<div class="espera"><span class="numero">${c.n}</span><span>${esc(ESTADO_CLIP[c.estado] ?? "")}</span></div>`}</div>
+      <div class="info">
+        <h4>${c.n}. ${esc(c.titulo)}</h4>
+        ${c.gancho ? `<p class="gancho">“${esc(c.gancho)}”</p>` : ""}
+        ${c.porque ? `<p class="porque">${esc(c.porque)}</p>` : ""}
+        <p class="porque">Minuto ${hora(c.inicio)} · ${Math.round(c.fin - c.inicio)} s</p>
+        ${url ? `<a class="boton" href="${url}&descargar=1">Descargar</a>` : `<span class="estado ${c.estado}" style="justify-self:start">${esc(ESTADO_CLIP[c.estado] ?? "")}</span>`}
+      </div>
+    </article>`;
+}
+
+// Los clips de un trabajo: del avance (mientras se crean) o de la versión final (ya listos).
+function clipsDe(t) {
+  const p = t.progreso;
+  const final = t.versiones[0]?.archivos ?? [];
+  if (p?.clips?.length) {
+    return p.clips.map((c) => {
+      const fin = final.find((a) => a.archivo.startsWith(`clip-${String(c.n).padStart(2, "0")}-`));
+      const archivo = fin ? { nombre: fin.archivo } : c.estado === "listo" && c.archivos?.[0] ? { nombre: c.archivos[0], parcial: true } : null;
+      return { clave: `${t.id}-${c.n}-${archivo?.nombre ?? c.estado}`, html: clipHtml(t, c, archivo) };
+    });
+  }
+  return final.map((a, i) => ({
+    clave: `${t.id}-${a.archivo}`,
+    html: clipHtml(t, { n: i + 1, titulo: a.red.replace(/^clip \d+: /, ""), estado: "listo", inicio: 0, fin: 0 }, { nombre: a.archivo }),
+  }));
+}
+
+function cabeza(t) {
+  const nombre = t.nombre === "clips-youtube" ? t.progreso?.video || "Video de YouTube" : t.nombre;
+  const cola = t.enCola ? (t.enCola === 1 ? "Es el siguiente en la cola" : `Hay ${t.enCola - 1} antes en la cola`) : "";
+  return `<div class="cabeza"><div><h3>${esc(nombre)}</h3><p class="ayuda">${esc(t.red)} · ${fecha(t.creado)}${t.costo ? ` · ≈ ${t.costo} USD` : ""}${cola ? ` · ${cola}` : ""}</p></div>
+    <span class="estado ${t.estado}">${esc(t.estadoTexto)}</span></div>`;
+}
+
+// Actualiza solo lo que cambió, para no cortar un video que se está viendo.
+function reconciliar(contenedor, items) {
+  const actuales = new Map([...contenedor.children].map((el) => [el.dataset.clave, el]));
+  let anterior = null;
+  for (const { clave, html } of items) {
+    let el = actuales.get(clave);
+    if (!el) {
+      const plantilla = document.createElement("template");
+      plantilla.innerHTML = html.trim();
+      el = plantilla.content.firstElementChild;
+      el.dataset.clave = clave;
+    }
+    actuales.delete(clave);
+    const lugar = anterior ? anterior.nextElementSibling : contenedor.firstElementChild;
+    if (lugar !== el) contenedor.insertBefore(el, lugar);
+    anterior = el;
+  }
+  for (const el of actuales.values()) el.remove();
+}
+
+function pintarTrabajo(contenedor, t, conEtapas) {
+  let el = contenedor.querySelector(`[data-id="${t.id}"]`);
+  if (!el) {
+    el = document.createElement("article");
+    el.className = "trabajo";
+    el.dataset.id = t.id;
+    el.dataset.clave = t.id;
+    el.innerHTML = `<div data-parte="cabeza"></div><div data-parte="etapas"></div><div data-parte="error"></div><div class="clips" data-parte="clips"></div>`;
+  }
+  const poner = (parte, html) => { const p = el.querySelector(`[data-parte="${parte}"]`); if (p.dataset.html !== html) { p.innerHTML = html; p.dataset.html = html; } };
+  poner("cabeza", cabeza(t));
+  poner("etapas", conEtapas ? etapasHtml(t) : "");
+  poner("error", t.error ? `<div class="aviso mal">${esc(t.error)}</div>${t.estado === "problema" ? `<button class="boton suave" type="button" data-reintentar="${t.id}" style="margin-top:10px">Intentar de nuevo</button>` : ""}` : "");
+  reconciliar(el.querySelector('[data-parte="clips"]'), clipsDe(t));
+  return el;
+}
+
+function pintarSubida() {
+  const el = document.getElementById("subida");
+  if (el && subiendo) {
+    el.querySelector(".barra-progreso div").style.width = `${Math.round(subiendo.pct * 100)}%`;
+    el.querySelector(".dato").textContent = `${Math.round(subiendo.pct * 100)} %`;
+  }
+}
+
+async function cargar() {
+  clearTimeout(reloj);
+  let datos;
+  try { datos = await api("/api/trabajos"); } catch { return; }
+  const clips = datos.trabajos.filter((t) => t.clips && t.estado !== "subiendo");
+  const enCurso = clips.filter((t) => !["listo", "problema"].includes(t.estado) || (t.estado === "problema" && !t.versiones.length));
+  const listos = clips.filter((t) => t.estado === "listo");
+
+  const contEnCurso = $("lista-en-curso");
+  const items = enCurso.map((t) => ({ clave: t.id, el: pintarTrabajo(contEnCurso, t, true) }));
+  if (subiendo) {
+    let s = document.getElementById("subida");
+    if (!s) {
+      s = document.createElement("article");
+      s.className = "trabajo";
+      s.id = "subida";
+      s.innerHTML = `<div class="cabeza"><h3>${esc(subiendo.nombre)}</h3><span class="estado subiendo">Subiendo</span></div>
+        <div class="etapa ahora"><span class="nombre"><span class="punto">✓</span>Subir el video</span><div class="barra-progreso"><div></div></div><span class="dato">0 %</span></div>`;
+    }
+    items.unshift({ clave: "subida", el: s });
+  }
+  [...contEnCurso.children].forEach((el) => { if (!items.some((i) => i.el === el)) el.remove(); });
+  items.forEach(({ el }, i) => { if (contEnCurso.children[i] !== el) contEnCurso.insertBefore(el, contEnCurso.children[i] ?? null); });
+  pintarSubida();
+  $("en-curso").hidden = items.length === 0;
+
+  const contListos = $("lista-listos");
+  const elementos = listos.map((t) => pintarTrabajo(contListos, t, false));
+  [...contListos.children].forEach((el) => { if (!elementos.includes(el)) el.remove(); });
+  elementos.forEach((el, i) => { if (contListos.children[i] !== el) contListos.insertBefore(el, contListos.children[i] ?? null); });
+  $("listos").hidden = listos.length === 0;
+
+  reloj = setTimeout(cargar, items.length ? 2000 : 10000);
+}
+
+document.addEventListener("click", async (e) => {
+  const id = e.target.closest("[data-reintentar]")?.dataset.reintentar;
+  if (!id) return;
+  try { await api(`/api/trabajos/${id}/reintentar`, { method: "POST" }); cargar(); } catch (err) { avisar(err.message); }
+});
+
+iniciar().catch(() => {});
+</script>
+</body>
+</html>

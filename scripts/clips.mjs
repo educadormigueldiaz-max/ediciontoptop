@@ -30,6 +30,7 @@ Opciones:
   --sin-exportar       Prepara los clips pero no crea los MP4 (para revisarlos antes)
   --elegir-de-nuevo    Vuelve a pedir los momentos aunque ya estén elegidos
   --descargar-en <dir> Carpeta donde guardar el video de YouTube (por defecto entrada/)
+  --progreso <archivo> Va escribiendo el avance en ese archivo JSON (lo usa la página)
 `;
 
 const { values: op, positionals } = parseArgs({
@@ -45,6 +46,7 @@ const { values: op, positionals } = parseArgs({
     "sin-exportar": { type: "boolean", default: false },
     "elegir-de-nuevo": { type: "boolean", default: false },
     "descargar-en": { type: "string" },
+    progreso: { type: "string" },
     ayuda: { type: "boolean", short: "h", default: false },
   },
 });
@@ -68,7 +70,22 @@ if (op.cuantos && !(cuantos >= 1 && cuantos <= 20)) {
   process.exit(1);
 }
 
-const paso = (n, texto) => console.log(`\n[${n}/4] ${texto}`);
+// Avance para la página: etapa (descargando, transcribiendo, eligiendo, creando, listo), su
+// porcentaje y cada clip con su estado. Se escribe completo cada vez (con un archivo temporal).
+const progreso = { etapa: "descargando", pct: 0, desde: Date.now(), clips: [] };
+let ultimaEscritura = 0;
+const avance = (cambios, forzar = true) => {
+  Object.assign(progreso, cambios);
+  if (!op.progreso || (!forzar && Date.now() - ultimaEscritura < 1000)) return;
+  ultimaEscritura = Date.now();
+  fs.writeFileSync(`${op.progreso}.tmp`, JSON.stringify(progreso));
+  fs.renameSync(`${op.progreso}.tmp`, op.progreso);
+};
+const ETAPAS = [null, "descargando", "transcribiendo", "eligiendo", "creando"];
+const paso = (n, texto) => {
+  console.log(`\n[${n}/4] ${texto}`);
+  avance({ etapa: ETAPAS[n], pct: 0, desde: Date.now(), texto });
+};
 const reloj = (s) => {
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
@@ -107,7 +124,8 @@ const descargar = async (url) => {
   const carpeta = path.resolve(op["descargar-en"] ?? path.join(RAIZ, "entrada"));
   fs.mkdirSync(carpeta, { recursive: true });
   const args = [
-    "--no-playlist", "--restrict-filenames", "--no-progress",
+    "--no-playlist", "--restrict-filenames", "--newline", "--progress",
+    "--progress-template", "download:BYDZYNE %(progress._percent_str)s",
     // Hasta 1080p, en H.264 si existe (lo abre cualquier programa).
     "-f", "bv*[height<=1080][vcodec^=avc1]+ba[ext=m4a]/bv*[height<=1080]+ba/b[height<=1080]/b",
     "--merge-output-format", "mp4",
@@ -124,7 +142,22 @@ const descargar = async (url) => {
       const p = spawn(YTDLP, args, { env });
       let salida = "";
       let errores = "";
-      p.stdout.on("data", (d) => (salida += d));
+      // Primero baja la imagen (90 % del peso) y después el sonido.
+      let parte = 0;
+      let anterior = 0;
+      p.stdout.on("data", (d) => {
+        for (const linea of String(d).split("\n")) {
+          const m = /^BYDZYNE\s+([\d.]+)%/.exec(linea.trim());
+          if (!m) {
+            if (linea.trim()) salida += `${linea}\n`;
+            continue;
+          }
+          const pct = parseFloat(m[1]);
+          if (pct < anterior - 50) parte = 1;
+          anterior = pct;
+          avance({ pct: Math.min(99, parte === 0 ? pct * 0.9 : 90 + pct * 0.1) }, pct >= 100);
+        }
+      });
       p.stderr.on("data", (d) => (errores += d));
       p.on("close", (codigo) => resolve({ codigo, salida, errores }));
     });
@@ -173,6 +206,7 @@ const base = aId(op.id ?? path.basename(video));
 const carpeta = path.join(CARPETA_SALIDA, "clips", base);
 fs.mkdirSync(carpeta, { recursive: true });
 console.log(`  Duración: ${reloj(duracion)}`);
+avance({ duracion, video: path.basename(video) });
 
 // ---------- 2. Transcripción completa (se guarda: si se repite, no se vuelve a hacer) ----------
 
@@ -186,7 +220,9 @@ if (fs.existsSync(archivoTranscripcion)) {
   const temporal = fs.mkdtempSync(path.join(os.tmpdir(), "bydzyne-clips-"));
   const wav = path.join(temporal, "audio.wav");
   ffmpeg(["-y", "-i", video, "-vn", "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le", wav]);
-  transcripcion = await transcribir({ wav, modelo: op.modelo, idioma: op.idioma });
+  transcripcion = await transcribir({
+    wav, modelo: op.modelo, idioma: op.idioma, alAvanzar: (f) => avance({ pct: Math.round(f * 100) }, false),
+  });
   fs.rmSync(temporal, { recursive: true, force: true });
   escribirJson(archivoTranscripcion, transcripcion);
 }
@@ -286,12 +322,23 @@ escribirJson(archivoClips, { clips });
 // ---------- 4. Cada clip, como un proyecto ----------
 
 paso(4, `Preparando ${clips.length} clips…`);
+avance({
+  clips: clips.map((c, i) => ({
+    n: i + 1, titulo: c.titulo, gancho: c.gancho ?? null, porque: c.porque ?? null,
+    inicio: c.inicio, fin: c.fin, estado: "esperando", archivos: [],
+  })),
+});
+const estadoClip = (i, cambios) => {
+  Object.assign(progreso.clips[i], cambios);
+  avance({ pct: Math.round((progreso.clips.filter((c) => ["listo", "error"].includes(c.estado)).length / clips.length) * 100) });
+};
 const MARGEN_ANTES = 0.25;
 const MARGEN_DESPUES = 0.4;
 const hechos = [];
 for (const [i, clip] of clips.entries()) {
   const id = `${base}-clip-${String(i + 1).padStart(2, "0")}`;
   console.log(`\n— Clip ${i + 1}/${clips.length}: "${clip.titulo}" (${reloj(clip.inicio)} → ${reloj(clip.fin)})`);
+  estadoClip(i, { estado: "preparando" });
   const archivoEdicion = path.join(CARPETA_PROYECTOS, id, "edicion.json");
   if (fs.existsSync(archivoEdicion)) {
     // No se rehace: puede tener cambios hechos a mano.
@@ -324,6 +371,7 @@ for (const [i, clip] of clips.entries()) {
     fs.rmSync(temporal, { recursive: true, force: true });
     if (r.status !== 0) {
       console.error(`  No se pudo preparar el clip ${i + 1}; sigo con los demás.`);
+      estadoClip(i, { estado: "error" });
       continue;
     }
     const edicion = leerJson(archivoEdicion);
@@ -332,6 +380,7 @@ for (const [i, clip] of clips.entries()) {
   }
   let archivos = [];
   if (!op["sin-exportar"]) {
+    estadoClip(i, { estado: "exportando" });
     const r = spawnSync(
       process.execPath,
       [path.join(RAIZ, "scripts", "exportar.mjs"), id, ...(op.red ? ["--red", op.red] : [])],
@@ -342,6 +391,7 @@ for (const [i, clip] of clips.entries()) {
     for (const a of archivos) console.log(`  Listo: salida/${a}`);
   }
   hechos.push({ ...clip, id, archivos });
+  estadoClip(i, { estado: archivos.length || op["sin-exportar"] ? "listo" : "error", id, archivos });
 }
 
 // ---------- Resumen ----------
@@ -362,6 +412,7 @@ const resumen = [
 ].join("\n");
 fs.writeFileSync(path.join(carpeta, "clips.md"), resumen);
 escribirJson(path.join(carpeta, "resultado.json"), { video: path.basename(video), duracion, clips: hechos });
+avance({ etapa: "listo", pct: 100 });
 console.log(`
 Listo: ${hechos.length} clips. Resumen en ${path.relative(RAIZ, path.join(carpeta, "clips.md"))}
 Para ver o pulir uno: "npm run dev" y busca "${base}-clip-01" (o pídele a Claude cambios en ese clip).`);

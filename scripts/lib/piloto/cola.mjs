@@ -221,7 +221,10 @@ const exportar = async (t, version) => {
 };
 
 // Clips de un video largo (subido o de YouTube): todo lo hace `npm run clips` (skill bydzyne-clips).
+export const archivoProgreso = (id) => path.join(carpetaTrabajo(id), "progreso.json");
+
 const sacarClips = async (t) => {
+  fs.rmSync(archivoProgreso(t.id), { force: true });
   const redes = t.red === "todas" ? "todas" : t.red;
   const r = await node(
     "clips.mjs",
@@ -232,6 +235,7 @@ const sacarClips = async (t) => {
       "--red", redes,
       "--tope", String(TOPE_POR_PASO),
       "--descargar-en", path.join(carpetaTrabajo(t.id), "subidos"),
+      "--progreso", archivoProgreso(t.id),
     ],
     { limiteMin: 360 },
   );
@@ -283,7 +287,8 @@ const procesar = async (id) => {
     const c = await sacarClips(t);
     t = leerTrabajo(id);
     actualizarTrabajo(id, {
-      nombre: c.nombre,
+      // De YouTube, el nombre es el título del video; si se subió, se deja el del archivo.
+      nombre: t.enlace ? c.nombre : t.nombre,
       versiones: [{ n: 1, fecha: new Date().toISOString(), pedido: null, resumen: `Saqué ${c.n} clips de los mejores momentos.`, archivos: c.archivos }],
       estado: "listo",
       paso: "Listo para descargar",

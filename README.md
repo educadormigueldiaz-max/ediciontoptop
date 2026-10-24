@@ -95,6 +95,11 @@ que se entienden solos (skill `bydzyne-clips`) y cada uno queda como un proyecto
 `salida/clips/<video>/clips.md`. Opciones: `--cuantos 5`, `--red todas`, `--estilo <cliente>`,
 `--sin-exportar` (para revisarlos antes). De YouTube, solo videos tuyos o con permiso.
 
+**Panel de clips**: con `npm run piloto` encendido, abre `http://localhost:8080/clips`. Pegas el
+enlace (o subes el video) y ves en vivo cada etapa (traer el video, escuchar todo, elegir momentos,
+crear clips) con porcentaje y tiempo restante. Cada clip aparece para verlo y descargarlo apenas
+termina, aunque los demás se sigan creando.
+
 ## Piloto automático (para quienes solo suben videos)
 
 ```bash

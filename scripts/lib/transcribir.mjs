@@ -60,7 +60,8 @@ export const palabrasDesdeWhisper = (salida) => {
   };
 };
 
-export const transcribir = async ({ wav, modelo, idioma }) => {
+// `alAvanzar(fraccion)` recibe el avance (0–1) para mostrarlo en otra parte.
+export const transcribir = async ({ wav, modelo, idioma, alAvanzar }) => {
   await prepararWhisper(modelo);
   let ultimo = -1;
   const salida = await transcribe({
@@ -73,6 +74,7 @@ export const transcribir = async ({ wav, modelo, idioma }) => {
     splitOnWord: true,
     printOutput: false,
     onProgress: (p) => {
+      alAvanzar?.(p);
       const pct = Math.floor(p * 100);
       if (pct >= ultimo + 10) {
         ultimo = pct;
