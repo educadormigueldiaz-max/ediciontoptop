@@ -123,6 +123,23 @@ const servirArchivo = (req, res, archivo, descargar) => {
   }
 };
 
+// Borra un trabajo con todo lo que generó (proyectos, imágenes, revisión y clips).
+const borrarTodo = (t) => {
+  fs.rmSync(carpetaTrabajo(t.id), { recursive: true, force: true });
+  for (const carpeta of [
+    path.join(CARPETA_PROYECTOS, t.proyecto),
+    path.join(RAIZ, "public", "imagenes", t.proyecto),
+    path.join(CARPETA_SALIDA, "revision", t.proyecto),
+    path.join(CARPETA_SALIDA, "clips", t.proyecto),
+    // Cada clip es un proyecto propio: <proyecto>-clip-01, -02…
+    ...(fs.existsSync(CARPETA_PROYECTOS) ? fs.readdirSync(CARPETA_PROYECTOS) : [])
+      .filter((d) => d.startsWith(`${t.proyecto}-clip-`))
+      .flatMap((d) => [path.join(CARPETA_PROYECTOS, d), path.join(CARPETA_SALIDA, "revision", d)]),
+  ]) {
+    fs.rmSync(carpeta, { recursive: true, force: true });
+  }
+};
+
 // ---------- Rutas ----------
 
 const manejar = async (req, res) => {
@@ -337,20 +354,37 @@ const manejar = async (req, res) => {
     if (["editando", "revisando", "exportando"].includes(t.estado)) {
       return error(res, 409, "Este video se está editando ahora. Bórralo cuando termine.");
     }
-    fs.rmSync(carpetaTrabajo(t.id), { recursive: true, force: true });
-    for (const carpeta of [
-      path.join(CARPETA_PROYECTOS, t.proyecto),
-      path.join(RAIZ, "public", "imagenes", t.proyecto),
-      path.join(CARPETA_SALIDA, "revision", t.proyecto),
-      path.join(CARPETA_SALIDA, "clips", t.proyecto),
-      // Cada clip es un proyecto propio: <proyecto>-clip-01, -02…
-      ...(fs.existsSync(CARPETA_PROYECTOS) ? fs.readdirSync(CARPETA_PROYECTOS) : [])
-        .filter((d) => d.startsWith(`${t.proyecto}-clip-`))
-        .flatMap((d) => [path.join(CARPETA_PROYECTOS, d), path.join(CARPETA_SALIDA, "revision", d)]),
-    ]) {
+    borrarTodo(t);
+    registrar(`Borrado ${t.id} por ${usuario}`);
+    return enviarJson(res, 200, { ok: true });
+  }
+
+  // Borrar un clip de un grupo de clips (con todas sus versiones por red). Si era el último, se
+  // borra el grupo entero.
+  if (metodo === "DELETE" && accion === "clip") {
+    if (t.tipo !== "clips" || t.estado !== "listo") return error(res, 409, "Solo se borran clips ya listos.");
+    const n = parseInt(url.searchParams.get("n"), 10);
+    const prefijo = `clip-${String(n).padStart(2, "0")}-`;
+    const versiones = t.versiones.map((v) => {
+      for (const a of v.archivos.filter((a) => a.archivo.startsWith(prefijo))) {
+        fs.rmSync(path.join(carpetaTrabajo(t.id), "resultados", `v${v.n}`, a.archivo), { force: true });
+      }
+      return { ...v, archivos: v.archivos.filter((a) => !a.archivo.startsWith(prefijo)) };
+    });
+    if (!(n > 0) || versiones.every((v, i) => v.archivos.length === t.versiones[i].archivos.length)) {
+      return error(res, 404, "Ese clip no existe.");
+    }
+    const idClip = `${t.proyecto}-clip-${String(n).padStart(2, "0")}`;
+    for (const carpeta of [path.join(CARPETA_PROYECTOS, idClip), path.join(CARPETA_SALIDA, "revision", idClip)]) {
       fs.rmSync(carpeta, { recursive: true, force: true });
     }
-    registrar(`Borrado ${t.id} por ${usuario}`);
+    if (versiones.every((v) => v.archivos.length === 0)) {
+      borrarTodo(t);
+    } else {
+      actualizarTrabajo(t.id, { versiones });
+      anotar(t.id, `${usuario} borró el clip ${n}.`);
+    }
+    registrar(`Clip ${n} de ${t.id} borrado por ${usuario}`);
     return enviarJson(res, 200, { ok: true });
   }
 

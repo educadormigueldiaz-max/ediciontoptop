@@ -414,9 +414,12 @@ function etapasHtml(t) {
   }).join("")}</div>`;
 }
 
-// Cada clip: mientras se crea, su estado; cuando está listo, el video para verlo y descargarlo.
-function clipHtml(t, c, archivo) {
-  const url = archivo ? `/api/trabajos/${t.id}/archivo?nombre=${encodeURIComponent(archivo.nombre)}${archivo.parcial ? "&parcial=1" : ""}` : null;
+// Cada clip: mientras se crea, su estado; cuando está listo, el video para verlo, descargarlo o borrarlo.
+// `descargas`: los archivos del clip (uno por red); el primero es el que se ve.
+function clipHtml(t, c, descargas, final) {
+  const enlace = (a) => `/api/trabajos/${t.id}/archivo?nombre=${encodeURIComponent(a.nombre)}${a.parcial ? "&parcial=1" : ""}`;
+  const url = descargas.length ? enlace(descargas[0]) : null;
+  const botones = descargas.map((a) => `<a class="boton" href="${enlace(a)}&descargar=1">Descargar${descargas.length > 1 ? ` ${esc(a.red)}` : ""}</a>`).join("");
   return `
     <article class="clip ${c.estado}">
       <div class="pantalla">${url
@@ -426,34 +429,44 @@ function clipHtml(t, c, archivo) {
         <h4>${c.n}. ${esc(c.titulo)}</h4>
         ${c.gancho ? `<p class="gancho">“${esc(c.gancho)}”</p>` : ""}
         ${c.porque ? `<p class="porque">${esc(c.porque)}</p>` : ""}
-        <p class="porque">Minuto ${hora(c.inicio)} · ${Math.round(c.fin - c.inicio)} s</p>
-        ${url ? `<a class="boton" href="${url}&descargar=1">Descargar</a>` : `<span class="estado ${c.estado}" style="justify-self:start">${esc(ESTADO_CLIP[c.estado] ?? "")}</span>`}
+        ${c.fin ? `<p class="porque">Minuto ${hora(c.inicio)} · ${Math.round(c.fin - c.inicio)} s</p>` : ""}
+        ${url ? botones : `<span class="estado ${c.estado}" style="justify-self:start">${esc(ESTADO_CLIP[c.estado] ?? "")}</span>`}
+        ${final ? `<button class="boton suave" type="button" data-borrar-clip="${t.id}" data-n="${c.n}">Borrar</button>` : ""}
       </div>
     </article>`;
 }
 
-// Los clips de un trabajo: del avance (mientras se crean) o de la versión final (ya listos).
+// Los clips de un trabajo: mientras se crean, del avance; ya listos, de los archivos que quedan
+// (los borrados no aparecen), con los datos del avance (gancho, por qué, minuto).
 function clipsDe(t) {
   const p = t.progreso;
   const final = t.versiones[0]?.archivos ?? [];
-  if (p?.clips?.length) {
+  if (t.estado !== "listo" && p?.clips?.length) {
     return p.clips.map((c) => {
-      const fin = final.find((a) => a.archivo.startsWith(`clip-${String(c.n).padStart(2, "0")}-`));
-      const archivo = fin ? { nombre: fin.archivo } : c.estado === "listo" && c.archivos?.[0] ? { nombre: c.archivos[0], parcial: true } : null;
-      return { clave: `${t.id}-${c.n}-${archivo?.nombre ?? c.estado}`, html: clipHtml(t, c, archivo) };
+      const descargas = c.estado === "listo" ? (c.archivos ?? []).map((nombre) => ({ nombre, parcial: true, red: "" })) : [];
+      return { clave: `${t.id}-${c.n}-${descargas[0]?.nombre ?? c.estado}`, html: clipHtml(t, c, descargas.slice(0, 1), false) };
     });
   }
-  return final.map((a, i) => ({
-    clave: `${t.id}-${a.archivo}`,
-    html: clipHtml(t, { n: i + 1, titulo: a.red.replace(/^clip \d+: /, ""), estado: "listo", inicio: 0, fin: 0 }, { nombre: a.archivo }),
-  }));
+  const grupos = new Map();
+  for (const a of final) {
+    const n = parseInt(/^clip-(\d+)-/.exec(a.archivo)?.[1] ?? "0", 10) || grupos.size + 1;
+    if (!grupos.has(n)) grupos.set(n, []);
+    grupos.get(n).push({ nombre: a.archivo, red: (/\(([^)]+)\)$/.exec(a.red)?.[1]) ?? "" });
+  }
+  return [...grupos].map(([n, descargas]) => {
+    const datos = p?.clips?.find((c) => c.n === n);
+    const otro = final.find((a) => a.archivo === descargas[0].nombre);
+    const c = { ...(datos ?? { n, titulo: otro.red.replace(/^clip \d+: /, "").replace(/ \([^)]+\)$/, "") }), estado: "listo" };
+    return { clave: `${t.id}-${descargas[0].nombre}`, html: clipHtml(t, c, descargas, true) };
+  });
 }
 
 function cabeza(t) {
   const nombre = t.nombre === "clips-youtube" ? t.progreso?.video || "Video de YouTube" : t.nombre;
   const cola = t.enCola ? (t.enCola === 1 ? "Es el siguiente en la cola" : `Hay ${t.enCola - 1} antes en la cola`) : "";
   return `<div class="cabeza"><div><h3>${esc(nombre)}</h3><p class="ayuda">${esc(t.red)} · ${fecha(t.creado)}${t.costo ? ` · ≈ ${t.costo} USD` : ""}${cola ? ` · ${cola}` : ""}</p></div>
-    <span class="estado ${t.estado}">${esc(t.estadoTexto)}</span></div>`;
+    <div style="display:flex;gap:8px;align-items:center"><span class="estado ${t.estado}">${esc(t.estadoTexto)}</span>
+    ${["listo", "problema"].includes(t.estado) ? `<button class="boton suave" type="button" data-borrar-grupo="${t.id}" style="min-height:36px;padding:0 14px;font-size:14px">Borrar todo</button>` : ""}</div></div>`;
 }
 
 // Actualiza solo lo que cambió, para no cortar un video que se está viendo.
@@ -536,7 +549,29 @@ async function cargar() {
   reloj = setTimeout(cargar, items.length ? 2000 : 10000);
 }
 
+// Borrar pide un segundo toque para confirmar (sin ventanas que tapan la página).
+const confirmar = (boton, texto) => {
+  if (boton.dataset.seguro === "1") return true;
+  boton.dataset.seguro = "1";
+  const antes = boton.textContent;
+  boton.textContent = texto;
+  setTimeout(() => { boton.dataset.seguro = ""; boton.textContent = antes; }, 4000);
+  return false;
+};
+
 document.addEventListener("click", async (e) => {
+  const clip = e.target.closest("[data-borrar-clip]");
+  const grupo = e.target.closest("[data-borrar-grupo]");
+  if (clip || grupo) {
+    const boton = clip || grupo;
+    if (!confirmar(boton, clip ? "¿Seguro? Toca otra vez" : "¿Borrar todos? Toca otra vez")) return;
+    boton.disabled = true;
+    try {
+      await api(clip ? `/api/trabajos/${clip.dataset.borrarClip}/clip?n=${clip.dataset.n}` : `/api/trabajos/${grupo.dataset.borrarGrupo}`, { method: "DELETE" });
+      cargar();
+    } catch (err) { boton.disabled = false; avisar(err.message); window.scrollTo({ top: 0, behavior: "smooth" }); }
+    return;
+  }
   const id = e.target.closest("[data-reintentar]")?.dataset.reintentar;
   if (!id) return;
   try { await api(`/api/trabajos/${id}/reintentar`, { method: "POST" }); cargar(); } catch (err) { avisar(err.message); }
