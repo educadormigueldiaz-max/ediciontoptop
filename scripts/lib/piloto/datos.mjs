@@ -16,6 +16,7 @@ export const TIPOS = {
   anuncio: "Anuncio",
   tutorial: "Tutorial",
   testimonio: "Testimonio",
+  clips: "Clips de un video largo",
 };
 export const REDES_PILOTO = {
   instagram: "Instagram / TikTok",

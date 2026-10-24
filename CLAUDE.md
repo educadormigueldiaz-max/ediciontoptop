@@ -5,7 +5,7 @@ pide en español lo que quiere ver ("corta las pausas y pon subtítulos") y tú 
 
 - Responde siempre en español, con frases cortas y sin jerga técnica.
 - Antes de editar, lee las skills de `.claude/skills/` que apliquen (ritmo, subtítulos, estilo,
-  elementos, 3d, recorte, producción, movimiento, composición). Son el criterio de edición.
+  elementos, 3d, recorte, producción, movimiento, composición, clips). Son el criterio de edición.
 - Si el pedido es ambiguo ("déjalo bonito"), aplica las skills y explica en una línea qué decidiste.
 
 ## Flujo de trabajo: Prepara → Pide → Revisa → Reutiliza
@@ -38,6 +38,7 @@ pide en español lo que quiere ver ("corta las pausas y pon subtítulos") y tú 
 | `npm run exportar -- <id> --red <red>\|todas` | Exporta con el tamaño y la calidad de WhatsApp, Instagram, TikTok, YouTube o YouTube Shorts |
 | `npm run duplicar -- <id> <nuevo>` | Copia la edición usando el mismo video |
 | `npm run revisar -- <id> [--formato …]` | Genera cuadros de revisión en `salida/revision/<id>/` |
+| `npm run clips -- <video o enlace de YouTube>` | Saca clips verticales de los mejores momentos de un video largo (skill `bydzyne-clips`) |
 | `npm run piloto` | Página para subir videos y recibirlos editados sin Terminal (skill `bydzyne-piloto`) |
 | `npm run lint` | Revisa el código (ESLint + TypeScript) |
 
@@ -60,7 +61,8 @@ Tiempos en **segundos del video original**. El esquema está en `src/edicion/esq
     si la persona pide un encuadre fijo.
   - `subtitulos`, `estiloSubtitulos` ("palabra", "frase" o "claves": solo las palabras con
     `"clave": true`; `"letra": "alterna"` usa la segunda letra), `posicionSubtitulos` (0 = arriba, 1 = abajo).
-  - `zoomEnCortes`: acercamiento alterno en cada corte.
+  - `zoomEnCortes`: acercamiento alterno en cada corte. `empuje` (true por defecto): acercamiento
+    lento dentro de cada tramo. `color`: "natural" (por defecto), "vivo" o "ninguno".
   - `gancho` (texto o null) y `duracionGancho`: frase de los primeros segundos.
   - `cierre`: `{ "texto": "...", "duracion": 2 }` o null.
   - `sonidos` (true/false) y `volumenSonidos` (0–1): efectos de sonido al aparecer los elementos.

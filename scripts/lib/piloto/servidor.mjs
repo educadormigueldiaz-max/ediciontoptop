@@ -64,6 +64,8 @@ const bloqueado = (ip) => {
   return lista.length >= 10;
 };
 
+const ENLACE_YOUTUBE = /^https:\/\/(www\.|m\.)?(youtube\.com\/(watch\?v=|shorts\/|live\/)|youtu\.be\/)[\w-]{6,}[^\s]*$/;
+
 const extension = (nombre) => path.extname(String(nombre)).slice(1).toLowerCase();
 
 // Lo que la página ve de un trabajo (sin rutas internas).
@@ -72,6 +74,7 @@ const vista = (t, posiciones, conDueno) => ({
   nombre: t.nombre,
   creado: t.creado,
   tipo: TIPOS[t.tipo] ?? t.tipo,
+  clips: t.tipo === "clips",
   red: REDES_PILOTO[t.red] ?? t.red,
   estilo: t.estilo,
   cta: t.cta,
@@ -179,6 +182,28 @@ const manejar = async (req, res) => {
     if (!TIPOS[d.tipo]) return error(res, 400, "Elige el tipo de video.");
     if (!REDES_PILOTO[d.red]) return error(res, 400, "Elige la red social.");
     const estilo = persona.estilo ?? (estilos().includes(d.estilo) ? d.estilo : "predeterminado");
+    // Clips de un video de YouTube: no se sube nada, entra directo a la cola.
+    if (d.tipo === "clips" && d.enlace) {
+      const enlace = String(d.enlace).trim();
+      if (!ENLACE_YOUTUBE.test(enlace)) return error(res, 400, "Ese enlace no parece de un video de YouTube.");
+      const t = nuevoTrabajo({
+        usuario,
+        nombre: "clips-youtube",
+        tipo: "clips",
+        red: d.red,
+        estilo,
+        enlace,
+        cta: "",
+        notas: "",
+        fotosEsperadas: 0,
+        estado: "en-cola",
+        paso: "Esperando turno",
+        enColaDesde: new Date().toISOString(),
+      });
+      anotar(t.id, `Clips de YouTube pedidos por ${usuario}: ${enlace}, ${t.red}, estilo ${estilo}.`);
+      siguiente();
+      return enviarJson(res, 200, { id: t.id, enCola: true });
+    }
     if (!EXT_VIDEO.includes(extension(d.nombreVideo))) {
       return error(res, 400, "Ese archivo no parece un video. Usa MP4 o MOV (los del celular sirven).");
     }
@@ -266,6 +291,7 @@ const manejar = async (req, res) => {
 
   if (metodo === "POST" && accion === "cambios") {
     if (t.estado !== "listo") return error(res, 409, "Espera a que el video esté listo para pedir cambios.");
+    if (t.tipo === "clips") return error(res, 409, "A los clips todavía no se les piden cambios desde aquí.");
     const { pedido } = await leerCuerpo(req);
     const texto = String(pedido ?? "").trim().slice(0, 600);
     if (texto.length < 3) return error(res, 400, "Escribe qué quieres cambiar.");
@@ -298,6 +324,11 @@ const manejar = async (req, res) => {
       path.join(CARPETA_PROYECTOS, t.proyecto),
       path.join(RAIZ, "public", "imagenes", t.proyecto),
       path.join(CARPETA_SALIDA, "revision", t.proyecto),
+      path.join(CARPETA_SALIDA, "clips", t.proyecto),
+      // Cada clip es un proyecto propio: <proyecto>-clip-01, -02…
+      ...(fs.existsSync(CARPETA_PROYECTOS) ? fs.readdirSync(CARPETA_PROYECTOS) : [])
+        .filter((d) => d.startsWith(`${t.proyecto}-clip-`))
+        .flatMap((d) => [path.join(CARPETA_PROYECTOS, d), path.join(CARPETA_SALIDA, "revision", d)]),
     ]) {
       fs.rmSync(carpeta, { recursive: true, force: true });
     }

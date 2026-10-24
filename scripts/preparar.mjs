@@ -12,6 +12,7 @@ import {
   CARPETA_PROYECTOS, FPS, RAIZ, actualizarListaDeProyectos, aId, escribirJson, ffmpeg, ffprobe,
   leerJson, redondear,
 } from "./lib/herramientas.mjs";
+import { limpiarAudio } from "./lib/audio.mjs";
 import { detectarCaras } from "./lib/caras.mjs";
 import { estilosDisponibles } from "./lib/produccion.mjs";
 import { transcribir } from "./lib/transcribir.mjs";
@@ -36,6 +37,7 @@ Opciones:
   --musica <archivo>        Música de fondo de public/musica/ (por ejemplo musica/cancion.mp3)
   --volumen-musica <0-1>    Volumen de la música en las pausas (por defecto 0.25)
   --sin-sonidos             Sin efectos de sonido en los elementos
+  --sin-limpiar-audio       Deja el audio como viene (por defecto limpia la voz y empareja el volumen)
   --forzar                  Rehace el proyecto aunque ya exista (pierde los cambios a mano)
 `;
 
@@ -58,6 +60,7 @@ const { values: op, positionals } = parseArgs({
     musica: { type: "string" },
     "volumen-musica": { type: "string", default: "0.25" },
     "sin-sonidos": { type: "boolean", default: false },
+    "sin-limpiar-audio": { type: "boolean", default: false },
     forzar: { type: "boolean", default: false },
     ayuda: { type: "boolean", short: "h", default: false },
   },
@@ -129,6 +132,7 @@ if (!info.streams.some((s) => s.codec_type === "audio")) {
   console.error("El video no tiene audio: no se pueden detectar pausas ni hacer subtítulos.");
   process.exit(1);
 }
+if (!op["sin-limpiar-audio"]) console.log(`  Audio: ${limpiarAudio(video)}`);
 
 // 2. Audio a 16 kHz mono, el formato que usa Whisper.
 paso(2, "Extrayendo el audio…");

@@ -27,6 +27,10 @@ animaciones con [Remotion](https://www.remotion.dev); tú revisas en el navegado
 - **Exportar por red social**: WhatsApp (liviano), Instagram, TikTok y YouTube, con nombres claros.
 - **Piloto automático**: una página con usuario y contraseña donde cualquiera sube su video desde el
   celular y lo recibe editado, sin Terminal y sin hablar con Claude. Puede pedir cambios escribiendo.
+- **Clipping**: de un video largo (o un enlace de YouTube) saca clips verticales de los mejores
+  momentos, cada uno con cortes, subtítulos y gancho. También desde la página.
+- **Acabado profesional**: voz limpia y con volumen parejo, color retocado, cámara que se acerca
+  lento en cada toma, gancho y subtítulos con animaciones suaves.
 - **Tu cara nunca se tapa**: el programa detecta dónde está, acomoda textos y gráficos alrededor
   y ajusta el recorte para que siempre quede en cuadro.
 - **Variaciones** de un mismo video para probar anuncios.
@@ -77,6 +81,19 @@ Cuando haya mejoras nuevas, dentro de la carpeta del proyecto:
 ```bash
 npm run actualizar
 ```
+
+## Clipping (clips de un video largo)
+
+```bash
+npm run clips -- entrada/charla.mp4
+npm run clips -- "https://www.youtube.com/watch?v=…"
+```
+
+Transcribe el video completo (un video de 1 hora tarda unos 25 minutos), Claude elige los momentos
+que se entienden solos (skill `bydzyne-clips`) y cada uno queda como un proyecto
+(`<video>-clip-01`, `-02`…) exportado a `salida/`. El resumen con el porqué de cada clip queda en
+`salida/clips/<video>/clips.md`. Opciones: `--cuantos 5`, `--red todas`, `--estilo <cliente>`,
+`--sin-exportar` (para revisarlos antes). De YouTube, solo videos tuyos o con permiso.
 
 ## Piloto automático (para quienes solo suben videos)
 

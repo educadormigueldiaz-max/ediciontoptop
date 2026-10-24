@@ -162,10 +162,15 @@ td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line
       <div class="campo">
         <span class="titulo">1. Tu video</span>
         <label class="archivo" id="caja-video">
-          <input type="file" id="video" accept="video/*" required>
+          <input type="file" id="video" accept="video/*">
           <strong id="texto-video">Toca para elegir el video</strong>
           <span class="ayuda">De la galería del celular o del computador</span>
         </label>
+        <div class="campo" id="campo-enlace" hidden>
+          <label class="titulo" for="enlace">…o pega el enlace de YouTube</label>
+          <input type="url" id="enlace" inputmode="url" placeholder="https://www.youtube.com/watch?v=…">
+          <span class="ayuda">Solo videos tuyos o con permiso. Un video de 1 hora tarda de 30 a 60 minutos.</span>
+        </div>
       </div>
       <div class="campo">
         <span class="titulo">2. ¿Qué tipo de video es?</span>
@@ -276,6 +281,8 @@ async function iniciar() {
   $("tipos").innerHTML = Object.entries(yo.tipos).map(([k, v], i) => `<label><input type="radio" name="tipo" value="${k}" ${i === 0 ? "checked" : ""}><span>${esc(v)}</span></label>`).join("");
   $("redes").innerHTML = Object.entries(yo.redes).map(([k, v], i) => `<label><input type="radio" name="red" value="${k}" ${i === 0 ? "checked" : ""}><span>${esc(v)}</span></label>`).join("");
   $("campo-estilo").hidden = Boolean(yo.estiloFijo);
+  document.querySelectorAll("input[name=tipo]").forEach((r) => r.addEventListener("change", cambioDeTipo));
+  cambioDeTipo();
   $("estilo").innerHTML = yo.estilos.map((e) => `<option value="${esc(e)}">${esc(e === "predeterminado" ? "Predeterminado" : e)}</option>`).join("");
   $("pestanas-admin").hidden = !yo.admin;
   $("personas").hidden = !yo.admin;
@@ -296,6 +303,13 @@ $("form-entrar").addEventListener("submit", async (e) => {
 $("salir").addEventListener("click", async () => { await api("/api/salir", { method: "POST" }).catch(() => {}); mostrarEntrar(); });
 
 // ---------- Subir ----------
+// "Clips de un video largo" acepta un enlace de YouTube en vez del archivo, y no usa fotos ni notas.
+function cambioDeTipo() {
+  const clips = document.querySelector("input[name=tipo]:checked")?.value === "clips";
+  $("campo-enlace").hidden = !clips;
+  document.querySelector("#form-subir details")?.toggleAttribute("hidden", clips);
+  $("boton-subir").textContent = clips ? "Sacar clips" : "Enviar a editar";
+}
 $("video").addEventListener("change", () => {
   const f = $("video").files[0];
   $("texto-video").textContent = f ? `✓ ${f.name} (${(f.size / 1e6).toFixed(0)} MB)` : "Toca para elegir el video";
@@ -324,8 +338,10 @@ const subirArchivo = (id, archivo, clase, alAvanzar) => new Promise((resolve, re
 $("form-subir").addEventListener("submit", async (e) => {
   e.preventDefault();
   const video = $("video").files[0];
-  if (!video) return avisar($("subir-aviso"), "Elige el video primero.");
-  const fotos = [...$("fotos").files];
+  const tipo = document.querySelector("input[name=tipo]:checked").value;
+  const enlace = tipo === "clips" && !video ? $("enlace").value.trim() : "";
+  if (!video && !enlace) return avisar($("subir-aviso"), tipo === "clips" ? "Elige el video o pega el enlace de YouTube." : "Elige el video primero.");
+  const fotos = tipo === "clips" ? [] : [...$("fotos").files];
   if (fotos.length > 6) return avisar($("subir-aviso"), "Puedes subir hasta 6 fotos.");
   avisar($("subir-aviso"), "");
   $("boton-subir").disabled = true;
@@ -334,15 +350,24 @@ $("form-subir").addEventListener("submit", async (e) => {
     const { id } = await api("/api/trabajos", {
       method: "POST",
       body: JSON.stringify({
-        tipo: document.querySelector("input[name=tipo]:checked").value,
+        tipo,
+        enlace,
         red: document.querySelector("input[name=red]:checked").value,
         estilo: $("estilo").value,
         cta: $("cta").value,
         notas: $("notas").value,
-        nombreVideo: video.name,
+        nombreVideo: video?.name ?? "",
         fotos: fotos.map((f) => f.name),
       }),
     });
+    if (enlace) {
+      $("form-subir").reset();
+      cambioDeTipo();
+      avisar($("subir-aviso"), "¡Recibido! El video ya está en la cola. Aquí abajo ves cómo va.", "bien");
+      abiertos.add(id);
+      cargarVideos();
+      return;
+    }
     const total = video.size + fotos.reduce((t, f) => t + f.size, 0);
     let hecho = 0;
     const avanzar = (base, tamano) => (p) => {
@@ -357,6 +382,7 @@ $("form-subir").addEventListener("submit", async (e) => {
     $("form-subir").reset();
     $("video").dispatchEvent(new Event("change"));
     $("fotos").dispatchEvent(new Event("change"));
+    cambioDeTipo();
     avisar($("subir-aviso"), "¡Recibido! Tu video ya está en la cola. Aquí abajo ves cómo va.", "bien");
     abiertos.add(id);
     cargarVideos();
@@ -396,7 +422,7 @@ function tarjetaVideo(t) {
       ${t.error ? `<div class="aviso mal">${esc(t.error)}</div>` : ""}
       ${t.estado === "problema" ? `<button class="boton suave" type="button" data-accion="reintentar">Intentar de nuevo</button>` : ""}
       ${versiones}
-      ${t.estado === "listo" ? `
+      ${t.estado === "listo" && !t.clips ? `
         <details class="cambios" ${abiertos.has(t.id + "-c") ? "open" : ""} data-cambios>
           <summary>Pedir cambios</summary>
           <textarea placeholder="Escribe qué cambiar. Por ejemplo: quita el inicio, otro gancho, sin música" maxlength="600"></textarea>

@@ -1,5 +1,6 @@
 import {
   AbsoluteFill,
+  Easing,
   interpolate,
   spring,
   useCurrentFrame,
@@ -81,7 +82,8 @@ export const colocarGancho = (p: {
   };
 };
 
-// Frase llamativa de los primeros segundos (ver colocarGancho).
+// Frase llamativa de los primeros segundos (ver colocarGancho): tarjeta oscura translúcida que
+// entra suave y palabras que aparecen una tras otra, con una línea de color que se dibuja abajo.
 export const Gancho: React.FC<{
   texto: string;
   duracionFrames: number;
@@ -91,9 +93,30 @@ export const Gancho: React.FC<{
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const base = Math.min(width, height);
-  const entrada = spring({ frame, fps, config: { damping: 13, mass: 0.6 } });
   const { arriba, tamano, anchoMax, rellenoAlto, rellenoLados } = colocarGancho(
     { texto, width, height, cara },
+  );
+  const entrada = spring({
+    frame,
+    fps,
+    config: { damping: 200 },
+    durationInFrames: 14,
+  });
+  const salida = interpolate(
+    frame,
+    [duracionFrames - 8, duracionFrames],
+    [0, 1],
+    {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: Easing.in(Easing.cubic),
+    },
+  );
+  const palabras = texto.trim().split(/\s+/);
+  // Las palabras entran en el primer medio segundo, más juntas si la frase es larga.
+  const paso = Math.min(
+    3,
+    Math.floor(fps * 0.5) / Math.max(1, palabras.length),
   );
 
   return (
@@ -103,30 +126,70 @@ export const Gancho: React.FC<{
           marginTop: arriba,
           maxWidth: anchoMax,
           padding: `${rellenoAlto}px ${rellenoLados}px`,
-          borderRadius: base * 0.03,
-          backgroundColor: marca.colores.primario,
-          boxShadow: `0 ${base * 0.015}px 0 ${marca.colores.contorno}`,
+          borderRadius: base * 0.028,
+          backgroundColor: "rgba(12, 12, 14, 0.62)",
+          backdropFilter: `blur(${base * 0.012}px)`,
+          border: `${Math.max(1, base * 0.0015)}px solid rgba(255, 255, 255, 0.14)`,
+          boxShadow: `0 ${base * 0.02}px ${base * 0.06}px rgba(0, 0, 0, 0.35)`,
           color: marca.colores.texto,
           fontFamily: marca.fuente,
-          fontWeight: 900,
+          fontWeight: 800,
           fontSize: tamano,
-          lineHeight: INTERLINEA,
-          textAlign: "center",
-          textWrap: "balance",
-          rotate: "-2deg",
-          scale: entrada,
-          opacity: interpolate(
-            frame,
-            [duracionFrames - 8, duracionFrames],
-            [1, 0],
-            {
-              extrapolateLeft: "clamp",
-              extrapolateRight: "clamp",
-            },
-          ),
+          opacity: entrada * (1 - salida),
+          scale: interpolate(entrada, [0, 1], [0.94, 1]),
+          translate: `0 ${interpolate(entrada, [0, 1], [base * 0.02, 0]) - salida * base * 0.02}px`,
+          position: "relative",
+          overflow: "hidden",
         }}
       >
-        {texto}
+        {/* El texto va en su propio bloque: con la línea de color (absoluta) en el mismo renglón,
+            Chrome se cae al equilibrar las líneas. */}
+        <div
+          style={{
+            lineHeight: INTERLINEA,
+            letterSpacing: "-0.01em",
+            textAlign: "center",
+            textWrap: "balance",
+          }}
+        >
+          {palabras.map((palabra, i) => {
+            const aparece = spring({
+              frame: frame - 3 - i * paso,
+              fps,
+              config: { damping: 200 },
+              durationInFrames: 10,
+            });
+            return (
+              <span key={i}>
+                {i === 0 ? "" : " "}
+                <span
+                  style={{
+                    display: "inline-block",
+                    opacity: aparece,
+                    translate: `0 ${(1 - aparece) * tamano * 0.35}px`,
+                    filter: `blur(${(1 - aparece) * tamano * 0.08}px)`,
+                  }}
+                >
+                  {palabra}
+                </span>
+              </span>
+            );
+          })}
+        </div>
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            bottom: 0,
+            height: Math.max(2, base * 0.006),
+            width: `${interpolate(frame, [6, 22], [0, 100], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+              easing: Easing.bezier(0.16, 1, 0.3, 1),
+            })}%`,
+            backgroundColor: marca.colores.acento,
+          }}
+        />
       </div>
     </AbsoluteFill>
   );

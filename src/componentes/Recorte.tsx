@@ -304,6 +304,8 @@ const PersonaDelVideo: React.FC<{
           enfoqueX={enfoque.x}
           enfoqueY={enfoque.y}
           zoom={t.zoom}
+          empuje={t.empuje}
+          color={edicion.opciones.color}
           enfasis={edicion.enfasis}
           mascara={(cuadro) => mascaraDe(edicion.recorte, cuadro)}
         />

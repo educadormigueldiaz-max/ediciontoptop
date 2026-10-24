@@ -5,7 +5,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { CARPETA_PROYECTOS, CARPETA_SALIDA, RAIZ, leerJson } from "../herramientas.mjs";
+import { CARPETA_PROYECTOS, CARPETA_SALIDA, RAIZ, aId, leerJson } from "../herramientas.mjs";
 import { REDES, TODAS_LAS_REDES } from "../produccion.mjs";
 import {
   TIPOS, actualizarTrabajo, anotar, carpetaTrabajo, leerTrabajo, registrar, trabajos,
@@ -220,6 +220,50 @@ const exportar = async (t, version) => {
   return archivos;
 };
 
+// Clips de un video largo (subido o de YouTube): todo lo hace `npm run clips` (skill bydzyne-clips).
+const sacarClips = async (t) => {
+  const redes = t.red === "todas" ? "todas" : t.red;
+  const r = await node(
+    "clips.mjs",
+    [
+      t.enlace ?? path.join(carpetaTrabajo(t.id), "subidos", t.video),
+      "--id", t.proyecto,
+      "--estilo", t.estilo,
+      "--red", redes,
+      "--tope", String(TOPE_POR_PASO),
+      "--descargar-en", path.join(carpetaTrabajo(t.id), "subidos"),
+    ],
+    { limiteMin: 360 },
+  );
+  anotar(t.id, `Clips (código ${r.codigo}):\n${r.salida.slice(-3000)}`);
+  const archivoResultado = path.join(CARPETA_SALIDA, "clips", t.proyecto, "resultado.json");
+  if (r.codigo !== 0 || !fs.existsSync(archivoResultado)) {
+    if (/privado|iniciar sesión/i.test(r.salida)) throw new ErrorClaro("Ese video de YouTube es privado o pide iniciar sesión: no se puede descargar.");
+    if (/descargar/i.test(r.salida)) throw new ErrorClaro("No pudimos descargar el video de YouTube. Revisa el enlace.", r.salida);
+    if (/no encontró momentos/i.test(r.salida)) throw new ErrorClaro("No encontramos momentos que funcionen solos en este video.");
+    throw new ErrorClaro("No pudimos sacar los clips de este video.", r.salida);
+  }
+  const resultado = leerJson(archivoResultado);
+  const carpeta = path.join(carpetaTrabajo(t.id), "resultados", "v1");
+  fs.mkdirSync(carpeta, { recursive: true });
+  const archivos = [];
+  for (const [i, clip] of resultado.clips.entries()) {
+    for (const a of clip.archivos) {
+      const red = a.slice(clip.id.length + 1, -".mp4".length);
+      const nombre = `clip-${String(i + 1).padStart(2, "0")}-${aId(clip.titulo).slice(0, 40)}-${red}.mp4`;
+      fs.renameSync(path.join(CARPETA_SALIDA, a), path.join(carpeta, nombre));
+      archivos.push({
+        archivo: nombre,
+        red: `clip ${i + 1}: ${clip.titulo}${t.red === "todas" ? ` (${REDES[red]?.nombre ?? red})` : ""}`,
+        megas: +(fs.statSync(path.join(carpeta, nombre)).size / 1e6).toFixed(1),
+      });
+    }
+  }
+  if (!archivos.length) throw new ErrorClaro("No pudimos crear los archivos de los clips.");
+  const costo = [...r.salida.matchAll(/Costo aprox\.: ([\d.]+) USD/g)].reduce((s, m) => s + +m[1], 0);
+  return { archivos, costo, n: resultado.clips.length, nombre: aId(resultado.video).slice(0, 40) };
+};
+
 // ---------- Un trabajo completo ----------
 
 const procesar = async (id) => {
@@ -233,6 +277,24 @@ const procesar = async (id) => {
   registrar(`Empieza ${id} (${t.usuario}, ${clase === "nuevo" ? "video nuevo" : `cambio: ${pedido}`})`);
   let costo = 0;
   let resumen;
+
+  if (t.tipo === "clips") {
+    paso("editando", "Buscando los mejores momentos (en un video de 1 hora tarda de 30 a 60 minutos)");
+    const c = await sacarClips(t);
+    t = leerTrabajo(id);
+    actualizarTrabajo(id, {
+      nombre: c.nombre,
+      versiones: [{ n: 1, fecha: new Date().toISOString(), pedido: null, resumen: `Saqué ${c.n} clips de los mejores momentos.`, archivos: c.archivos }],
+      estado: "listo",
+      paso: "Listo para descargar",
+      error: null,
+      pendiente: null,
+      enColaDesde: null,
+      costo: +((t.costo ?? 0) + c.costo).toFixed(2),
+    });
+    registrar(`Listo ${id}: ${c.n} clips`);
+    return;
+  }
 
   if (clase === "nuevo") {
     paso("editando", "Cortando pausas y escribiendo subtítulos");

@@ -34,6 +34,10 @@ Bueno saber:
 - **El video no promete lo que no dijiste.** No se inventan cifras ni resultados. Si en el video
   dices algo riesgoso (ingresos o salud), te avisa.
 
+**Clips de un video largo:** en *¿Qué tipo de video es?* elige **Clips de un video largo**. Sube el
+video o pega el enlace de YouTube (solo videos tuyos o con permiso) y toca *Sacar clips*. Un video de
+1 hora tarda de 30 a 60 minutos. Recibes varios clips cortos, cada uno con su botón de descarga.
+
 **Para quien administra:** `npm run piloto` enciende la página. Las cuentas se crean en la sección
 *Personas* (entrando como `admin`) o con `npm run piloto -- --usuario <nombre>`.
 

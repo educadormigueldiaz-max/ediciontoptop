@@ -189,6 +189,8 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
                   enfoqueX={enfoque.x}
                   enfoqueY={enfoque.y}
                   zoom={tramo.zoom}
+                  empuje={tramo.empuje}
+                  color={edicion.opciones.color}
                   enfasis={edicion.enfasis}
                 />
               </Series.Sequence>

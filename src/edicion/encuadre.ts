@@ -1,6 +1,6 @@
 import { Easing, interpolate } from "remotion";
 import type { Edicion } from "./esquema";
-import type { ElementoEnEditado, Tramo } from "./linea-de-tiempo";
+import { zoomDeEmpuje, type ElementoEnEditado, type Tramo } from "./linea-de-tiempo";
 
 // Rectángulo en píxeles del video de salida.
 export type Caja = { x: number; y: number; ancho: number; alto: number };
@@ -129,7 +129,10 @@ export const caraEnSalida = (
       altoOriginal: edicion.alto,
       enfoqueX: enfoque.x,
       enfoqueY: enfoque.y,
-      zoom: tramo.zoom * zoomEnfasisEn(segundo, edicion.enfasis),
+      zoom:
+        tramo.zoom *
+        zoomDeEmpuje(tramo.empuje, tramo.trimBefore + f - tramo.desdeFrame, fps) *
+        zoomEnfasisEn(segundo, edicion.enfasis),
     });
     const cx = g.left + c[0] * g.ancho;
     const cy = g.top + c[1] * g.alto;

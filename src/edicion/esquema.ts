@@ -181,6 +181,10 @@ export const esquemaEdicion = z.object({
     posicionSubtitulos: z.number().min(0).max(1),
     // Alterna un acercamiento en cada corte para disimular los saltos.
     zoomEnCortes: z.boolean(),
+    // Acercamiento lento y continuo dentro de cada tramo (como una cámara que se mueve).
+    empuje: z.boolean().default(true),
+    // Retoque de color de la imagen: "natural" (un poco más de contraste y color), "vivo" o "ninguno".
+    color: z.enum(["natural", "vivo", "ninguno"]).default("natural"),
     gancho: z.string().nullable(),
     duracionGancho: z.number().positive(),
     cierre: z

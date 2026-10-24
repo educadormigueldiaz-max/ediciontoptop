@@ -111,7 +111,6 @@ const Pagina: React.FC<{ page: TikTokPage; estilo: Estilo; centro: number; alter
         left: margen,
         right: margen,
         top: centro,
-        translate: "0 -50%",
         textAlign: "center",
         fontFamily: alterna ? marca.fuenteAlterna : marca.fuente,
         fontStyle: alterna ? "italic" : "normal",
@@ -124,19 +123,21 @@ const Pagina: React.FC<{ page: TikTokPage; estilo: Estilo; centro: number; alter
         textWrap: "balance",
         // El contorno grueso "come" el espacio entre palabras; esto lo compensa.
         wordSpacing: "0.18em",
+        // Contorno fino y sombra suave: se lee sobre cualquier fondo sin verse "de caricatura".
         // La letra alterna es más fina: con menos contorno se ve más elegante.
-        WebkitTextStroke: `${tamano * (alterna ? 0.09 : 0.14)}px ${marca.colores.contorno}`,
+        WebkitTextStroke: `${tamano * (alterna ? 0.06 : 0.09)}px ${marca.colores.contorno}`,
         paintOrder: "stroke fill",
-        textShadow: `0 ${tamano * 0.06}px ${tamano * 0.18}px rgba(0,0,0,0.45)`,
-        opacity: interpolate(frame, [0, 3], [0, 1], {
+        textShadow: `0 ${tamano * 0.05}px ${tamano * 0.25}px rgba(0,0,0,0.55)`,
+        opacity: interpolate(frame, [0, 4], [0, 1], {
           extrapolateLeft: "clamp",
           extrapolateRight: "clamp",
         }),
-        scale: interpolate(frame, [0, 6], [0.82, 1], {
+        // Entra subiendo apenas, sin rebote.
+        translate: `0 calc(-50% + ${interpolate(frame, [0, 6], [tamano * 0.18, 0], {
           extrapolateLeft: "clamp",
           extrapolateRight: "clamp",
-          easing: Easing.bezier(0.34, 1.56, 0.64, 1),
-        }),
+          easing: Easing.bezier(0.16, 1, 0.3, 1),
+        })}px)`,
       }}
     >
       {page.tokens.map((token, i) => {
@@ -148,7 +149,7 @@ const Pagina: React.FC<{ page: TikTokPage; estilo: Estilo; centro: number; alter
               style={{
                 display: "inline-block",
                 color: i === activa ? marca.colores.acento : marca.colores.texto,
-                scale: i === activa && estilo !== "frase" ? 1.08 : 1,
+                scale: i === activa && estilo !== "frase" ? 1.05 : 1,
               }}
             >
               {texto}

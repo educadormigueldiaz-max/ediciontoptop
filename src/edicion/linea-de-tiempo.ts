@@ -2,12 +2,26 @@ import type { Caption } from "@remotion/captions";
 import type { Edicion, Elemento } from "./esquema";
 
 export const ZOOM_EN_CORTES = 1.12;
+// Cuánto se acerca la cámara a lo largo de un tramo con `empuje` (4 %), y lo más rápido que lo
+// hace (por segundo), para que en tramos cortos no se note como un salto.
+const EMPUJE = 0.04;
+const EMPUJE_POR_SEGUNDO = 0.01;
+
+// Zoom extra del empuje lento en un cuadro del video original. Se mide sobre el tramo completo,
+// así un pedazo del tramo (por ejemplo, la persona recortada) se mueve igual que el video.
+export const zoomDeEmpuje = (empuje: Tramo["empuje"], cuadroOriginal: number, fps: number) => {
+  if (!empuje) return 1;
+  const avance = Math.min(1, Math.max(0, (cuadroOriginal - empuje.inicio) / empuje.duracion));
+  return 1 + Math.min(EMPUJE, (EMPUJE_POR_SEGUNDO * empuje.duracion) / fps) * avance;
+};
 
 export type Tramo = {
   desdeFrame: number; // dónde empieza en el video editado
   duracionFrames: number;
   trimBefore: number; // frame del video original donde empieza
   zoom: number;
+  // Tramo completo (cuadro del original donde empieza y duración) para el empuje lento, o null.
+  empuje: { inicio: number; duracion: number } | null;
 };
 
 // Convierte los segmentos (segundos del original) en tramos consecutivos (frames del editado).
@@ -22,6 +36,7 @@ export const calcularTramos = (edicion: Edicion, fps: number): Tramo[] => {
       duracionFrames,
       trimBefore: desde,
       zoom: s.zoom ?? (edicion.opciones.zoomEnCortes && i % 2 === 1 ? ZOOM_EN_CORTES : 1),
+      empuje: edicion.opciones.empuje ? { inicio: desde, duracion: duracionFrames } : null,
     };
     cursor += duracionFrames;
     return tramo;

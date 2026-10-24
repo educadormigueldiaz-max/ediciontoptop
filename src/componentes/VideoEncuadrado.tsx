@@ -2,6 +2,14 @@ import { Video } from "@remotion/media";
 import { AbsoluteFill, Img, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { geometriaVideo, zoomEnfasisEn } from "../edicion/encuadre";
 import type { Edicion } from "../edicion/esquema";
+import { zoomDeEmpuje, type Tramo } from "../edicion/linea-de-tiempo";
+
+// Retoque de color: un poco más de contraste y color, como un video grabado con buena luz.
+const FILTRO_COLOR: Record<Edicion["opciones"]["color"], string | undefined> = {
+  natural: "contrast(1.06) saturate(1.1)",
+  vivo: "contrast(1.1) saturate(1.25) brightness(1.02)",
+  ninguno: undefined,
+};
 
 // Muestra un tramo del video original llenando el formato de salida (recorta lo que sobra).
 // Con `mascara`, muestra solo a la persona (sin fondo y sin sonido): la máscara de cada cuadro
@@ -16,6 +24,8 @@ export const VideoEncuadrado: React.FC<{
   enfoqueY: number;
   zoom: number;
   enfasis: Edicion["enfasis"];
+  empuje?: Tramo["empuje"];
+  color?: Edicion["opciones"]["color"];
   mascara?: (cuadroOriginal: number) => string | null;
 }> = ({
   src,
@@ -27,6 +37,8 @@ export const VideoEncuadrado: React.FC<{
   enfoqueY,
   zoom,
   enfasis,
+  empuje = null,
+  color = "ninguno",
   mascara,
 }) => {
   const frame = useCurrentFrame();
@@ -41,7 +53,7 @@ export const VideoEncuadrado: React.FC<{
     altoOriginal,
     enfoqueX,
     enfoqueY,
-    zoom: zoom * zoomEnfasisEn(segundo, enfasis),
+    zoom: zoom * zoomDeEmpuje(empuje, trimBefore + frame, fps) * zoomEnfasisEn(segundo, enfasis),
   });
   const archivoMascara = mascara ? mascara(trimBefore + frame) : null;
   if (mascara && !archivoMascara) return null;
@@ -73,6 +85,7 @@ export const VideoEncuadrado: React.FC<{
           top: g.top,
           width: g.ancho,
           height: g.alto,
+          filter: FILTRO_COLOR[color],
           // Blanco = persona, negro = fondo.
           ...(urlMascara
             ? {
