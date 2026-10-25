@@ -121,7 +121,12 @@ ejemplo, un Fórmula 1 que entra a los pits y los mecánicos que llegan), con fo
 acerca y ruedas que giran. Cada escena se arma por capas (fondo, luces, anillos, partículas y el
 contenido) y la cámara se mueve entre ellas. Opciones: `--cuantas 4`, `--pedido "más datos"`,
 `--sin-dibujos` (solo texto, íconos y cifras: más rápido y barato). Con dibujos cuesta cerca de
-1 USD por video y tarda 2–3 minutos; los dibujos quedan en `public/proyectos/<id>/dibujos/`.
+2 USD por video y tarda 4–6 minutos; los dibujos quedan en `public/proyectos/<id>/dibujos/`.
+
+Al final hay una **revisión de sentido**: Claude mira cuadros de cada escena dibujada y corrige
+lo que no tiene lógica (un carro que corre en el aire, un mecánico que le da la espalda al carro,
+tamaños raros) y vuelve a mirar lo corregido. `npm run apoyo -- <proyecto> --revisar` hace solo
+esa revisión sobre las escenas que ya tiene; `--sin-revision` la salta.
 
 **Solo audio**: `npm run preparar -- entrada/nota-de-voz.m4a` acepta un audio (mp3, m4a, wav…) y
 crea un proyecto con fondo animado y subtítulos; después `npm run apoyo` lo llena de escenas de

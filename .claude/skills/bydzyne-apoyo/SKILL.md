@@ -14,6 +14,12 @@ abajo (la escena les deja su franja). Se abre en círculo y se cierra avanzando 
 las escenas de apoyo que ya tenía; los demás elementos no se tocan). También se pueden escribir a
 mano en `edicion.json`.
 
+Al final, **revisión de sentido**: de cada escena ilustrada se sacan 4 cuadros con guías (alturas
+y número de capa); Claude los mira como director de arte y corrige lo que no tiene lógica (cosas
+flotando, personajes que miran al lado equivocado, tamaños, encimados) y se vuelve a revisar lo
+corregido (hasta 3 veces). `npm run apoyo -- <id> --revisar` hace solo esa revisión;
+`--sin-revision` la salta. Los cuadros quedan en `salida/revision/<id>/sentido/`.
+
 ## Modos
 | `modo` | Qué se ve | Campos |
 |---|---|---|
@@ -55,6 +61,16 @@ ruedas giran, la cámara se acerca; después otros carros que lo pasan.
   9:16 → 900×1600) y con el piso o el horizonte a la altura donde va la acción.
 - **Dónde va la acción**: el protagonista entre `y` 0.3 y 0.6. Abajo de 0.65 van los subtítulos:
   nada importante ahí (solo el piso o el fondo). Arriba de 0.15, solo el título si hay.
+- **Que tenga sentido, como en el mundo real** (después se revisa con cuadros y se corrige):
+  - `y` es el **centro** del dibujo. Lo que se apoya (carros, personas, muebles) pisa el piso del
+    fondo: su borde de abajo va a la altura del piso. Alto en el cuadro = `ancho` × (ancho del
+    cuadro / alto del cuadro) / proporción del dibujo; entonces `y` = piso − alto / 2. Solo flota lo
+    que vuela. En la `descripcion` del fondo di a qué altura queda el piso (por ejemplo "asfalto
+    desde el 62 % del alto").
+  - Los dibujos miran a la derecha: `voltear` para que miren a la izquierda. Las personas miran
+    hacia lo que atienden; lo que avanza va hacia donde apunta su frente.
+  - Tamaños creíbles entre sí, y lo que está más atrás va más arriba y más chico.
+  - Ruedas o hélices giran solo mientras se mueve.
 - `profundidad`: -1 fondo (paisaje, pista, ciudad), 0 protagonista, 1 cosas cerca de la cámara.
   Ordena las capas de atrás hacia adelante.
 - `entrada`: aparece, abajo, arriba, izquierda, derecha, zoom o ninguna. `efecto` de toda la capa:

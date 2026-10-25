@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import {
   AbsoluteFill,
   Easing,
+  getInputProps,
   interpolate,
   random,
   spring,
@@ -17,6 +18,9 @@ type Ilustracion = z.infer<typeof esquemaEscenaIlustrada>;
 type Capa = Ilustracion["capas"][number];
 
 const LIMITE = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
+// Con `--props '{"guias": true}'` (la revisión de sentido de `npm run apoyo`) se dibujan encima
+// las líneas de altura y el número de cada capa, para que Claude pueda decir qué mover y a dónde.
+const conGuias = () => getInputProps().guias === true;
 const SUAVE = Easing.inOut(Easing.cubic);
 
 // Valor de una lista de momentos { t, ...valores } en el segundo `t`, con paso suave entre uno y otro.
@@ -108,7 +112,8 @@ const CapaDibujo: React.FC<{
   indice: number;
   svg: string;
   camara: { x: number; y: number; zoom: number };
-}> = ({ capa, indice, svg, camara }) => {
+  guias: boolean;
+}> = ({ capa, indice, svg, camara, guias }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const segundos = frame / fps;
@@ -206,8 +211,27 @@ const CapaDibujo: React.FC<{
           capa.profundidad <= -0.6
             ? `blur(${Math.min(width, height) * 0.0025}px)`
             : undefined,
+        outline:
+          guias && !capa.cubrir ? "2px dashed rgba(255,0,180,0.9)" : undefined,
       }}
     >
+      {guias && !capa.cubrir ? (
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            bottom: "100%",
+            padding: "2px 8px",
+            background: "rgba(255,0,180,0.9)",
+            color: "#FFFFFF",
+            font: `700 ${Math.min(width, height) * 0.03}px sans-serif`,
+            whiteSpace: "nowrap",
+            transform: capa.voltear ? "scaleX(-1)" : undefined,
+          }}
+        >
+          {`capa ${indice + 1}`}
+        </div>
+      ) : null}
       {estiloPartes ? <style>{estiloPartes}</style> : null}
       <div
         style={{ width: "100%", height: "100%" }}
@@ -237,6 +261,8 @@ export const EscenaIlustrada: React.FC<{
     zoom: recorrer(puntos, segundos, "zoom") * avance,
   };
   const marca = useMarca();
+  const { width, height } = useVideoConfig();
+  const guias = conGuias();
   const capas = escena.capas
     .map((capa, indice) => ({ capa, indice }))
     .sort((a, b) => a.capa.profundidad - b.capa.profundidad);
@@ -252,9 +278,35 @@ export const EscenaIlustrada: React.FC<{
             indice={indice}
             svg={dibujos[capa.dibujo]}
             camara={camara}
+            guias={guias}
           />
         ) : null,
       )}
+      {guias
+        ? // Alturas del plano de los protagonistas (profundidad 0), ya con la cámara aplicada.
+          Array.from({ length: 9 }, (_, i) => {
+            const y = (i + 1) / 10;
+            const top = height / 2 + (y - camara.y) * height * camara.zoom;
+            return (
+              <div
+                key={i}
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  top,
+                  borderTop: "2px solid rgba(0,255,255,0.8)",
+                  color: "#00FFFF",
+                  font: `700 ${Math.min(width, height) * 0.028}px sans-serif`,
+                  textShadow: "0 0 4px #000",
+                  paddingLeft: 6,
+                }}
+              >
+                {`y ${y.toFixed(1)}`}
+              </div>
+            );
+          })
+        : null}
     </AbsoluteFill>
   );
 };

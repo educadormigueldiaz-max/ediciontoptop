@@ -7,6 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { CARPETA_PROYECTOS, RAIZ, escribirJson, leerJson, redondear } from "./lib/herramientas.mjs";
+import { entre, limpiarIlustracion, nombreDibujo, numero, revisarSentido, texto } from "./lib/escenas.mjs";
 import { CLAUDE } from "./lib/piloto/cola.mjs";
 
 const AYUDA = `
@@ -23,6 +24,8 @@ Opciones:
   --sin-dibujos     Sin escenas ilustradas (solo texto, íconos y cifras: más rápido y barato)
   --agregar         Agrega escenas y conserva las que ya tiene (y reusa sus dibujos)
   --desde <seg> --hasta <seg>  Solo crea escenas en ese tramo (segundos del original)
+  --sin-revision    No revisa si las escenas ilustradas tienen sentido (más rápido y barato)
+  --revisar         Solo revisa (y corrige) las escenas ilustradas que ya tiene, sin crear nuevas
 `;
 
 const { values: op, positionals } = parseArgs({
@@ -34,6 +37,8 @@ const { values: op, positionals } = parseArgs({
     tope: { type: "string", default: "1" },
     "sin-dibujos": { type: "boolean", default: false },
     agregar: { type: "boolean", default: false },
+    "sin-revision": { type: "boolean", default: false },
+    revisar: { type: "boolean", default: false },
     desde: { type: "string" },
     hasta: { type: "string" },
     ayuda: { type: "boolean", short: "h", default: false },
@@ -110,7 +115,6 @@ const coloresDelEstilo = (estilo) => {
   return colores;
 };
 
-console.log(`Claude está diseñando las escenas de apoyo de "${id}"…`);
 const skill = fs.readFileSync(path.join(RAIZ, ".claude", "skills", "bydzyne-apoyo", "SKILL.md"), "utf8");
 const tarea = [
   skill,
@@ -144,13 +148,15 @@ const tarea = [
   .filter(Boolean)
   .join("\n\n");
 
-// Le pide algo a Claude sin herramientas. Devuelve { texto, costo } o { error }.
-const preguntar = (entrada, { tope, sistema }) =>
+// Le pide algo a Claude, sin herramientas o (con `herramientas`) solo con Read para mirar cuadros.
+// Devuelve { texto, costo } o { error }.
+const preguntar = (entrada, { tope, sistema, herramientas = false }) =>
   new Promise((resolve) => {
     const proceso = spawn(
       CLAUDE,
       [
-        "-p", "--output-format", "json", "--tools", "", "--no-session-persistence",
+        "-p", "--output-format", "json", "--tools", herramientas ? "Read" : "", "--no-session-persistence",
+        ...(herramientas ? ["--allowedTools", "Read"] : []),
         "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}', "--setting-sources", "project",
         "--max-budget-usd", String(tope),
         ...(op.modelo ? ["--model", op.modelo] : []),
@@ -175,6 +181,19 @@ const preguntar = (entrada, { tope, sistema }) =>
     proceso.stdin.end(entrada);
   });
 
+// Revisión de sentido de las escenas ilustradas (al final de crearlas, o sola con --revisar).
+const revisarEscenas = async (cuales) => {
+  const r = await revisarSentido({ id, preguntar, cuales });
+  for (const linea of r.informe) console.log(`  ${linea}`);
+  return r.costo;
+};
+if (op.revisar) {
+  const gasto = await revisarEscenas(null);
+  console.log(`  Costo aprox.: ${gasto.toFixed(2)} USD`);
+  process.exit(0);
+}
+
+console.log(`Claude está diseñando las escenas de apoyo de "${id}"…`);
 let costo = 0;
 const plan = await preguntar(tarea, {
   tope: op.tope,
@@ -210,11 +229,7 @@ const icono = (n) => {
   const limpio = n.trim().normalize("NFD").replace(/[̀-ͯ]/g, "");
   return alias.has(limpio.toLowerCase()) || icons[pascal(limpio)] ? n.trim() : null;
 };
-const texto = (t) => (typeof t === "string" && t.trim() ? t.trim() : null);
 const MODOS = ["concepto", "dato", "pasos", "comparar", "frase", "imagen", ...(op["sin-dibujos"] ? [] : ["escena"])];
-const numero = (n, defecto = 0) => (Number.isFinite(Number(n)) ? Number(n) : defecto);
-const entre = (n, min, max) => Math.min(max, Math.max(min, n));
-const nombreDibujo = (n) => String(n ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
 const pedidos = new Map(
   listaDibujos
     .filter((d) => nombreDibujo(d?.nombre) && texto(d?.descripcion))
@@ -230,43 +245,7 @@ const pedidos = new Map(
     ]),
 );
 const rutaDibujo = (nombre) => `proyectos/${id}/dibujos/${nombre}.svg`;
-const ENTRADAS = ["aparece", "abajo", "arriba", "izquierda", "derecha", "zoom", "ninguna"];
-const EFECTOS = ["flotar", "vibrar", "latir", "balanceo"];
-const EFECTOS_PARTE = ["girar", "latir", "parpadear", "balanceo", "vibrar"];
-const ilustracion = (i) => {
-  if (!i || !Array.isArray(i.capas)) return null;
-  const capas = i.capas
-    .filter((c) => pedidos.has(nombreDibujo(c?.dibujo)) || yaDibujados.includes(nombreDibujo(c?.dibujo)))
-    .slice(0, 10)
-    .map((c) => ({
-      dibujo: nombreDibujo(c.dibujo),
-      x: entre(numero(c.x, 0.5), -2, 3),
-      y: entre(numero(c.y, 0.5), -2, 3),
-      ancho: entre(numero(c.ancho, 0.5), 0.02, 4),
-      profundidad: entre(numero(c.profundidad), -1, 1),
-      entrada: ENTRADAS.includes(c.entrada) ? c.entrada : "aparece",
-      en: Number.isFinite(c.en) ? entre(c.en, 0, 60) : null,
-      recorrido: (Array.isArray(c.recorrido) ? c.recorrido : []).slice(0, 8).map((r) => ({
-        t: entre(numero(r.t), 0, 60), x: entre(numero(r.x, 0.5), -2, 3), y: entre(numero(r.y, 0.5), -2, 3),
-        escala: entre(numero(r.escala, 1), 0.05, 6), giro: entre(numero(r.giro), -1080, 1080),
-      })),
-      efecto: EFECTOS.includes(c.efecto) ? c.efecto : null,
-      voltear: c.voltear === true,
-      cubrir: c.cubrir === true,
-      partes: (Array.isArray(c.partes) ? c.partes : [])
-        .filter((p) => EFECTOS_PARTE.includes(p?.efecto) && texto(p?.id))
-        .slice(0, 8)
-        .map((p) => ({ id: String(p.id).replace(/[^a-zA-Z0-9_-]/g, ""), efecto: p.efecto, velocidad: entre(numero(p.velocidad, 1.5), 0.1, 10) })),
-    }));
-  if (capas.length === 0) return null;
-  return {
-    fondo: ["marca", "cielo", "atardecer", "noche", "claro"].includes(i.fondo) ? i.fondo : "marca",
-    camara: (Array.isArray(i.camara) ? i.camara : []).slice(0, 6).map((c) => ({
-      t: entre(numero(c.t), 0, 60), x: entre(numero(c.x, 0.5), -1, 2), y: entre(numero(c.y, 0.5), -1, 2), zoom: entre(numero(c.zoom, 1), 0.5, 4),
-    })),
-    capas,
-  };
-};
+const ilustracion = (i) => limpiarIlustracion(i, (n) => pedidos.has(n) || yaDibujados.includes(n));
 const fin = frases.at(-1).fin;
 const escenas = [];
 const descartadas = [];
@@ -379,6 +358,10 @@ actual.elementos = [...actual.elementos.filter((e) => op.agregar || e.tipo !== "
   (a, b) => a.inicio - b.inicio,
 );
 escribirJson(archivoEdicion, actual);
+
+if (!op["sin-revision"] && finales.some((e) => e.modo === "escena")) {
+  costo += await revisarEscenas(new Set(finales.map((e) => e.inicio)));
+}
 
 console.log(`\nListo: ${finales.length} escenas de apoyo en "${id}"`);
 for (const e of finales) {

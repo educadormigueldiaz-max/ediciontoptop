@@ -9,6 +9,7 @@ import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { asegurarCaras } from "./lib/caras.mjs";
+import { aFrameEditado as aFrameEnTramos, tramosDe } from "./lib/escenas.mjs";
 import { asegurarProduccion } from "./lib/produccion.mjs";
 import { asegurarRecortes, avisarRecortesIncompletos } from "./lib/recorte.mjs";
 import {
@@ -38,35 +39,9 @@ console.log(
     `Efectos de sonido: ${opciones.sonidos === false ? "apagados" : "sí"}`,
 );
 
-// Misma cuenta que src/edicion/linea-de-tiempo.ts.
-let cursor = 0;
-const tramos = edicion.segmentos.map((s) => {
-  const desde = Math.round(s.inicio * FPS);
-  const hasta = Math.round(Math.min(s.fin, edicion.duracion) * FPS);
-  const t = { desdeFrame: cursor, duracionFrames: Math.max(1, hasta - desde), trimBefore: desde };
-  cursor += t.duracionFrames;
-  return t;
-});
-const finVideo = cursor;
-
-const aFrameEditado = (segundo, lado) => {
-  const frame = segundo * FPS;
-  for (const t of tramos) {
-    if (frame >= t.trimBefore && frame <= t.trimBefore + t.duracionFrames) {
-      return Math.round(t.desdeFrame + frame - t.trimBefore);
-    }
-  }
-  if (lado === "inicio") {
-    const siguientes = tramos.filter((t) => t.trimBefore > frame);
-    return siguientes.length
-      ? siguientes.reduce((a, b) => (b.trimBefore < a.trimBefore ? b : a)).desdeFrame
-      : null;
-  }
-  const anteriores = tramos.filter((t) => t.trimBefore + t.duracionFrames < frame);
-  if (!anteriores.length) return null;
-  const t = anteriores.reduce((a, b) => (b.trimBefore > a.trimBefore ? b : a));
-  return t.desdeFrame + t.duracionFrames;
-};
+const tramos = tramosDe(edicion);
+const finVideo = tramos.reduce((t, x) => t + x.duracionFrames, 0);
+const aFrameEditado = (segundo, lado) => aFrameEnTramos(tramos, segundo, lado);
 
 const cuadros = [["01-inicio", Math.min(15, finVideo - 1)]];
 tramos.slice(1, 3).forEach((t, i) => cuadros.push([`02-corte-${i + 1}`, t.desdeFrame + 3]));
