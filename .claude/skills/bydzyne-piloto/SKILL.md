@@ -71,6 +71,9 @@ corto", "sin gráficos", "corrige el nombre"). Haz **solo** eso, con el menor ca
   RESUMEN una línea `ANIMACIONES: <qué escena, con qué dibujos y en qué segundos>` y el sistema la
   crea con `npm run apoyo -- --agregar` (conserva las que ya había).
 - Los clips del panel de clips se cambian uno a uno, con este mismo criterio.
+- Trozos de videos de apoyo (`modo: "video"`): "ese trozo no va", "otro momento del video de
+  apoyo": quítalo o cambia su `desde` usando `public/videos-apoyo/<nombre>/catalogo.json` (qué se ve
+  en cada segundo). No inventes trozos de videos que la persona no pegó.
 - Si el pedido no se entiende o no se puede hacer, no cambies nada y explícalo en el RESUMEN.
 
 ## Revisión

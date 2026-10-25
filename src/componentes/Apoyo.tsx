@@ -1,3 +1,4 @@
+import { Video } from "@remotion/media";
 import {
   AbsoluteFill,
   Easing,
@@ -6,6 +7,7 @@ import {
   random,
   Sequence,
   spring,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
@@ -733,7 +735,8 @@ const Contenido: React.FC<{ item: ApoyoEnEditado; area: Area }> = ({
       );
     }
     case "escena":
-      // Se dibuja aparte (EscenaIlustrada), con su propio fondo.
+    case "video":
+      // Se dibujan aparte (EscenaIlustrada y VideoDeApoyo), a pantalla completa.
       return null;
     case "imagen": {
       const altoTitulo = e.titulo ? area.alto * 0.22 : 0;
@@ -783,6 +786,31 @@ const Contenido: React.FC<{ item: ApoyoEnEditado; area: Area }> = ({
   }
 };
 
+// Un trozo de un video de apoyo a pantalla completa (recortado al formato), con un acercamiento
+// lento para que no se sienta quieto. Sin sonido salvo que tenga `volumen`.
+const VideoDeApoyo: React.FC<{
+  archivo: string;
+  desde: number;
+  volumen: number;
+  duracionFrames: number;
+}> = ({ archivo, desde, volumen, duracionFrames }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const acercar = interpolate(frame, [0, duracionFrames], [1.03, 1.1], LIMITE);
+  return (
+    <AbsoluteFill style={{ backgroundColor: "black", overflow: "hidden" }}>
+      <Video
+        src={staticFile(archivo)}
+        trimBefore={Math.round(desde * fps)}
+        objectFit="cover"
+        muted={volumen === 0}
+        volume={volumen}
+        style={{ width: "100%", height: "100%", scale: acercar }}
+      />
+    </AbsoluteFill>
+  );
+};
+
 // Una escena de apoyo: el fondo en capas se abre en círculo sobre el video, el contenido llega
 // desde atrás, y al final todo avanza hacia la cámara y se desvanece.
 const Escena: React.FC<{
@@ -818,6 +846,10 @@ const Escena: React.FC<{
   const radio = Math.hypot(width, height) * 0.5 * abre;
   const ilustrada =
     item.elemento.modo === "escena" ? item.elemento.escena : null;
+  const video =
+    item.elemento.modo === "video" && item.elemento.archivo
+      ? item.elemento.archivo
+      : null;
 
   return (
     <AbsoluteFill
@@ -827,16 +859,26 @@ const Escena: React.FC<{
         scale: 1 + cierra * 0.06,
       }}
     >
-      {ilustrada ? (
+      {ilustrada || video ? (
         <>
-          {ilustrada.fondo === "marca" ? (
+          {ilustrada && ilustrada.fondo === "marca" ? (
             <FondoEnCapas frame={frame} semilla={`${item.elemento.inicio}`} />
           ) : null}
-          <EscenaIlustrada
-            escena={ilustrada}
-            dibujos={dibujos}
-            duracionFrames={duracionFrames}
-          />
+          {ilustrada ? (
+            <EscenaIlustrada
+              escena={ilustrada}
+              dibujos={dibujos}
+              duracionFrames={duracionFrames}
+            />
+          ) : null}
+          {video ? (
+            <VideoDeApoyo
+              archivo={video}
+              desde={item.elemento.desde}
+              volumen={item.elemento.volumen}
+              duracionFrames={duracionFrames}
+            />
+          ) : null}
           {item.elemento.titulo ? (
             // Sombra arriba para que el título se lea sobre cualquier dibujo.
             <AbsoluteFill

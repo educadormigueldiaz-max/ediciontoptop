@@ -9,6 +9,7 @@ entrada/*
 salida/*
 !salida/.gitkeep
 public/proyectos/
+public/videos-apoyo/
 public/imagenes/*
 !public/imagenes/.gitkeep
 public/musica/*

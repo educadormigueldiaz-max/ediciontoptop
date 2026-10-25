@@ -45,6 +45,7 @@
     "lote": "node scripts/lote.mjs",
     "piloto": "node scripts/piloto.mjs",
     "clips": "node scripts/clips.mjs",
+    "videos-apoyo": "node scripts/videos-apoyo.mjs",
     "apoyo": "node scripts/apoyo.mjs",
     "build": "remotion bundle",
     "upgrade": "remotion upgrade",

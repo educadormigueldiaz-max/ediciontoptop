@@ -185,6 +185,11 @@ td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line
         </div>
         <span class="ayuda">Escenas animadas que muestran lo que dices (tapan tu imagen unos segundos). Con un audio se ponen siempre.</span>
       </div>
+      <div class="campo" id="campo-videos-apoyo">
+        <label class="titulo" for="videos-apoyo">Videos de apoyo (opcional)</label>
+        <textarea id="videos-apoyo" rows="2" maxlength="1000" placeholder="Pega enlaces de YouTube, uno por línea"></textarea>
+        <span class="ayuda">Se ponen trozos de estos videos justo cuando hablas de lo que muestran. Usa videos tuyos, con permiso o libres de derechos: los de otros pueden hacer que te bajen el video.</span>
+      </div>
       <div class="campo" id="campo-estilo" hidden>
         <label class="titulo" for="estilo">4. Estilo (colores y letras)</label>
         <select id="estilo"></select>
@@ -318,6 +323,7 @@ function cambioDeTipo() {
   const clips = document.querySelector("input[name=tipo]:checked")?.value === "clips";
   $("campo-enlace").hidden = !clips;
   $("campo-animaciones").hidden = clips;
+  $("campo-videos-apoyo").hidden = clips;
   $("ayuda-video").hidden = clips;
   document.querySelector("#form-subir details")?.toggleAttribute("hidden", clips);
   $("boton-subir").textContent = clips ? "Sacar clips" : "Enviar a editar";
@@ -370,6 +376,7 @@ $("form-subir").addEventListener("submit", async (e) => {
         notas: $("notas").value,
         nombreVideo: video?.name ?? "",
         animaciones: $("animaciones").checked,
+        videosApoyo: $("videos-apoyo").value.split(/\s+/).filter(Boolean),
         fotos: fotos.map((f) => f.name),
       }),
     });

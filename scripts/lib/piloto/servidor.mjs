@@ -19,6 +19,12 @@ const COOKIE = "bydzyne";
 const EXT_VIDEO = ["mp4", "mov", "m4v", "webm", "mkv", "avi", "3gp"];
 // Un audio solo (nota de voz, podcast) se vuelve un video animado (skill bydzyne-apoyo).
 const EXT_AUDIO = ["mp3", "m4a", "wav", "aac", "ogg", "opus", "flac"];
+// Hasta 5 enlaces de YouTube (lo demás se ignora).
+const enlacesDeApoyo = (lista) =>
+  (Array.isArray(lista) ? lista : [])
+    .map((e) => String(e).trim())
+    .filter((e) => e.length < 300 && /^https:\/\/([\w-]+\.)?(youtube\.com|youtu\.be)\/\S+$/i.test(e))
+    .slice(0, 5);
 const EXT_FOTO = ["jpg", "jpeg", "png", "webp", "heic", "heif"];
 const MAX_VIDEO = 4 * 1024 ** 3;
 const MAX_FOTO = 30 * 1024 ** 2;
@@ -263,11 +269,14 @@ const manejar = async (req, res) => {
       fotosEsperadas: fotos.length,
       // Escenas de apoyo animadas en medio del video (con un audio solo, siempre).
       animaciones: esAudio || d.animaciones === true,
+      // Enlaces de YouTube de donde sacar trozos de apoyo (npm run videos-apoyo).
+      videosApoyo: d.tipo === "clips" ? [] : enlacesDeApoyo(d.videosApoyo),
     });
     anotar(
       t.id,
       `Subido por ${usuario}: ${TIPOS[t.tipo]}${esAudio ? " (solo audio)" : ""}, ${t.red}, estilo ${estilo}, ` +
-        `animaciones ${t.animaciones ? "sí" : "no"}. CTA: ${t.cta || "-"}. Notas: ${t.notas || "-"}`,
+        `animaciones ${t.animaciones ? "sí" : "no"}, videos de apoyo ${t.videosApoyo.length || "no"}. ` +
+        `CTA: ${t.cta || "-"}. Notas: ${t.notas || "-"}`,
     );
     return enviarJson(res, 200, { id: t.id });
   }

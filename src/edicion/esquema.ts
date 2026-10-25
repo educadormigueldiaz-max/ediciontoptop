@@ -202,6 +202,7 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
       // pasos: 2–4 tarjetas que aparecen una a una. comparar: dos tarjetas, antes y después.
       // frase: cita grande palabra por palabra. imagen: una foto de public/ que flota en 3D.
       // escena: una ilustración animada (dibujos hechos para este video, por capas, con cámara).
+      // video: un trozo de un video de apoyo (`npm run videos-apoyo`), desde el segundo `desde`.
       modo: z
         .enum([
           "concepto",
@@ -211,6 +212,7 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
           "frase",
           "imagen",
           "escena",
+          "video",
         ])
         .default("concepto"),
       titulo: z.string().nullable().default(null),
@@ -231,6 +233,10 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
         .default([]),
       archivo: z.string().nullable().default(null),
       escena: esquemaEscenaIlustrada.nullable().default(null),
+      // Solo en modo video: segundo del video de apoyo donde empieza el trozo y su volumen
+      // (0 = sin sonido: se escucha solo la voz).
+      desde: z.number().min(0).default(0),
+      volumen: z.number().min(0).max(1).default(0),
     })
     .superRefine((e, ctx) => {
       const falta = (mensaje: string) =>
@@ -250,6 +256,8 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
         falta('necesita "archivo" (por ejemplo "imagenes/foto.jpg")');
       if (e.modo === "escena" && !e.escena)
         falta('necesita "escena" con sus "capas"');
+      if (e.modo === "video" && !e.archivo)
+        falta('necesita "archivo" (por ejemplo "videos-apoyo/f1/video.mp4")');
     }),
 
   // --- Recorte de fondo: la persona se separa del fondo (`npm run recortar`). ---

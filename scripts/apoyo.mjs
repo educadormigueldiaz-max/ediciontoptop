@@ -2,13 +2,12 @@
 // Escenas de apoyo: Claude lee lo que se dice y diseña animaciones a pantalla completa que lo
 // ilustran (skill bydzyne-apoyo). En un proyecto de solo audio cubren todo el video.
 //   npm run apoyo -- <id> [--cuantas 4] [--modelo sonnet] [--tope 1]
-import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { CARPETA_PROYECTOS, RAIZ, escribirJson, leerJson, redondear } from "./lib/herramientas.mjs";
 import { entre, limpiarIlustracion, nombreDibujo, numero, revisarSentido, texto } from "./lib/escenas.mjs";
-import { CLAUDE } from "./lib/piloto/cola.mjs";
+import { preguntarAClaude } from "./lib/preguntar.mjs";
 
 const AYUDA = `
 Uso: npm run apoyo -- <id> [opciones]
@@ -77,9 +76,10 @@ const editado = edicion.segmentos.reduce((t, s) => t + (s.fin - s.inicio), 0);
 const inicioPermitido = soloAudio
   ? (edicion.opciones.gancho ? edicion.opciones.duracionGancho : 0)
   : Math.max(3, edicion.opciones.gancho ? edicion.opciones.duracionGancho : 0);
-// Con --agregar, las escenas de apoyo que ya tiene se quedan y cuentan como ocupadas.
+// Con --agregar, las escenas de apoyo que ya tiene se quedan y cuentan como ocupadas. Los trozos de
+// videos de apoyo (npm run videos-apoyo) se quedan siempre.
 const ocupados = edicion.elementos
-  .filter((e) => op.agregar || e.tipo !== "apoyo")
+  .filter((e) => op.agregar || e.tipo !== "apoyo" || e.modo === "video")
   .map((e) => [e.inicio, e.fin, e.tipo === "apoyo" ? `escena de apoyo (${e.modo})` : e.tipo]);
 const desde = op.desde !== undefined ? Number(op.desde) : null;
 const hasta = op.hasta !== undefined ? Number(op.hasta) : null;
@@ -148,38 +148,7 @@ const tarea = [
   .filter(Boolean)
   .join("\n\n");
 
-// Le pide algo a Claude, sin herramientas o (con `herramientas`) solo con Read para mirar cuadros.
-// Devuelve { texto, costo } o { error }.
-const preguntar = (entrada, { tope, sistema, herramientas = false }) =>
-  new Promise((resolve) => {
-    const proceso = spawn(
-      CLAUDE,
-      [
-        "-p", "--output-format", "json", "--tools", herramientas ? "Read" : "", "--no-session-persistence",
-        ...(herramientas ? ["--allowedTools", "Read"] : []),
-        "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}', "--setting-sources", "project",
-        "--max-budget-usd", String(tope),
-        ...(op.modelo ? ["--model", op.modelo] : []),
-        "--append-system-prompt", sistema,
-      ],
-      { cwd: RAIZ },
-    );
-    let salida = "";
-    let errores = "";
-    proceso.stdout.on("data", (d) => (salida += d));
-    proceso.stderr.on("data", (d) => (errores += d));
-    proceso.on("error", (e) => resolve({ error: e.message }));
-    proceso.on("close", () => {
-      try {
-        const datos = JSON.parse(salida.trim().split("\n").filter(Boolean).at(-1));
-        if (datos.is_error) return resolve({ error: String(datos.result ?? "").slice(-500), costo: datos.total_cost_usd ?? 0 });
-        resolve({ texto: String(datos.result ?? ""), costo: datos.total_cost_usd ?? 0 });
-      } catch {
-        resolve({ error: (errores || salida).slice(-500) });
-      }
-    });
-    proceso.stdin.end(entrada);
-  });
+const preguntar = (entrada, opciones) => preguntarAClaude(entrada, { modelo: op.modelo, ...opciones });
 
 // Revisión de sentido de las escenas ilustradas (al final de crearlas, o sola con --revisar).
 const revisarEscenas = async (cuales) => {
@@ -354,7 +323,7 @@ const finales = escenas.flatMap((e) => {
 
 // El archivo se vuelve a leer por si cambió mientras Claude pensaba.
 const actual = leerJson(archivoEdicion);
-actual.elementos = [...actual.elementos.filter((e) => op.agregar || e.tipo !== "apoyo"), ...finales].sort(
+actual.elementos = [...actual.elementos.filter((e) => op.agregar || e.tipo !== "apoyo" || e.modo === "video"), ...finales].sort(
   (a, b) => a.inicio - b.inicio,
 );
 escribirJson(archivoEdicion, actual);

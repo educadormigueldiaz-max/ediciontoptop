@@ -128,6 +128,15 @@ lo que no tiene lógica (un carro que corre en el aire, un mecánico que le da l
 tamaños raros) y vuelve a mirar lo corregido. `npm run apoyo -- <proyecto> --revisar` hace solo
 esa revisión sobre las escenas que ya tiene; `--sin-revision` la salta.
 
+**Videos de apoyo**: `npm run videos-apoyo -- <proyecto> <enlace de YouTube o archivo> …`. Claude
+mira el video de apoyo entero, anota qué se ve en cada momento, pone el trozo justo cuando hablas de
+eso (por ejemplo, el cambio de llantas cuando dices "los pits") y revisa con cuadros que coincida.
+Los trozos van a pantalla completa y sin su sonido (`--volumen 0.2` para oírlo bajito). Los videos
+quedan en `public/videos-apoyo/` y se reusan en otros proyectos. Cuesta 0.3–1.5 USD por video de
+apoyo la primera vez. Ojo: los videos de otras personas o marcas tienen derechos de autor; lo
+seguro son videos tuyos, con permiso o libres de derechos. En el panel también se pueden pegar los
+enlaces al subir el video.
+
 **Solo audio**: `npm run preparar -- entrada/nota-de-voz.m4a` acepta un audio (mp3, m4a, wav…) y
 crea un proyecto con fondo animado y subtítulos; después `npm run apoyo` lo llena de escenas de
 principio a fin. Desde la página: sube el audio en vez del video.

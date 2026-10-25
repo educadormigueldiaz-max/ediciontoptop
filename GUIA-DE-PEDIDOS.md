@@ -40,6 +40,10 @@ Bueno saber:
 animadas que muestran lo que dices (un ícono, una cifra, los pasos, una frase). Tapan tu imagen
 unos segundos; tu voz sigue.
 
+**Videos de apoyo:** pega enlaces de YouTube en *Videos de apoyo* (uno por línea). Se ponen trozos
+de esos videos justo cuando hablas de lo que muestran; tu voz sigue encima. Usa videos tuyos, con
+permiso o libres de derechos: los de otros pueden hacer que te bajen el video.
+
 **Solo un audio:** en vez del video puedes subir una nota de voz o un audio de podcast (MP3 o M4A).
 Lo recibes como un video animado de principio a fin, con subtítulos.
 
