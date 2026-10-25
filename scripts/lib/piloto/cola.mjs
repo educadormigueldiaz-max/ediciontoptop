@@ -115,7 +115,7 @@ const pedirAClaude = async (t, tarea) => {
   }
   if (!datos) {
     throw new ErrorClaro(
-      "La edición automática no pudo arrancar. Avísale a quien administra ByDzyne.",
+      "La edición automática no pudo arrancar. Avísale a quien administra la página.",
       r.salida,
     );
   }
@@ -275,6 +275,81 @@ const sacarClips = async (t) => {
   return { archivos, costo, n: resultado.clips.length, nombre: aId(resultado.video).slice(0, 40) };
 };
 
+// Escenas de apoyo que Claude pide en su respuesta ("ANIMACIONES: …"): las crea `npm run apoyo`
+// (Claude no puede ejecutar programas). Devuelve lo que costó.
+const animacionesPedidas = async (t, texto) => {
+  const pedido = /^ANIMACIONES:\s*(.+)$/m.exec(texto)?.[1]?.trim();
+  if (!pedido) return 0;
+  const r = await node("apoyo.mjs", [t.proyecto, "--agregar", "--tope", "1", "--pedido", pedido.slice(0, 600)], { limiteMin: 20 });
+  anotar(t.id, `Animaciones pedidas (código ${r.codigo}): ${pedido}\n${r.salida.slice(-1500)}`);
+  return parseFloat(r.salida.match(/Costo aprox\.: ([\d.]+)/)?.[1] ?? "0");
+};
+
+const AVISO_ANIMACIONES =
+  "Si la persona pide animaciones o escenas dibujadas NUEVAS, no las escribas tú: agrega antes del " +
+  "RESUMEN una línea 'ANIMACIONES: <qué escenas, con qué dibujos y en qué segundos>' y el sistema las crea. " +
+  "Cambiar, mover o quitar escenas de apoyo que ya existen sí lo haces tú en edicion.json.";
+
+// Formatos o redes de los archivos de un clip (lo que va después del título en su nombre).
+const FINALES = [...Object.keys(REDES), "9x16", "4x5", "1x1", "16x9"].sort((a, b) => b.length - a.length);
+
+// Cambio pedido a un clip ya listo: Claude edita ese clip, se revisa, se exporta otra vez y el
+// archivo nuevo reemplaza al anterior (mismo nombre). Los demás clips no se tocan.
+const cambiarClip = async (trabajo, n, pedido, paso) => {
+  const prefijo = `clip-${String(n).padStart(2, "0")}-`;
+  const t = { ...trabajo, proyecto: `${trabajo.proyecto}-clip-${String(n).padStart(2, "0")}` };
+  if (!fs.existsSync(path.join(CARPETA_PROYECTOS, t.proyecto, "edicion.json"))) {
+    throw new ErrorClaro(`No encontramos la edición del clip ${n}: ya no se puede cambiar.`);
+  }
+  let costo = 0;
+  paso("editando", `Aplicando tus cambios al clip ${n}`);
+  const e = await pedirAClaude(
+    t,
+    `Aplica un cambio al clip del proyecto "${t.proyecto}" (public/proyectos/${t.proyecto}/edicion.json) ` +
+      `siguiendo la skill bydzyne-piloto, paso "Pedido de cambios". ${AVISO_ANIMACIONES}\n\n${datosDeLaPersona(t, pedido)}`,
+  );
+  costo += e.costo;
+  costo += await animacionesPedidas(t, e.texto);
+  paso("revisando", `Revisando el clip ${n}`);
+  await revisarYCorregir(t);
+
+  paso("exportando", `Creando otra vez el clip ${n}`);
+  const carpeta = path.join(carpetaTrabajo(trabajo.id), "resultados", "v1");
+  const v1 = trabajo.versiones[0];
+  const delClip = v1.archivos.filter((a) => a.archivo.startsWith(prefijo));
+  if (!delClip.length) throw new ErrorClaro(`El clip ${n} ya no existe.`);
+  const finales = delClip.map((a) => ({ a, final: FINALES.find((f) => a.archivo.endsWith(`-${f}.mp4`)) }));
+  const redes = finales.map((x) => x.final).filter((f) => REDES[f]);
+  const formatos = finales.map((x) => x.final).filter((f) => f && !REDES[f]);
+  const llamadas = [
+    ...(redes.length ? [["--red", redes.join(",")]] : []),
+    ...formatos.map((f) => ["--formato", f.replace("x", ":")]),
+  ];
+  for (const args of llamadas) {
+    const r = await node("exportar.mjs", [t.proyecto, ...args], { limiteMin: 60 });
+    anotar(trabajo.id, `Exportar clip ${n} (código ${r.codigo}):\n${r.salida.slice(-1000)}`);
+    if (r.codigo !== 0) throw new ErrorClaro(`No pudimos crear otra vez el clip ${n}.`, r.salida);
+  }
+  for (const { a, final } of finales) {
+    const origen = path.join(CARPETA_SALIDA, `${t.proyecto}-${final}.mp4`);
+    if (!final || !fs.existsSync(origen)) continue;
+    fs.renameSync(origen, path.join(carpeta, a.archivo));
+    a.megas = +(fs.statSync(path.join(carpeta, a.archivo)).size / 1e6).toFixed(1);
+  }
+  const ahora = leerTrabajo(trabajo.id);
+  actualizarTrabajo(trabajo.id, {
+    versiones: [{ ...ahora.versiones[0], archivos: ahora.versiones[0].archivos.map((a) => delClip.find((d) => d.archivo === a.archivo) ?? a) }, ...ahora.versiones.slice(1)],
+    cambiosClips: [...(ahora.cambiosClips ?? []), { n, pedido, resumen: e.resumen ?? null, fecha: new Date().toISOString() }],
+    estado: "listo",
+    paso: "Listo para descargar",
+    error: null,
+    pendiente: null,
+    enColaDesde: null,
+    costo: +((ahora.costo ?? 0) + costo).toFixed(2),
+  });
+  registrar(`Listo ${trabajo.id}: cambio al clip ${n}`);
+};
+
 // ---------- Un trabajo completo ----------
 
 const procesar = async (id) => {
@@ -288,6 +363,11 @@ const procesar = async (id) => {
   registrar(`Empieza ${id} (${t.usuario}, ${clase === "nuevo" ? "video nuevo" : `cambio: ${pedido}`})`);
   let costo = 0;
   let resumen;
+
+  if (t.tipo === "clips" && clase === "cambio-clip") {
+    await cambiarClip(t, t.pendiente.n, pedido, paso);
+    return;
+  }
 
   if (t.tipo === "clips") {
     paso("editando", "Buscando los mejores momentos (en un video de 1 hora tarda de 30 a 60 minutos)");
@@ -329,9 +409,10 @@ const procesar = async (id) => {
     const e = await pedirAClaude(
       t,
       `Aplica un cambio al video del proyecto "${t.proyecto}" (public/proyectos/${t.proyecto}/edicion.json) ` +
-        `siguiendo la skill bydzyne-piloto, paso "Pedido de cambios".\n\n${datosDeLaPersona(t, pedido)}`,
+        `siguiendo la skill bydzyne-piloto, paso "Pedido de cambios". ${AVISO_ANIMACIONES}\n\n${datosDeLaPersona(t, pedido)}`,
     );
     costo += e.costo;
+    costo += await animacionesPedidas(t, e.texto);
     resumen = e.resumen;
   }
 

@@ -167,6 +167,9 @@ input[type=url] { width: 100%; border: 1.5px solid var(--linea); border-radius: 
 .clip .espera { text-align: center; color: var(--tinta-suave); font-size: 15px; padding: 16px; display: grid; gap: 6px; justify-items: center; }
 .clip .numero { font-family: var(--f-titulo); font-size: 44px; font-weight: 800; color: var(--linea); line-height: 1; }
 .clip .info { padding: 12px 14px 14px; display: grid; gap: 6px; align-content: start; }
+.clip form.pedido { display: grid; gap: 8px; }
+.clip form.pedido[hidden] { display: none; }
+.clip textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 15px; padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--linea); background: var(--papel); color: inherit; resize: vertical; }
 .clip h4 { margin: 0; font-family: var(--f-titulo); font-size: 16px; font-weight: 800; line-height: 1.2; }
 .clip .gancho { font-size: 14px; }
 .clip .porque { font-size: 13px; color: var(--tinta-suave); }
@@ -419,7 +422,11 @@ function etapasHtml(t) {
 // Cada clip: mientras se crea, su estado; cuando está listo, el video para verlo, descargarlo o borrarlo.
 // `descargas`: los archivos del clip (uno por red); el primero es el que se ve.
 function clipHtml(t, c, descargas, final) {
-  const enlace = (a) => `/api/trabajos/${t.id}/archivo?nombre=${encodeURIComponent(a.nombre)}${a.parcial ? "&parcial=1" : ""}`;
+  const cambios = (t.cambiosClips ?? []).filter((x) => x.n === c.n);
+  const ultimo = cambios.at(-1);
+  const cambiando = t.cambioClip?.n === c.n;
+  // `v` cambia con cada cambio aplicado: así se ve el clip nuevo y no el guardado en el navegador.
+  const enlace = (a) => `/api/trabajos/${t.id}/archivo?nombre=${encodeURIComponent(a.nombre)}${a.parcial ? "&parcial=1" : ""}${cambios.length ? `&v=${cambios.length}` : ""}`;
   const url = descargas.length ? enlace(descargas[0]) : null;
   const botones = descargas.map((a) => `<a class="boton" href="${enlace(a)}&descargar=1">Descargar${descargas.length > 1 ? ` ${esc(a.red)}` : ""}</a>`).join("");
   return `
@@ -433,7 +440,14 @@ function clipHtml(t, c, descargas, final) {
         ${c.porque ? `<p class="porque">${esc(c.porque)}</p>` : ""}
         ${c.fin ? `<p class="porque">Minuto ${hora(c.inicio)} · ${Math.round(c.fin - c.inicio)} s</p>` : ""}
         ${url ? botones : `<span class="estado ${c.estado}" style="justify-self:start">${esc(ESTADO_CLIP[c.estado] ?? "")}</span>`}
-        ${final ? `<button class="boton suave" type="button" data-borrar-clip="${t.id}" data-n="${c.n}">Borrar</button>` : ""}
+        ${ultimo && !cambiando ? `<p class="porque">✓ Cambio aplicado: “${esc(ultimo.pedido)}”${ultimo.resumen ? ` — ${esc(ultimo.resumen)}` : ""}</p>` : ""}
+        ${cambiando ? `<p class="estado editando" style="justify-self:start">${esc(t.estado === "en-cola" ? "En cola" : t.paso)}</p><p class="porque">Tu pedido: “${esc(t.cambioClip.pedido)}”</p>` : ""}
+        ${final && !cambiando && !t.cambioClip ? `<button class="boton" type="button" data-pedir="${c.n}">Pedir cambios</button>
+        <form class="pedido" data-id="${t.id}" data-n="${c.n}" hidden>
+          <textarea maxlength="600" rows="3" required placeholder="Por ejemplo: pon una animación del carro cuando digo &quot;los pits&quot;, o cambia el gancho"></textarea>
+          <button class="boton" type="submit">Enviar el pedido</button>
+        </form>` : ""}
+        ${final && !cambiando && !t.cambioClip ? `<button class="boton suave" type="button" data-borrar-clip="${t.id}" data-n="${c.n}">Borrar</button>` : ""}
       </div>
     </article>`;
 }
@@ -459,7 +473,9 @@ function clipsDe(t) {
     const datos = p?.clips?.find((c) => c.n === n);
     const otro = final.find((a) => a.archivo === descargas[0].nombre);
     const c = { ...(datos ?? { n, titulo: otro.red.replace(/^clip \d+: /, "").replace(/ \([^)]+\)$/, "") }), estado: "listo" };
-    return { clave: `${t.id}-${descargas[0].nombre}`, html: clipHtml(t, c, descargas, true) };
+    const veces = (t.cambiosClips ?? []).filter((x) => x.n === n).length;
+    const estado = t.cambioClip ? (t.cambioClip.n === n ? `cambiando-${t.estado}-${t.paso}` : "otro") : "";
+    return { clave: `${t.id}-${descargas[0].nombre}-${veces}-${estado}`, html: clipHtml(t, c, descargas, true) };
   });
 }
 
@@ -521,8 +537,9 @@ async function cargar() {
   let datos;
   try { datos = await api("/api/trabajos"); } catch { return; }
   const clips = datos.trabajos.filter((t) => t.clips && t.estado !== "subiendo");
-  const enCurso = clips.filter((t) => !["listo", "problema"].includes(t.estado) || (t.estado === "problema" && !t.versiones.length));
-  const listos = clips.filter((t) => t.estado === "listo");
+  // Un grupo al que se le cambia un clip sigue entre los listos (los demás clips se pueden ver).
+  const enCurso = clips.filter((t) => !t.cambioClip && (!["listo", "problema"].includes(t.estado) || (t.estado === "problema" && !t.versiones.length)));
+  const listos = clips.filter((t) => t.estado === "listo" || t.cambioClip);
 
   const contEnCurso = $("lista-en-curso");
   const items = enCurso.map((t) => ({ clave: t.id, el: pintarTrabajo(contEnCurso, t, true) }));
@@ -548,7 +565,7 @@ async function cargar() {
   elementos.forEach((el, i) => { if (contListos.children[i] !== el) contListos.insertBefore(el, contListos.children[i] ?? null); });
   $("listos").hidden = listos.length === 0;
 
-  reloj = setTimeout(cargar, items.length ? 2000 : 10000);
+  reloj = setTimeout(cargar, items.length || listos.some((t) => t.cambioClip) ? 2000 : 10000);
 }
 
 // Borrar pide un segundo toque para confirmar (sin ventanas que tapan la página).
@@ -574,9 +591,31 @@ document.addEventListener("click", async (e) => {
     } catch (err) { boton.disabled = false; avisar(err.message); window.scrollTo({ top: 0, behavior: "smooth" }); }
     return;
   }
+  const pedir = e.target.closest("[data-pedir]");
+  if (pedir) {
+    const form = pedir.parentElement.querySelector("form.pedido");
+    form.hidden = !form.hidden;
+    if (!form.hidden) form.querySelector("textarea").focus();
+    return;
+  }
   const id = e.target.closest("[data-reintentar]")?.dataset.reintentar;
   if (!id) return;
   try { await api(`/api/trabajos/${id}/reintentar`, { method: "POST" }); cargar(); } catch (err) { avisar(err.message); }
+});
+
+document.addEventListener("submit", async (e) => {
+  const form = e.target.closest("form.pedido");
+  if (!form) return;
+  e.preventDefault();
+  const boton = form.querySelector("button");
+  boton.disabled = true;
+  try {
+    await api(`/api/trabajos/${form.dataset.id}/cambios`, {
+      method: "POST",
+      body: JSON.stringify({ pedido: form.querySelector("textarea").value, clip: Number(form.dataset.n) }),
+    });
+    cargar();
+  } catch (err) { boton.disabled = false; avisar(err.message); window.scrollTo({ top: 0, behavior: "smooth" }); }
 });
 
 iniciar().catch(() => {});

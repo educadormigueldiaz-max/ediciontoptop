@@ -22,6 +22,8 @@ Te dieron una dirección (por ejemplo `http://192.168.1.23:8080`), un usuario y 
    - "Pon otro gancho".
    - "Más corto".
    - "Corrige el nombre: es Dzyne, no Diseñ".
+   - "Pon una animación del carro cuando digo 'los pits'".
+   En el panel de clips cada clip tiene su propio botón **Pedir cambios**.
    - "Sin gráficos".
 
    Llega una versión nueva y las anteriores se guardan.

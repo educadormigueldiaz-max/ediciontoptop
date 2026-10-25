@@ -67,6 +67,10 @@ corto", "sin gráficos", "corrige el nombre"). Haz **solo** eso, con el menor ca
 - "Corrige <palabra>": cambia `texto` de esas palabras, sin tocar tiempos.
 - "Más / menos animaciones", "cambia esta animación", "sin animaciones": edita las escenas de
   apoyo con la skill `bydzyne-apoyo` (en solo audio, nunca dejes huecos sin escena).
+- "Pon una animación cuando digo…" (una escena nueva con dibujos): no la escribas tú; agrega al
+  RESUMEN una línea `ANIMACIONES: <qué escena, con qué dibujos y en qué segundos>` y el sistema la
+  crea con `npm run apoyo -- --agregar` (conserva las que ya había).
+- Los clips del panel de clips se cambian uno a uno, con este mismo criterio.
 - Si el pedido no se entiende o no se puede hacer, no cambies nada y explícalo en el RESUMEN.
 
 ## Revisión

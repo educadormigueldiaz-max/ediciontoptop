@@ -101,6 +101,9 @@ const vista = (t, posiciones, conDueno) => ({
   pedidoEnCurso: t.pendiente?.tipo === "cambio" ? t.pendiente.pedido : null,
   versiones: t.versiones,
   progreso: t.tipo === "clips" ? leerProgreso(t) : null,
+  // Cambio a un clip en curso (el grupo sigue listo y los demás clips se pueden ver).
+  cambioClip: t.pendiente?.tipo === "cambio-clip" ? { n: t.pendiente.n, pedido: t.pendiente.pedido } : null,
+  cambiosClips: t.cambiosClips ?? [],
   ...(conDueno ? { usuario: t.usuario, costo: t.costo ?? 0 } : {}),
 });
 
@@ -337,18 +340,25 @@ const manejar = async (req, res) => {
 
   if (metodo === "POST" && accion === "cambios") {
     if (t.estado !== "listo") return error(res, 409, "Espera a que el video esté listo para pedir cambios.");
-    if (t.tipo === "clips") return error(res, 409, "A los clips todavía no se les piden cambios desde aquí.");
-    const { pedido } = await leerCuerpo(req);
+    const { pedido, clip } = await leerCuerpo(req);
     const texto = String(pedido ?? "").trim().slice(0, 600);
     if (texto.length < 3) return error(res, 400, "Escribe qué quieres cambiar.");
+    // En un grupo de clips, el cambio es para un clip (n); los demás no se tocan.
+    const n = parseInt(clip, 10);
+    if (t.tipo === "clips") {
+      const prefijo = `clip-${String(n).padStart(2, "0")}-`;
+      if (!(n > 0) || !t.versiones[0]?.archivos.some((a) => a.archivo.startsWith(prefijo))) {
+        return error(res, 404, "Ese clip no existe.");
+      }
+    }
     actualizarTrabajo(t.id, {
       estado: "en-cola",
       paso: "Esperando turno",
       error: null,
-      pendiente: { tipo: "cambio", pedido: texto },
+      pendiente: t.tipo === "clips" ? { tipo: "cambio-clip", n, pedido: texto } : { tipo: "cambio", pedido: texto },
       enColaDesde: new Date().toISOString(),
     });
-    anotar(t.id, `Pide cambios: ${texto}`);
+    anotar(t.id, `Pide cambios${t.tipo === "clips" ? ` al clip ${n}` : ""}: ${texto}`);
     siguiente();
     return enviarJson(res, 200, { ok: true });
   }
