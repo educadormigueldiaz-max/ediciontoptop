@@ -34,19 +34,38 @@ En `opciones`: `"sonidos": true` y `"volumenSonidos": 0.25` (0–1). "Sin sonido
 Para apagar solo uno: `"sonido": false` en ese elemento. Si hay muchos elementos seguidos,
 apaga los de menos importancia: un sonido cada 2–3 s cansa.
 
+## Estilos por tono
+Vienen listos en `estilos/` (cada uno con sus colores y su letra, y una `descripcion`). Úsalos
+cuando pidan un tono ("que se vea serio", "algo divertido") o cuando el video lo pida claro:
+
+| Estilo | Cuándo |
+|---|---|
+| `serio` | Legal, finanzas, política, anuncios importantes |
+| `amistoso` | Hablarle a la comunidad, saludos, consejos cercanos |
+| `relajado` | Bienestar, rutinas, reflexiones, estilo de vida |
+| `suspenso` | Historias, misterios, revelaciones |
+| `tecnologico` | Apps, inteligencia artificial, tutoriales de tecnología |
+| `informativo` | Noticias, datos, explicaciones |
+| `curioso` | Datos curiosos, preguntas, "sabías que" |
+| `chistoso` | Humor, memes, videos ligeros |
+| `elegante` | Moda, belleza, bienes raíces, marcas de lujo |
+| `energetico` | Motivación, deporte, ventas, lanzamientos |
+
+Un cliente con estilo propio siempre usa el suyo. Si dudas entre dos tonos, usa el predeterminado.
+
 ## Estilos por cliente
-Cada cliente tiene `estilos/<cliente>.json` (nombre en minúsculas y con guiones: `bryan-amaya`).
+Cada cliente tiene `estilos/<cliente>.json` (nombre en minúsculas y con guiones: `maria-gomez`).
 Lo que no diga se toma del estilo **predeterminado** (`src/marca.ts`).
 ```json
 {
-  "nombre": "Bryan Amaya",
+  "nombre": "María Gómez",
   "colores": { "primario": "#1D3557", "secundario": "#457B9D", "acento": "#E30613",
                "textoSobreAcento": "#FFFFFF", "texto": "#FFFFFF", "contorno": "#0A0A0A", "fondo": "#0B0F19" },
   "fuente": { "familia": "Bebas Neue", "archivos": ["fuentes/BebasNeue-Regular.ttf"] },
   "fuenteAlterna": { "familia": "Playfair Display", "cursiva": true }
 }
 ```
-- En `edicion.json`: `"estilo": "bryan-amaya"` (nivel superior). Sin `estilo` = predeterminado.
+- En `edicion.json`: `"estilo": "maria-gomez"` (nivel superior). Sin `estilo` = predeterminado.
 - Fuentes: los archivos van en `public/fuentes/` (con su licencia). Varios grosores:
   `{ "archivo": "fuentes/Marca-Black.ttf", "peso": "900" }`. Sin `archivos`, la fuente tiene que
   ser una de las que ya carga `src/marca.ts` (Montserrat, Playfair Display).
@@ -54,7 +73,7 @@ Lo que no diga se toma del estilo **predeterminado** (`src/marca.ts`).
   (eso cambiaría a todos). Solo `src/marca.ts` si piden cambiar el estilo de siempre.
 - `acento` debe verse sobre video (amarillo, rojo, verde fuerte); `textoSobreAcento` es el color
   de las letras encima del acento (blanco u oscuro, el que se lea mejor).
-- Los estilos de clientes no se suben a git (solo `estilos/ejemplo.json`).
+- Los estilos de clientes no se suben a git (solo `estilos/ejemplo.json` y los de tono).
 - Para verlo sin video: cualquier **Muestra-** de la vista previa tiene el campo `estilo`.
 - ByDzyne nunca aparece en los videos: ni en el nombre de un estilo que se vea en pantalla.
 

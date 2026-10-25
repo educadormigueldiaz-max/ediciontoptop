@@ -1,0 +1,25 @@
+{
+  "nombre": "Curioso",
+  "descripcion": "Intrigante y juvenil: morado y menta. Para datos curiosos, preguntas, 'sabías que' y descubrimientos.",
+  "colores": {
+    "primario": "#6D28D9",
+    "secundario": "#2DD4BF",
+    "acento": "#2DD4BF",
+    "textoSobreAcento": "#06201C",
+    "texto": "#FFFFFF",
+    "contorno": "#160A2E",
+    "fondo": "#120A26"
+  },
+  "fuente": {
+    "familia": "Lexend",
+    "archivos": [
+      "fuentes/Lexend.ttf"
+    ]
+  },
+  "fuenteAlterna": {
+    "familia": "Caveat",
+    "archivos": [
+      "fuentes/Caveat.ttf"
+    ]
+  }
+}

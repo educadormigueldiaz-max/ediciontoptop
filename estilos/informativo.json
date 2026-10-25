@@ -1,0 +1,19 @@
+{
+  "nombre": "Informativo",
+  "descripcion": "Claro y directo, como un noticiero: azul y amarillo. Para noticias, datos, explicaciones y anuncios.",
+  "colores": {
+    "primario": "#1D4ED8",
+    "secundario": "#60A5FA",
+    "acento": "#FACC15",
+    "textoSobreAcento": "#0A0A0A",
+    "texto": "#FFFFFF",
+    "contorno": "#0A0A0A",
+    "fondo": "#0B1530"
+  },
+  "fuente": {
+    "familia": "Archivo",
+    "archivos": [
+      "fuentes/Archivo.ttf"
+    ]
+  }
+}

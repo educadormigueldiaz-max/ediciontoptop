@@ -1,0 +1,19 @@
+{
+  "nombre": "Serio",
+  "descripcion": "Sobrio y confiable: azul marino, gris y un toque dorado. Para temas legales, finanzas, política o anuncios importantes.",
+  "colores": {
+    "primario": "#1E3A5F",
+    "secundario": "#94A3B8",
+    "acento": "#E2B53E",
+    "textoSobreAcento": "#0B1220",
+    "texto": "#FFFFFF",
+    "contorno": "#0B1220",
+    "fondo": "#0B1220"
+  },
+  "fuente": {
+    "familia": "Inter",
+    "archivos": [
+      "fuentes/Inter.ttf"
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "nombre": "Tecnológico",
+  "descripcion": "Moderno y digital: azul noche con cian y verde neón. Para apps, inteligencia artificial, tutoriales y tecnología.",
+  "colores": {
+    "primario": "#0E2A47",
+    "secundario": "#22D3EE",
+    "acento": "#39FF88",
+    "textoSobreAcento": "#04110A",
+    "texto": "#FFFFFF",
+    "contorno": "#020617",
+    "fondo": "#020617"
+  },
+  "fuente": {
+    "familia": "Space Grotesk",
+    "archivos": [
+      "fuentes/SpaceGrotesk.ttf"
+    ]
+  },
+  "fuenteAlterna": {
+    "familia": "Space Grotesk Alterna",
+    "archivos": [
+      "fuentes/SpaceGrotesk.ttf"
+    ]
+  }
+}

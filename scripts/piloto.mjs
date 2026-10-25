@@ -2,7 +2,7 @@
 // Piloto automático de ByDzyne: una página para subir videos y recibirlos editados.
 //   npm run piloto                         Arranca la página y la cola (se deja encendido)
 //   npm run piloto -- --usuario maria      Crea a "maria" (o le da una clave nueva) y muestra la clave
-//   npm run piloto -- --usuario maria --estilo bryan-amaya --nombre "María Gómez"
+//   npm run piloto -- --usuario maria --estilo serio --nombre "María Gómez"
 //   npm run piloto -- --personas           Lista las personas
 //   npm run piloto -- --al-iniciar         Que arranque solo al prender la Mac
 //   npm run piloto -- --no-iniciar         Quita el arranque automático

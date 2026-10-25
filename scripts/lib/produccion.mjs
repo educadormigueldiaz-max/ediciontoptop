@@ -13,6 +13,20 @@ export const estilosDisponibles = () => [
     : []),
 ];
 
+// Nombre y descripción de cada estilo, para mostrarlos ("tecnologico" → "Tecnológico").
+export const nombresDeEstilos = () =>
+  Object.fromEntries(
+    estilosDisponibles().map((e) => {
+      if (e === "predeterminado") return [e, { nombre: "Predeterminado", descripcion: "Los colores de siempre." }];
+      try {
+        const d = JSON.parse(fs.readFileSync(path.join(CARPETA_ESTILOS, `${e}.json`), "utf8"));
+        return [e, { nombre: d.nombre ?? e, descripcion: d.descripcion ?? "" }];
+      } catch {
+        return [e, { nombre: e, descripcion: "" }];
+      }
+    }),
+  );
+
 // Errores (no se puede dibujar el video) y avisos (se puede, pero conviene mirarlo).
 export const revisarProduccion = (edicion) => {
   const errores = [];

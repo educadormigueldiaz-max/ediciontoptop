@@ -32,6 +32,8 @@ animaciones con [Remotion](https://www.remotion.dev); tú revisas en el navegado
 - **Animaciones de apoyo**: escenas animadas por capas (ícono, cifra, pasos, comparación, frase,
   foto en 3D) que muestran lo que dices, en medio de tu video. Y con **solo un audio** (nota de
   voz, podcast) crea el video completo animado.
+- **Estilos por tono**: Serio, Amistoso, Relajado, Suspenso, Tecnológico, Informativo, Curioso,
+  Chistoso, Elegante y Energético, cada uno con sus colores y su letra.
 - **Respeta tus subtítulos**: si el video ya trae subtítulos, no le pone otros encima.
 - **Acabado profesional**: voz limpia y con volumen parejo, color retocado, cámara que se acerca
   lento en cada toma, gancho y subtítulos con animaciones suaves.

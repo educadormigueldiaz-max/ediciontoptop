@@ -234,6 +234,7 @@ input[type=url] { width: 100%; border: 1.5px solid var(--linea); border-radius: 
       <div class="campo" id="campo-estilo" hidden>
         <label class="titulo" for="estilo">Estilo (colores y letra)</label>
         <select id="estilo"></select>
+        <span class="ayuda" id="estilo-ayuda"></span>
       </div>
       <div class="aviso mal" id="aviso" hidden></div>
     </form>
@@ -253,6 +254,9 @@ input[type=url] { width: 100%; border: 1.5px solid var(--linea); border-radius: 
 <script>
 const $ = (id) => document.getElementById(id);
 let yo = null;
+// "tecnologico" → "Tecnológico", con su descripción debajo de la lista.
+const nombreEstilo = (e) => yo?.nombresEstilos?.[e]?.nombre ?? e;
+const ayudaEstilo = () => { $("estilo-ayuda").textContent = yo?.nombresEstilos?.[$("estilo").value]?.descripcion ?? ""; };
 let reloj = null;
 let subiendo = null; // { nombre, pct } mientras se sube un video desde el equipo
 
@@ -295,7 +299,8 @@ async function iniciar() {
   $("nombre").textContent = yo.nombre;
   $("redes").innerHTML = Object.entries(yo.redes).map(([k, v], i) => `<label><input type="radio" name="red" value="${k}" ${i === 0 ? "checked" : ""}><span>${esc(v)}</span></label>`).join("");
   $("campo-estilo").hidden = Boolean(yo.estiloFijo);
-  $("estilo").innerHTML = yo.estilos.map((e) => `<option value="${esc(e)}">${esc(e === "predeterminado" ? "Predeterminado" : e)}</option>`).join("");
+  $("estilo").innerHTML = yo.estilos.map((e) => `<option value="${esc(e)}">${esc(nombreEstilo(e))}</option>`).join("");
+  ayudaEstilo();
   cargar();
 }
 
@@ -575,6 +580,7 @@ document.addEventListener("click", async (e) => {
 });
 
 iniciar().catch(() => {});
+$("estilo").addEventListener("change", ayudaEstilo);
 </script>
 </body>
 </html>

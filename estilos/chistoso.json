@@ -1,0 +1,25 @@
+{
+  "nombre": "Chistoso",
+  "descripcion": "Divertido, como un cómic: rosa, azul y amarillo con letra de historieta. Para humor, memes y videos ligeros.",
+  "colores": {
+    "primario": "#FF4D6D",
+    "secundario": "#3A86FF",
+    "acento": "#FFE14D",
+    "textoSobreAcento": "#1A1A1A",
+    "texto": "#FFFFFF",
+    "contorno": "#1A1A1A",
+    "fondo": "#1B1033"
+  },
+  "fuente": {
+    "familia": "Bangers",
+    "archivos": [
+      "fuentes/Bangers.ttf"
+    ]
+  },
+  "fuenteAlterna": {
+    "familia": "Fredoka",
+    "archivos": [
+      "fuentes/Fredoka.ttf"
+    ]
+  }
+}

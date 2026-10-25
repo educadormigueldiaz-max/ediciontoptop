@@ -1,0 +1,25 @@
+{
+  "nombre": "Amistoso",
+  "descripcion": "Cálido y cercano: coral y amarillo, letra redondeada y detalles escritos a mano. Para hablarle a tu comunidad.",
+  "colores": {
+    "primario": "#F97362",
+    "secundario": "#FFC24B",
+    "acento": "#FFD23F",
+    "textoSobreAcento": "#2B1B12",
+    "texto": "#FFFFFF",
+    "contorno": "#2B1B12",
+    "fondo": "#2A1712"
+  },
+  "fuente": {
+    "familia": "Nunito",
+    "archivos": [
+      "fuentes/Nunito.ttf"
+    ]
+  },
+  "fuenteAlterna": {
+    "familia": "Caveat",
+    "archivos": [
+      "fuentes/Caveat.ttf"
+    ]
+  }
+}

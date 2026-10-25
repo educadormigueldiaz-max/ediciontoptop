@@ -47,8 +47,9 @@ pide en español lo que quiere ver ("corta las pausas y pon subtítulos") y tú 
 
 Tiempos en **segundos del video original**. El esquema está en `src/edicion/esquema.ts`.
 
-- `estilo`: colores y fuentes. `"predeterminado"` (`src/marca.ts`) o el nombre de un cliente con
-  archivo en `estilos/<cliente>.json` (skill `bydzyne-produccion`).
+- `estilo`: colores y fuentes. `"predeterminado"` (`src/marca.ts`), uno por tono (`serio`,
+  `amistoso`, `relajado`, `suspenso`, `tecnologico`, `informativo`, `curioso`, `chistoso`,
+  `elegante`, `energetico`) o el de un cliente en `estilos/<cliente>.json` (skill `bydzyne-produccion`).
 - `musica`: `{ "archivo": "musica/cancion.mp3", "volumen": 0.25, "alHablar": 0.3, "desde": 0 }` o
   null. La canción va en `public/musica/`. Baja sola cuando la persona habla.
 

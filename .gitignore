@@ -16,9 +16,19 @@ public/musica/*
 # Piloto automático: videos, cuentas y resultados de otras personas
 /piloto/
 
-# Estilos de los clientes: son de cada quien (solo se sube el ejemplo)
+# Estilos de los clientes: son de cada quien (se suben el ejemplo y los estilos por tono)
 estilos/*
 !estilos/ejemplo.json
+!estilos/serio.json
+!estilos/amistoso.json
+!estilos/relajado.json
+!estilos/suspenso.json
+!estilos/tecnologico.json
+!estilos/informativo.json
+!estilos/curioso.json
+!estilos/chistoso.json
+!estilos/elegante.json
+!estilos/energetico.json
 out
 
 # Generados en cada computadora

@@ -1,0 +1,19 @@
+{
+  "nombre": "Suspenso",
+  "descripcion": "Oscuro y tenso: negro y rojo, letra alta y angosta. Para historias, misterios, revelaciones y 'no vas a creer lo que pasó'.",
+  "colores": {
+    "primario": "#3A0A0F",
+    "secundario": "#6B7280",
+    "acento": "#E11D2E",
+    "textoSobreAcento": "#FFFFFF",
+    "texto": "#FFFFFF",
+    "contorno": "#000000",
+    "fondo": "#050505"
+  },
+  "fuente": {
+    "familia": "Oswald",
+    "archivos": [
+      "fuentes/Oswald.ttf"
+    ]
+  }
+}

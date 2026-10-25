@@ -36,6 +36,8 @@ type Fuente = z.infer<typeof esquemaFuente>;
 export const esquemaEstilo = z.object({
   // Nombre del cliente, solo para leerlo.
   nombre: z.string().optional(),
+  // Para qué tipo de video sirve (lo leen Claude y la página).
+  descripcion: z.string().optional(),
   colores: z
     .object({
       primario: color,

@@ -1,0 +1,19 @@
+{
+  "nombre": "Relajado",
+  "descripcion": "Tranquilo y suave: verde salvia y arena. Para bienestar, rutinas, reflexiones y estilo de vida.",
+  "colores": {
+    "primario": "#3E8E7E",
+    "secundario": "#F2C6A0",
+    "acento": "#F4D9A6",
+    "textoSobreAcento": "#1F2A28",
+    "texto": "#FFFFFF",
+    "contorno": "#1F2A28",
+    "fondo": "#14211F"
+  },
+  "fuente": {
+    "familia": "DM Sans",
+    "archivos": [
+      "fuentes/DMSans.ttf"
+    ]
+  }
+}

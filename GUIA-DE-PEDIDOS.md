@@ -196,6 +196,12 @@ video o pega el enlace de YouTube (solo videos tuyos o con permiso) y toca *Saca
 
 ## Cambiar el estilo (colores y fuente)
 
+**Estilos por tono** (ya vienen listos): Serio, Amistoso, Relajado, Suspenso, Tecnológico,
+Informativo, Curioso, Chistoso, Elegante y Energético. En la página se eligen en *Estilo*.
+> Usa el estilo suspenso en este video.
+
+> Elige tú el estilo que mejor le quede a este video.
+
 **Estilos por cliente**
 > Crea el estilo de <cliente> con estos colores: primario `<#código>`, acento `<#código>`. Usa la fuente que puse en `public/fuentes/`.
 

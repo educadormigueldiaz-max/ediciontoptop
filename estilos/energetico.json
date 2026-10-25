@@ -1,0 +1,19 @@
+{
+  "nombre": "Energético",
+  "descripcion": "Fuerte y con ganas: naranja y amarillo, letra gruesa. Para motivación, deporte, ventas y lanzamientos.",
+  "colores": {
+    "primario": "#FF5A1F",
+    "secundario": "#FFB800",
+    "acento": "#FFE600",
+    "textoSobreAcento": "#111111",
+    "texto": "#FFFFFF",
+    "contorno": "#111111",
+    "fondo": "#140A05"
+  },
+  "fuente": {
+    "familia": "Anton",
+    "archivos": [
+      "fuentes/Anton.ttf"
+    ]
+  }
+}

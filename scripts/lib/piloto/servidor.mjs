@@ -5,7 +5,7 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import { CARPETA_PROYECTOS, CARPETA_SALIDA, RAIZ, aId } from "../herramientas.mjs";
-import { estilosDisponibles } from "../produccion.mjs";
+import { estilosDisponibles, nombresDeEstilos } from "../produccion.mjs";
 import { archivoProgreso, posicionEnCola, siguiente } from "./cola.mjs";
 import {
   ESTADOS, REDES_PILOTO, TIPOS, abrirSesion, actualizarTrabajo, anotar, borrarPersona, carpetaTrabajo,
@@ -203,6 +203,7 @@ const manejar = async (req, res) => {
       admin: esAdmin,
       estiloFijo: persona.estilo,
       estilos: estilos(),
+      nombresEstilos: nombresDeEstilos(),
       tipos: TIPOS,
       redes: REDES_PILOTO,
     });

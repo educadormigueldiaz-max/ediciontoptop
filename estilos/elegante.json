@@ -1,0 +1,19 @@
+{
+  "nombre": "Elegante",
+  "descripcion": "Lujo y distinción: negro, crema y dorado con letra clásica. Para moda, belleza, bienes raíces y marcas premium.",
+  "colores": {
+    "primario": "#2B2118",
+    "secundario": "#C8A96A",
+    "acento": "#D4AF37",
+    "textoSobreAcento": "#14100C",
+    "texto": "#F7F1E6",
+    "contorno": "#0C0A08",
+    "fondo": "#0C0A08"
+  },
+  "fuente": {
+    "familia": "Playfair Display Upright",
+    "archivos": [
+      "fuentes/PlayfairDisplay.ttf"
+    ]
+  }
+}

@@ -188,6 +188,7 @@ td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line
       <div class="campo" id="campo-estilo" hidden>
         <label class="titulo" for="estilo">4. Estilo (colores y letras)</label>
         <select id="estilo"></select>
+        <span class="ayuda" id="estilo-ayuda"></span>
       </div>
       <details>
         <summary>Más opciones (fotos, llamada a la acción, notas)</summary>
@@ -250,6 +251,9 @@ td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line
 <script>
 const $ = (id) => document.getElementById(id);
 let yo = null;
+// "tecnologico" → "Tecnológico", con su descripción debajo de la lista.
+const nombreEstilo = (e) => yo?.nombresEstilos?.[e]?.nombre ?? e;
+const ayudaEstilo = () => { $("estilo-ayuda").textContent = yo?.nombresEstilos?.[$("estilo").value]?.descripcion ?? ""; };
 let verTodos = false;
 let refresco = null;
 const abiertos = new Set();
@@ -288,7 +292,8 @@ async function iniciar() {
   $("campo-estilo").hidden = Boolean(yo.estiloFijo);
   document.querySelectorAll("input[name=tipo]").forEach((r) => r.addEventListener("change", cambioDeTipo));
   cambioDeTipo();
-  $("estilo").innerHTML = yo.estilos.map((e) => `<option value="${esc(e)}">${esc(e === "predeterminado" ? "Predeterminado" : e)}</option>`).join("");
+  $("estilo").innerHTML = yo.estilos.map((e) => `<option value="${esc(e)}">${esc(nombreEstilo(e))}</option>`).join("");
+  ayudaEstilo();
   $("pestanas-admin").hidden = !yo.admin;
   $("personas").hidden = !yo.admin;
   if (yo.admin) cargarPersonas();
@@ -489,9 +494,9 @@ $("ver-todos").addEventListener("click", () => { verTodos = true; cargarVideos()
 
 // ---------- Personas ----------
 function pintarPersonas(datos) {
-  $("p-estilo").innerHTML = `<option value="">Puede elegir</option>` + datos.estilos.map((e) => `<option value="${esc(e)}">${esc(e)}</option>`).join("");
+  $("p-estilo").innerHTML = `<option value="">Puede elegir</option>` + datos.estilos.map((e) => `<option value="${esc(e)}">${esc(nombreEstilo(e))}</option>`).join("");
   $("tabla-personas").innerHTML = datos.personas.map((p) => `
-    <tr><td>${esc(p.usuario)}${p.admin ? " (admin)" : ""}</td><td>${esc(p.nombre)}</td><td>${esc(p.estilo || "Puede elegir")}</td><td>${p.videos}</td>
+    <tr><td>${esc(p.usuario)}${p.admin ? " (admin)" : ""}</td><td>${esc(p.nombre)}</td><td>${esc(p.estilo ? nombreEstilo(p.estilo) : "Puede elegir")}</td><td>${p.videos}</td>
     <td>${p.admin ? "" : `<button class="boton suave" type="button" data-borrar="${esc(p.usuario)}">Borrar</button>`}</td></tr>`).join("");
 }
 async function cargarPersonas() { try { pintarPersonas(await api("/api/personas")); } catch {} }
@@ -513,6 +518,7 @@ $("tabla-personas").addEventListener("click", async (e) => {
 });
 
 iniciar();
+$("estilo").addEventListener("change", ayudaEstilo);
 </script>
 </body>
 </html>
