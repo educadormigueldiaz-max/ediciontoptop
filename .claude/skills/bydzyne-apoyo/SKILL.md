@@ -23,6 +23,49 @@ mano en `edicion.json`.
 | `comparar` | Dos tarjetas: la primera apagada (antes, mal), la segunda encendida (después, bien) | `puntos` (exactamente 2), `titulo` opcional |
 | `frase` | Cita grande, palabra por palabra, con comillas | `texto` (la frase tal como la dice), `destacar` |
 | `imagen` | Una foto que flota y gira en 3D con un título | `archivo` (de `public/`), `titulo` opcional |
+| `escena` | **Ilustración animada**: dibujos hechos para este momento (un Fórmula 1 en la pista, una casa que se construye, dinero que crece), por capas y con cámara | `escena`, `titulo` opcional |
+
+## Escenas ilustradas (`modo: "escena"`): el nivel más alto
+Cuando la persona cuenta algo que se puede **ver** (una metáfora, una historia, un lugar, un
+objeto, una acción), recréalo con dibujos en vez de texto. Ejemplo: habla de la Fórmula 1 y los
+pits → un Fórmula 1 que entra por la izquierda y frena en los pits, mecánicos que aparecen, las
+ruedas giran, la cámara se acerca; después otros carros que lo pasan.
+
+```json
+{ "modo": "escena", "inicio": 30, "fin": 36.5, "titulo": null,
+  "escena": {
+    "fondo": "cielo",
+    "camara": [ { "t": 0, "x": 0.5, "y": 0.5, "zoom": 1 }, { "t": 3, "x": 0.45, "y": 0.55, "zoom": 1.35 } ],
+    "capas": [
+      { "dibujo": "pista", "x": 0.5, "y": 0.62, "ancho": 1.6, "profundidad": -0.6, "entrada": "ninguna" },
+      { "dibujo": "formula1", "x": -0.4, "y": 0.6, "ancho": 0.8, "entrada": "ninguna",
+        "recorrido": [ { "t": 1.6, "x": 0.45, "y": 0.6 } ],
+        "partes": [ { "id": "rueda-delantera", "efecto": "girar", "velocidad": 3 },
+                    { "id": "rueda-trasera", "efecto": "girar", "velocidad": 3 } ] },
+      { "dibujo": "mecanico", "x": 0.25, "y": 0.58, "ancho": 0.22, "entrada": "abajo", "en": 1.8,
+        "partes": [ { "id": "brazo", "efecto": "balanceo", "velocidad": 2 } ] }
+    ] } }
+```
+- Coordenadas: `x`, `y` de 0 a 1 en el cuadro (el centro del dibujo); fuera de 0–1 = fuera de
+  cuadro (para que entre o salga caminando, rodando o volando con `recorrido`). `ancho` en partes
+  del ancho del cuadro (1 = todo el ancho; un fondo puede medir 1.5–2 para que la cámara lo recorra).
+- Tiempos `t` y `en`: segundos **desde que empieza la escena** (no del video).
+- **Fondo dibujado** (paisaje, pista, garaje, ciudad, oficina): `"cubrir": true` y
+  `"profundidad": -0.6`; llena todo el cuadro solo. Dibújalo con la proporción del video (vertical
+  9:16 → 900×1600) y con el piso o el horizonte a la altura donde va la acción.
+- **Dónde va la acción**: el protagonista entre `y` 0.3 y 0.6. Abajo de 0.65 van los subtítulos:
+  nada importante ahí (solo el piso o el fondo). Arriba de 0.15, solo el título si hay.
+- `profundidad`: -1 fondo (paisaje, pista, ciudad), 0 protagonista, 1 cosas cerca de la cámara.
+  Ordena las capas de atrás hacia adelante.
+- `entrada`: aparece, abajo, arriba, izquierda, derecha, zoom o ninguna. `efecto` de toda la capa:
+  flotar, vibrar (motor), latir, balanceo. `partes`: grupos del dibujo que se mueven solos
+  (girar ruedas o hélices, balanceo de brazos, latir un corazón, parpadear una luz).
+- `fondo`: marca (el de los colores del estilo), cielo, atardecer, noche o claro.
+- La cámara: 1–3 puntos (`zoom` 1 = todo; 1.5 = de cerca). Sigue la acción.
+- La franja de abajo es de los subtítulos: lo importante va entre `y` 0.15 y 0.65.
+- 2 a 6 capas por escena, 4–8 s de duración. Cuenta la idea con lo que pasa, no con texto.
+- En un video donde sale la persona: hasta la mitad de las escenas pueden ser ilustradas, en los
+  momentos más visuales. En solo audio: todas las que se puedan imaginar.
 
 Cada punto: `{ "texto": "…", "icono": "…" o null, "en": segundo o null }` (null = se reparten
 solos en la primera mitad). `destacar` = palabra(s) del título o la frase en color de acento.
@@ -65,6 +108,18 @@ trato trofeo ubicacion video whatsapp billetera gobierno cerebro corona. Tambié
 de lucide.dev/icons ("trending-up", "hand-heart").
 
 ## Respuesta (cuando lo pide `npm run apoyo`)
-Solo JSON, sin texto antes ni después: `{ "escenas": [ { "modo": "…", "inicio": …, "fin": …, … } ] }`
-con los campos de arriba (sin `tipo`). Tiempos en segundos del original, tomados de la
-transcripción.
+Solo JSON, sin texto antes ni después:
+```json
+{ "estiloDibujo": "ilustración plana moderna, sin contorno, sombras suaves, colores saturados",
+  "dibujos": [ { "nombre": "formula1", "ancho": 1000, "alto": 400,
+                 "descripcion": "Fórmula 1 rojo de perfil mirando a la derecha, piloto con casco blanco…",
+                 "partes": ["rueda-delantera", "rueda-trasera"] } ],
+  "escenas": [ { "modo": "…", "inicio": …, "fin": …, … } ] }
+```
+- `escenas`: con los campos de arriba (sin `tipo`). `inicio`/`fin` en segundos del original,
+  tomados de la transcripción. En las capas, `dibujo` es el `nombre` de un dibujo de la lista.
+- `dibujos`: cada dibujo que usan las escenas ilustradas (se puede repetir en varias escenas).
+  `nombre` en minúsculas con guiones; `ancho`/`alto` = proporción del viewBox (un carro 1000×400,
+  una persona 400×800, un fondo 2000×1000); `descripcion` detallada de cómo se ve, de qué lado
+  mira y sus colores; `partes` = ids de los grupos que se moverán.
+- `estiloDibujo`: una frase con el estilo común de todos los dibujos (para que combinen).

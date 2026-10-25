@@ -15,10 +15,89 @@ export const DIMENSIONES: Record<Formato, { width: number; height: number }> = {
 
 // Elementos gráficos sobre el video. `inicio`, `fin` y `en` son segundos del video original,
 // igual que las palabras, así que siguen a los cortes. `sonido: false` apaga su efecto de sonido.
-const tramo = { inicio: z.number().min(0), fin: z.number().positive(), sonido: z.boolean().default(true) };
+const tramo = {
+  inicio: z.number().min(0),
+  fin: z.number().positive(),
+  sonido: z.boolean().default(true),
+};
 
 const nombreIcono = z.string().refine((n) => buscarIcono(n) !== null, {
-  message: "Ícono desconocido: usa un nombre en español de src/componentes/iconos.ts o uno de lucide.dev/icons",
+  message:
+    "Ícono desconocido: usa un nombre en español de src/componentes/iconos.ts o uno de lucide.dev/icons",
+});
+
+// Ilustración animada de una escena de apoyo. Tiempos `t` en segundos desde que empieza la escena;
+// `x` e `y` de 0 a 1 en el cuadro (0,0 = arriba a la izquierda); `ancho` en partes del ancho.
+const punto = { t: z.number().min(0), x: z.number(), y: z.number() };
+export const esquemaEscenaIlustrada = z.object({
+  fondo: z
+    .enum(["marca", "cielo", "atardecer", "noche", "claro"])
+    .default("marca"),
+  // La cámara recorre la escena: hacia dónde mira y cuánto se acerca en cada momento.
+  camara: z
+    .array(z.object({ ...punto, zoom: z.number().min(0.5).max(4).default(1) }))
+    .default([]),
+  capas: z
+    .array(
+      z.object({
+        // SVG dentro de public/ (por ejemplo "proyectos/<id>/dibujos/formula1.svg").
+        dibujo: z.string().min(1),
+        x: z.number(),
+        y: z.number(),
+        ancho: z.number().positive().max(4),
+        // -1 = al fondo (se mueve menos con la cámara y se ve un poco borroso), 1 = adelante.
+        profundidad: z.number().min(-1).max(1).default(0),
+        entrada: z
+          .enum([
+            "aparece",
+            "abajo",
+            "arriba",
+            "izquierda",
+            "derecha",
+            "zoom",
+            "ninguna",
+          ])
+          .default("aparece"),
+        // Segundo (desde el inicio de la escena) en que entra; null = una tras otra al empezar.
+        en: z.number().min(0).nullable().default(null),
+        // Recorrido: a dónde va y cuándo (además de x/y del inicio).
+        recorrido: z
+          .array(
+            z.object({
+              ...punto,
+              escala: z.number().positive().default(1),
+              giro: z.number().default(0),
+            }),
+          )
+          .default([]),
+        efecto: z
+          .enum(["flotar", "vibrar", "latir", "balanceo"])
+          .nullable()
+          .default(null),
+        voltear: z.boolean().default(false),
+        // Fondo que llena todo el cuadro (paisaje, pista, ciudad): se ignoran x, y y ancho.
+        cubrir: z.boolean().default(false),
+        // Partes del dibujo que se mueven solas: el `id` de un grupo <g> del SVG.
+        partes: z
+          .array(
+            z.object({
+              id: z.string().min(1),
+              efecto: z.enum([
+                "girar",
+                "latir",
+                "parpadear",
+                "balanceo",
+                "vibrar",
+              ]),
+              // Vueltas o ciclos por segundo.
+              velocidad: z.number().positive().default(1.5),
+            }),
+          )
+          .default([]),
+      }),
+    )
+    .min(1)
+    .max(10),
 });
 
 export const esquemaElemento = z.discriminatedUnion("tipo", [
@@ -27,7 +106,10 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
     tipo: z.literal("lista"),
     ...tramo,
     titulo: z.string().nullable().default(null),
-    puntos: z.array(z.object({ texto: z.string(), en: z.number() })).min(1).max(6),
+    puntos: z
+      .array(z.object({ texto: z.string(), en: z.number() }))
+      .min(1)
+      .max(6),
   }),
   // Lettering: frase grande a pantalla completa.
   z.object({
@@ -49,7 +131,9 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
     ...tramo,
     icono: nombreIcono,
     texto: z.string().nullable().default(null),
-    posicion: z.enum(["arriba-derecha", "arriba-izquierda", "arriba", "centro"]).default("arriba-derecha"),
+    posicion: z
+      .enum(["arriba-derecha", "arriba-izquierda", "arriba", "centro"])
+      .default("arriba-derecha"),
   }),
   // Foto, captura o imagen de public/ (por ejemplo "imagenes/producto.jpg").
   z.object({
@@ -101,7 +185,10 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
     ...tramo,
     archivo: z.string().min(1),
     titulo: z.string().nullable().default(null),
-    etiquetas: z.array(z.object({ texto: z.string(), en: z.number() })).max(5).default([]),
+    etiquetas: z
+      .array(z.object({ texto: z.string(), en: z.number() }))
+      .max(5)
+      .default([]),
   }),
 
   // --- Escena de apoyo: animación a pantalla completa, hecha por capas con profundidad, que
@@ -114,7 +201,18 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
       // concepto: ícono grande y título. dato: una cifra grande (siempre una que se dice).
       // pasos: 2–4 tarjetas que aparecen una a una. comparar: dos tarjetas, antes y después.
       // frase: cita grande palabra por palabra. imagen: una foto de public/ que flota en 3D.
-      modo: z.enum(["concepto", "dato", "pasos", "comparar", "frase", "imagen"]).default("concepto"),
+      // escena: una ilustración animada (dibujos hechos para este video, por capas, con cámara).
+      modo: z
+        .enum([
+          "concepto",
+          "dato",
+          "pasos",
+          "comparar",
+          "frase",
+          "imagen",
+          "escena",
+        ])
+        .default("concepto"),
       titulo: z.string().nullable().default(null),
       texto: z.string().nullable().default(null),
       destacar: z.string().nullable().default(null),
@@ -132,15 +230,26 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
         .max(4)
         .default([]),
       archivo: z.string().nullable().default(null),
+      escena: esquemaEscenaIlustrada.nullable().default(null),
     })
     .superRefine((e, ctx) => {
-      const falta = (mensaje: string) => ctx.addIssue({ code: "custom", message: `Apoyo "${e.modo}": ${mensaje}` });
-      if (e.modo === "concepto" && !e.titulo && !e.texto) falta('necesita "titulo" o "texto"');
+      const falta = (mensaje: string) =>
+        ctx.addIssue({
+          code: "custom",
+          message: `Apoyo "${e.modo}": ${mensaje}`,
+        });
+      if (e.modo === "concepto" && !e.titulo && !e.texto)
+        falta('necesita "titulo" o "texto"');
       if (e.modo === "dato" && !e.cifra) falta('necesita "cifra"');
-      if (e.modo === "pasos" && e.puntos.length < 2) falta('necesita de 2 a 4 "puntos"');
-      if (e.modo === "comparar" && e.puntos.length !== 2) falta('necesita exactamente 2 "puntos"');
+      if (e.modo === "pasos" && e.puntos.length < 2)
+        falta('necesita de 2 a 4 "puntos"');
+      if (e.modo === "comparar" && e.puntos.length !== 2)
+        falta('necesita exactamente 2 "puntos"');
       if (e.modo === "frase" && !e.texto) falta('necesita "texto"');
-      if (e.modo === "imagen" && !e.archivo) falta('necesita "archivo" (por ejemplo "imagenes/foto.jpg")');
+      if (e.modo === "imagen" && !e.archivo)
+        falta('necesita "archivo" (por ejemplo "imagenes/foto.jpg")');
+      if (e.modo === "escena" && !e.escena)
+        falta('necesita "escena" con sus "capas"');
     }),
 
   // --- Recorte de fondo: la persona se separa del fondo (`npm run recortar`). ---
@@ -163,7 +272,8 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
       archivo: z.string().nullable().default(null),
     })
     .refine((e) => e.estilo !== "imagen" || e.archivo, {
-      message: 'El fondo con estilo "imagen" necesita "archivo" (por ejemplo "imagenes/oficina.jpg")',
+      message:
+        'El fondo con estilo "imagen" necesita "archivo" (por ejemplo "imagenes/oficina.jpg")',
     }),
   // La persona recortada sale de un círculo o una tarjeta de color, con lettering detrás.
   z.object({
@@ -177,12 +287,26 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
 
 export type Elemento = z.infer<typeof esquemaElemento>;
 
-export const TIPOS_ESCENA = ["capas", "perspectiva", "tutorial", "objeto3d"] as const;
-export type ElementoEscena = Extract<Elemento, { tipo: (typeof TIPOS_ESCENA)[number] }>;
+export const TIPOS_ESCENA = [
+  "capas",
+  "perspectiva",
+  "tutorial",
+  "objeto3d",
+] as const;
+export type ElementoEscena = Extract<
+  Elemento,
+  { tipo: (typeof TIPOS_ESCENA)[number] }
+>;
 export const TIPOS_RECORTE = ["detras", "fondo", "marco"] as const;
-export type ElementoRecorte = Extract<Elemento, { tipo: (typeof TIPOS_RECORTE)[number] }>;
+export type ElementoRecorte = Extract<
+  Elemento,
+  { tipo: (typeof TIPOS_RECORTE)[number] }
+>;
 export type ElementoApoyo = Extract<Elemento, { tipo: "apoyo" }>;
-export type ElementoSobreVideo = Exclude<Elemento, ElementoEscena | ElementoRecorte | ElementoApoyo>;
+export type ElementoSobreVideo = Exclude<
+  Elemento,
+  ElementoEscena | ElementoRecorte | ElementoApoyo
+>;
 
 // Estructura de public/proyectos/<id>/edicion.json (la crea `npm run preparar`).
 // Tiempos en segundos del video original.
@@ -261,7 +385,13 @@ export const esquemaEdicion = z.object({
   ),
   // Acercamientos de énfasis (por ejemplo, cuando se dice una palabra clave).
   enfasis: z
-    .array(z.object({ inicio: z.number(), fin: z.number(), zoom: z.number().min(1).max(2) }))
+    .array(
+      z.object({
+        inicio: z.number(),
+        fin: z.number(),
+        zoom: z.number().min(1).max(2),
+      }),
+    )
     .default([]),
   elementos: z.array(esquemaElemento).default([]),
   // Cara principal cada `cada` segundos: [x, y, ancho, alto] en fracciones del video original.
@@ -269,13 +399,18 @@ export const esquemaEdicion = z.object({
   caras: z
     .object({
       cada: z.number().positive(),
-      cuadros: z.array(z.tuple([z.number(), z.number(), z.number(), z.number()]).nullable()),
+      cuadros: z.array(
+        z.tuple([z.number(), z.number(), z.number(), z.number()]).nullable(),
+      ),
     })
     .nullable()
     .default(null),
   // Subtítulos que el video ya trae pegados en la imagen (los detecta `npm run preparar`):
   // altura de su centro (0 = arriba, 1 = abajo). Con ellos, `opciones.subtitulos` va en false.
-  subtitulosEnVideo: z.object({ altura: z.number().min(0).max(1) }).nullable().default(null),
+  subtitulosEnVideo: z
+    .object({ altura: z.number().min(0).max(1) })
+    .nullable()
+    .default(null),
   // Máscaras de la persona para los elementos de recorte: carpeta (dentro de public/) y tramos
   // [desde, hasta) de cuadros del video original que ya tienen máscara.
   // La llena `npm run recortar` (o revisar y exportar); no se edita a mano.
@@ -297,4 +432,8 @@ export const esquemaProps = z.object({
   formato: z.enum(formatos).nullable(),
 });
 
-export type PropsEditado = z.infer<typeof esquemaProps> & { edicion?: Edicion };
+// `dibujos`: el SVG de cada dibujo de las escenas ilustradas (los lee calcularMetadatos).
+export type PropsEditado = z.infer<typeof esquemaProps> & {
+  edicion?: Edicion;
+  dibujos?: Record<string, string>;
+};

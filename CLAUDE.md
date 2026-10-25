@@ -77,7 +77,8 @@ Tiempos en **segundos del video original**. El esquema está en `src/edicion/esq
   `objeto3d` (skill `bydzyne-3d`), y recorte de fondo: `detras` (texto detrás de la persona),
   `fondo` (color, degradado o imagen) y `marco` (persona saliendo de un círculo o tarjeta)
   (skill `bydzyne-recorte`), y `apoyo`: escena animada a pantalla completa por capas que ilustra
-  lo que se dice (skill `bydzyne-apoyo`). Las imágenes de la persona van en `public/imagenes/`.
+  lo que se dice; con `modo: "escena"` es una ilustración animada con dibujos SVG hechos para el
+  video (`public/proyectos/<id>/dibujos/`), cámara y partes que se mueven (skill `bydzyne-apoyo`). Las imágenes de la persona van en `public/imagenes/`.
 - `caras`: dónde está la cara en cada momento. Lo llena el programa; no se edita a mano.
 - `subtitulosEnVideo`: el video ya trae subtítulos en la imagen (lo detecta preparar); con eso
   `opciones.subtitulos` va en false.

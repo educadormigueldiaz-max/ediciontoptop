@@ -30,7 +30,8 @@ animaciones con [Remotion](https://www.remotion.dev); tú revisas en el navegado
 - **Clipping**: de un video largo (o un enlace de YouTube) saca clips verticales de los mejores
   momentos, cada uno con cortes, subtítulos y gancho. También desde la página.
 - **Animaciones de apoyo**: escenas animadas por capas (ícono, cifra, pasos, comparación, frase,
-  foto en 3D) que muestran lo que dices, en medio de tu video. Y con **solo un audio** (nota de
+  foto en 3D) y **escenas ilustradas**: Claude dibuja lo que cuentas (un Fórmula 1 en los pits,
+  una casa, una ciudad) y lo anima con cámara, profundidad y partes que se mueven. Y con **solo un audio** (nota de
   voz, podcast) crea el video completo animado.
 - **Estilos por tono**: Serio, Amistoso, Relajado, Suspenso, Tecnológico, Informativo, Curioso,
   Chistoso, Elegante y Energético, cada uno con sus colores y su letra.
@@ -114,8 +115,12 @@ npm run apoyo -- <proyecto>
 
 Claude lee lo que dices y pone escenas animadas a pantalla completa que lo ilustran (skill
 `bydzyne-apoyo`): un ícono con título, una cifra que cuenta, pasos, un antes y después, una frase o
-una foto que flota en 3D. Cada escena se arma por capas (fondo, luces, anillos, partículas y el
-contenido) y la cámara se mueve entre ellas. Opciones: `--cuantas 4`, `--pedido "más datos"`.
+una foto que flota en 3D, o una **escena ilustrada**: dibujos hechos para ese momento (por
+ejemplo, un Fórmula 1 que entra a los pits y los mecánicos que llegan), con fondo, cámara que se
+acerca y ruedas que giran. Cada escena se arma por capas (fondo, luces, anillos, partículas y el
+contenido) y la cámara se mueve entre ellas. Opciones: `--cuantas 4`, `--pedido "más datos"`,
+`--sin-dibujos` (solo texto, íconos y cifras: más rápido y barato). Con dibujos cuesta cerca de
+1 USD por video y tarda 2–3 minutos; los dibujos quedan en `public/proyectos/<id>/dibujos/`.
 
 **Solo audio**: `npm run preparar -- entrada/nota-de-voz.m4a` acepta un audio (mp3, m4a, wav…) y
 crea un proyecto con fondo animado y subtítulos; después `npm run apoyo` lo llena de escenas de

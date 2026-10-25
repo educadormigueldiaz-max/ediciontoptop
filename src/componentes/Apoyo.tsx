@@ -15,6 +15,7 @@ import { useMarca } from "../edicion/estilos";
 import type { ElementoEnEditado } from "../edicion/linea-de-tiempo";
 import type { Marca } from "../marca";
 import { buscarIcono } from "./iconos";
+import { EscenaIlustrada } from "./EscenaIlustrada";
 import { fuenteImagen } from "./ImagenInsertada";
 import { normalizar, tamanoQueCabe } from "./Lettering";
 
@@ -731,6 +732,9 @@ const Contenido: React.FC<{ item: ApoyoEnEditado; area: Area }> = ({
         </div>
       );
     }
+    case "escena":
+      // Se dibuja aparte (EscenaIlustrada), con su propio fondo.
+      return null;
     case "imagen": {
       const altoTitulo = e.titulo ? area.alto * 0.22 : 0;
       const alto = (area.alto - altoTitulo) * 0.92;
@@ -784,7 +788,8 @@ const Contenido: React.FC<{ item: ApoyoEnEditado; area: Area }> = ({
 const Escena: React.FC<{
   item: ApoyoEnEditado;
   limiteAbajo: number | null;
-}> = ({ item, limiteAbajo }) => {
+  dibujos: Record<string, string>;
+}> = ({ item, limiteAbajo, dibujos }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const { duracionFrames } = item;
@@ -811,6 +816,8 @@ const Escena: React.FC<{
     { ...LIMITE, easing: Easing.in(Easing.cubic) },
   );
   const radio = Math.hypot(width, height) * 0.5 * abre;
+  const ilustrada =
+    item.elemento.modo === "escena" ? item.elemento.escena : null;
 
   return (
     <AbsoluteFill
@@ -820,11 +827,53 @@ const Escena: React.FC<{
         scale: 1 + cierra * 0.06,
       }}
     >
-      <FondoEnCapas frame={frame} semilla={`${item.elemento.inicio}`}>
-        <Capa z={0} perspectiva={perspectiva}>
-          <Contenido item={item} area={area} />
-        </Capa>
-      </FondoEnCapas>
+      {ilustrada ? (
+        <>
+          {ilustrada.fondo === "marca" ? (
+            <FondoEnCapas frame={frame} semilla={`${item.elemento.inicio}`} />
+          ) : null}
+          <EscenaIlustrada
+            escena={ilustrada}
+            dibujos={dibujos}
+            duracionFrames={duracionFrames}
+          />
+          {item.elemento.titulo ? (
+            // Sombra arriba para que el título se lea sobre cualquier dibujo.
+            <AbsoluteFill
+              style={{
+                background: `linear-gradient(rgba(0,0,0,0.5), transparent ${((area.y + area.alto * 0.3) / height) * 100}%)`,
+              }}
+            />
+          ) : null}
+          {item.elemento.titulo ? (
+            <div
+              style={{
+                position: "absolute",
+                left: area.x,
+                top: area.y,
+                width: area.ancho,
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <Titulo
+                texto={item.elemento.titulo}
+                destacar={item.elemento.destacar}
+                ancho={area.ancho}
+                alto={area.alto * 0.2}
+                desde={6}
+                maximo={0.075}
+              />
+            </div>
+          ) : null}
+        </>
+      ) : (
+        <FondoEnCapas frame={frame} semilla={`${item.elemento.inicio}`}>
+          <Capa z={0} perspectiva={perspectiva}>
+            <Contenido item={item} area={area} />
+          </Capa>
+        </FondoEnCapas>
+      )}
     </AbsoluteFill>
   );
 };
@@ -832,7 +881,8 @@ const Escena: React.FC<{
 export const Apoyos: React.FC<{
   items: ApoyoEnEditado[];
   limiteAbajo: number | null;
-}> = ({ items, limiteAbajo }) => (
+  dibujos: Record<string, string>;
+}> = ({ items, limiteAbajo, dibujos }) => (
   <AbsoluteFill>
     {items.map((item, i) => (
       <Sequence
@@ -841,7 +891,7 @@ export const Apoyos: React.FC<{
         durationInFrames={item.duracionFrames}
         name={`Apoyo: ${item.elemento.modo}`}
       >
-        <Escena item={item} limiteAbajo={limiteAbajo} />
+        <Escena item={item} limiteAbajo={limiteAbajo} dibujos={dibujos} />
       </Sequence>
     ))}
   </AbsoluteFill>

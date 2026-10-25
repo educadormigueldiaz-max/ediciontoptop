@@ -22,6 +22,7 @@ import { Elementos } from "../componentes/Elementos";
 import { Apoyos, esApoyo, FondoSoloAudio } from "../componentes/Apoyo";
 import { VideoEnEscena } from "../componentes/Escena3D";
 import { esEscena } from "../edicion/escenas";
+import { dibujosDe } from "../edicion/dibujos";
 import { esRecorte, recorteCompleto } from "../edicion/recortes";
 import { Recortes } from "../componentes/Recorte";
 import {
@@ -64,6 +65,19 @@ export const calcularMetadatos: CalculateMetadataFunction<
     );
   }
   const edicion = resultado.data;
+  // Los dibujos de las escenas ilustradas se leen aquí, una sola vez.
+  const dibujos: Record<string, string> = {};
+  for (const ruta of dibujosDe(edicion)) {
+    const r = await fetch(staticFile(ruta), {
+      signal: abortSignal,
+      cache: "no-store",
+    });
+    if (!r.ok)
+      throw new Error(
+        `No encuentro el dibujo public/${ruta} de una escena de apoyo.`,
+      );
+    dibujos[ruta] = await r.text();
+  }
   // Un estilo que no existe o tiene un error se avisa aquí, con su nombre.
   buscarEstilo(edicion.estilo);
   const formato = props.formato ?? edicion.opciones.formato;
@@ -72,12 +86,12 @@ export const calcularMetadatos: CalculateMetadataFunction<
     fps: FPS,
     durationInFrames: framesTotales(edicion, FPS),
     defaultOutName: `${props.proyecto}-${formato.replace(":", "x")}`,
-    props: { ...props, edicion },
+    props: { ...props, edicion, dibujos },
   };
 };
 
 // Estilo "Crudo → editado": tramos sin pausas, subtítulos, gancho y cierre opcionales.
-export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
+export const Editado: React.FC<PropsEditado> = ({ edicion, dibujos }) => {
   const { fps, width, height } = useVideoConfig();
   const tramos = useMemo(
     () => (edicion ? calcularTramos(edicion, fps) : []),
@@ -204,7 +218,8 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
   }
   // Una escena de frase ya muestra lo que se dice.
   for (const a of apoyos) {
-    if (a.elemento.modo === "frase") sinSubtitulos.push([a.desdeFrame, a.desdeFrame + a.duracionFrames]);
+    if (a.elemento.modo === "frase")
+      sinSubtitulos.push([a.desdeFrame, a.desdeFrame + a.duracionFrames]);
   }
   if (subtitulosSoloEnApoyos) {
     let desde = 0;
@@ -268,7 +283,11 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
 
         {apoyos.length > 0 ? (
           <Sequence durationInFrames={finVideo} name="Escenas de apoyo">
-            <Apoyos items={apoyos} limiteAbajo={limiteApoyos} />
+            <Apoyos
+              items={apoyos}
+              limiteAbajo={limiteApoyos}
+              dibujos={dibujos ?? {}}
+            />
           </Sequence>
         ) : null}
 
