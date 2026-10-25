@@ -24,7 +24,8 @@ estilo elegido. Tú decides el resto, en este orden:
 2. **Tomas repetidas y errores** (skill `bydzyne-crudo-a-editado`): si dice dos veces la misma frase,
    deja la última buena. Si la persona lo pidió en las notas ("quita la parte donde me equivoco"),
    búscalo en la transcripción. Nunca cortes a mitad de palabra (usa `inicio`/`fin` de `palabras`).
-3. **Subtítulos** (skill `bydzyne-subtitulos`): siempre. Corrige solo lo que está claramente mal
+3. **Subtítulos** (skill `bydzyne-subtitulos`): siempre, salvo que el video ya traiga los suyos
+   (`subtitulosEnVideo` no es null y `opciones.subtitulos` viene en false: déjalo así). Corrige solo lo que está claramente mal
    escrito (nombres de marcas o productos que la persona escribió en las notas). Si no estás seguro,
    no cambies la palabra.
 4. **Gancho** (skill `bydzyne-estilo`): propone uno corto tomado de lo que la persona DICE (una
@@ -41,6 +42,11 @@ estilo elegido. Tú decides el resto, en este orden:
    - Escenas 3D (skill `bydzyne-3d`) y recortes (skill `bydzyne-recorte`): solo si encajan muy
      claro (por ejemplo, mostrar una app paso a paso con capturas que subió). En duda, no.
    - Nunca dos elementos al mismo tiempo; deja al menos 3 s entre uno y otro.
+   - **Escenas de apoyo** (`"tipo": "apoyo"`, skill `bydzyne-apoyo`): si la persona pidió
+     animaciones, ya vienen puestas. No las quites ni las encimes; puedes corregir un texto mal
+     escrito o una cifra que no se dice. Sin animaciones pedidas, no agregues escenas de apoyo.
+   - **Solo audio** (`opciones.soloAudio: true`): no hay imagen de la persona; las escenas de
+     apoyo llenan el video. No agregues otros elementos, solo gancho y cierre si corresponde.
 7. **Formato**: `9:16` salvo que la red sea YouTube horizontal (`16:9`). Deja `enfoqueX/Y` en "auto".
 8. **Música**: no pongas música (la página todavía no la elige). Efectos de sonido: déjalos como vienen.
 
@@ -59,6 +65,8 @@ corto", "sin gráficos", "corrige el nombre"). Haz **solo** eso, con el menor ca
 - "Otro gancho": otra frase suya distinta a la anterior (sin inventar).
 - "Más corto": quita frases repetidas o de relleno, no ideas importantes.
 - "Corrige <palabra>": cambia `texto` de esas palabras, sin tocar tiempos.
+- "Más / menos animaciones", "cambia esta animación", "sin animaciones": edita las escenas de
+  apoyo con la skill `bydzyne-apoyo` (en solo audio, nunca dejes huecos sin escena).
 - Si el pedido no se entiende o no se puede hacer, no cambies nada y explícalo en el RESUMEN.
 
 ## Revisión

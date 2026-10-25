@@ -5,7 +5,7 @@ pide en español lo que quiere ver ("corta las pausas y pon subtítulos") y tú 
 
 - Responde siempre en español, con frases cortas y sin jerga técnica.
 - Antes de editar, lee las skills de `.claude/skills/` que apliquen (ritmo, subtítulos, estilo,
-  elementos, 3d, recorte, producción, movimiento, composición, clips). Son el criterio de edición.
+  elementos, 3d, recorte, producción, movimiento, composición, clips, apoyo). Son el criterio de edición.
 - Si el pedido es ambiguo ("déjalo bonito"), aplica las skills y explica en una línea qué decidiste.
 
 ## Flujo de trabajo: Prepara → Pide → Revisa → Reutiliza
@@ -29,7 +29,8 @@ pide en español lo que quiere ver ("corta las pausas y pon subtítulos") y tú 
 |---|---|
 | `npm run instalar` | Instala Whisper y descarga el modelo (solo la primera vez) |
 | `npm run actualizar` | Trae la última versión desde GitHub e instala lo nuevo |
-| `npm run preparar -- <video> [opciones]` | Convierte, transcribe, corta pausas y ubica la cara. `--ayuda` muestra las opciones |
+| `npm run preparar -- <video o audio> [opciones]` | Convierte, transcribe, corta pausas y ubica la cara. Con un audio crea un proyecto de solo audio. Si el video ya trae subtítulos, no pone otros. `--ayuda` muestra las opciones |
+| `npm run apoyo -- <id>` | Escenas de apoyo animadas que ilustran lo que se dice; en solo audio, todo el video (skill `bydzyne-apoyo`) |
 | `npm run caras -- <id>` | Vuelve a buscar la cara en un proyecto (no toca la edición) |
 | `npm run recortar -- <id>` | Separa a la persona del fondo para `detras`, `fondo` y `marco` (revisar y exportar lo hacen solos) |
 | `npm run lote [-- opciones de preparar]` | Prepara y revisa todos los videos nuevos de `entrada/` y deja un resumen en `salida/lote-<fecha>.md` |
@@ -63,6 +64,7 @@ Tiempos en **segundos del video original**. El esquema está en `src/edicion/esq
     `"clave": true`; `"letra": "alterna"` usa la segunda letra), `posicionSubtitulos` (0 = arriba, 1 = abajo).
   - `zoomEnCortes`: acercamiento alterno en cada corte. `empuje` (true por defecto): acercamiento
     lento dentro de cada tramo. `color`: "natural" (por defecto), "vivo" o "ninguno".
+  - `soloAudio`: proyecto hecho con un audio (fondo animado; la imagen vacía no se ve).
   - `gancho` (texto o null) y `duracionGancho`: frase de los primeros segundos.
   - `cierre`: `{ "texto": "...", "duracion": 2 }` o null.
   - `sonidos` (true/false) y `volumenSonidos` (0–1): efectos de sonido al aparecer los elementos.
@@ -73,8 +75,11 @@ Tiempos en **segundos del video original**. El esquema está en `src/edicion/esq
   `imagen` (skill `bydzyne-elementos`), y escenas 3D: `capas`, `perspectiva`, `tutorial` y
   `objeto3d` (skill `bydzyne-3d`), y recorte de fondo: `detras` (texto detrás de la persona),
   `fondo` (color, degradado o imagen) y `marco` (persona saliendo de un círculo o tarjeta)
-  (skill `bydzyne-recorte`). Las imágenes de la persona van en `public/imagenes/`.
+  (skill `bydzyne-recorte`), y `apoyo`: escena animada a pantalla completa por capas que ilustra
+  lo que se dice (skill `bydzyne-apoyo`). Las imágenes de la persona van en `public/imagenes/`.
 - `caras`: dónde está la cara en cada momento. Lo llena el programa; no se edita a mano.
+- `subtitulosEnVideo`: el video ya trae subtítulos en la imagen (lo detecta preparar); con eso
+  `opciones.subtitulos` va en false.
 - `recorte`: qué momentos ya tienen a la persona separada del fondo. Lo llena el programa
   (`npm run recortar`, revisar o exportar); no se edita a mano.
 - Usa `transcripcion.txt` para ubicar frases por tiempo (por ejemplo, una toma repetida).
@@ -92,7 +97,8 @@ en vivo (`--progreso`).
 ## Reglas
 
 - **La cara de la persona nunca se tapa.** Subtítulos y elementos se acomodan solos alrededor
-  de ella. No uses imagen `pantalla-completa` ni lettering con `fondo: "color"` salvo que lo pidan.
+  de ella. La excepción son las escenas de apoyo (`apoyo`): tapan el video unos segundos a
+  propósito, como un video de apoyo, solo cuando la persona pidió animaciones. No uses imagen `pantalla-completa` ni lettering con `fondo: "color"` salvo que lo pidan.
 - **ByDzyne nunca aparece en los videos**: ni su nombre ni un logo, en ningún texto, gancho
   o cierre. ByDzyne es la herramienta, no la marca de los videos.
 

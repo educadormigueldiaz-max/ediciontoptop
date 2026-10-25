@@ -179,6 +179,13 @@ const preparar = async (t) => {
   if (!edicion.palabras?.length) throw new ErrorClaro("No se escucha a nadie hablando en el video. Revisa el sonido y súbelo de nuevo.");
 };
 
+// Escenas de apoyo (skill bydzyne-apoyo). Devuelve lo que costó. Si fallan, el video sigue sin ellas.
+const crearAnimaciones = async (t) => {
+  const r = await node("apoyo.mjs", [t.proyecto, "--tope", "1", ...(t.notas ? ["--pedido", t.notas] : [])], { limiteMin: 20 });
+  anotar(t.id, `Animaciones (código ${r.codigo}):\n${r.salida.slice(-1500)}`);
+  return parseFloat(r.salida.match(/Costo aprox\.: ([\d.]+)/)?.[1] ?? "0");
+};
+
 const revisar = (t) => node("revisar.mjs", [t.proyecto], { limiteMin: 30 });
 
 // Revisa y, si la edición tiene errores, le pide a Claude que los corrija (hasta 2 veces).
@@ -304,6 +311,11 @@ const procesar = async (id) => {
   if (clase === "nuevo") {
     paso("editando", "Cortando pausas y escribiendo subtítulos");
     await preparar(t);
+    const soloAudio = leerJson(path.join(CARPETA_PROYECTOS, t.proyecto, "edicion.json")).opciones.soloAudio === true;
+    if (t.animaciones || soloAudio) {
+      paso("editando", soloAudio ? "Creando la animación de todo el audio" : "Creando las animaciones");
+      costo += await crearAnimaciones(t);
+    }
     paso("editando", "Decidiendo el gancho y los gráficos");
     const e = await pedirAClaude(
       t,

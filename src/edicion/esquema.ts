@@ -104,6 +104,45 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
     etiquetas: z.array(z.object({ texto: z.string(), en: z.number() })).max(5).default([]),
   }),
 
+  // --- Escena de apoyo: animación a pantalla completa, hecha por capas con profundidad, que
+  // ilustra lo que se dice (como un video de apoyo). Tapa a la persona mientras dura: va en
+  // momentos en que no hace falta verla. En los proyectos de solo audio llenan casi todo. ---
+  z
+    .object({
+      tipo: z.literal("apoyo"),
+      ...tramo,
+      // concepto: ícono grande y título. dato: una cifra grande (siempre una que se dice).
+      // pasos: 2–4 tarjetas que aparecen una a una. comparar: dos tarjetas, antes y después.
+      // frase: cita grande palabra por palabra. imagen: una foto de public/ que flota en 3D.
+      modo: z.enum(["concepto", "dato", "pasos", "comparar", "frase", "imagen"]).default("concepto"),
+      titulo: z.string().nullable().default(null),
+      texto: z.string().nullable().default(null),
+      destacar: z.string().nullable().default(null),
+      icono: nombreIcono.nullable().default(null),
+      cifra: z.string().max(14).nullable().default(null),
+      puntos: z
+        .array(
+          z.object({
+            texto: z.string().min(1),
+            icono: nombreIcono.nullable().default(null),
+            // Segundo en que aparece (null = se reparten solos).
+            en: z.number().nullable().default(null),
+          }),
+        )
+        .max(4)
+        .default([]),
+      archivo: z.string().nullable().default(null),
+    })
+    .superRefine((e, ctx) => {
+      const falta = (mensaje: string) => ctx.addIssue({ code: "custom", message: `Apoyo "${e.modo}": ${mensaje}` });
+      if (e.modo === "concepto" && !e.titulo && !e.texto) falta('necesita "titulo" o "texto"');
+      if (e.modo === "dato" && !e.cifra) falta('necesita "cifra"');
+      if (e.modo === "pasos" && e.puntos.length < 2) falta('necesita de 2 a 4 "puntos"');
+      if (e.modo === "comparar" && e.puntos.length !== 2) falta('necesita exactamente 2 "puntos"');
+      if (e.modo === "frase" && !e.texto) falta('necesita "texto"');
+      if (e.modo === "imagen" && !e.archivo) falta('necesita "archivo" (por ejemplo "imagenes/foto.jpg")');
+    }),
+
   // --- Recorte de fondo: la persona se separa del fondo (`npm run recortar`). ---
 
   // Texto detrás de la persona, como en las portadas de revista.
@@ -142,7 +181,8 @@ export const TIPOS_ESCENA = ["capas", "perspectiva", "tutorial", "objeto3d"] as 
 export type ElementoEscena = Extract<Elemento, { tipo: (typeof TIPOS_ESCENA)[number] }>;
 export const TIPOS_RECORTE = ["detras", "fondo", "marco"] as const;
 export type ElementoRecorte = Extract<Elemento, { tipo: (typeof TIPOS_RECORTE)[number] }>;
-export type ElementoSobreVideo = Exclude<Elemento, ElementoEscena | ElementoRecorte>;
+export type ElementoApoyo = Extract<Elemento, { tipo: "apoyo" }>;
+export type ElementoSobreVideo = Exclude<Elemento, ElementoEscena | ElementoRecorte | ElementoApoyo>;
 
 // Estructura de public/proyectos/<id>/edicion.json (la crea `npm run preparar`).
 // Tiempos en segundos del video original.
@@ -185,6 +225,9 @@ export const esquemaEdicion = z.object({
     empuje: z.boolean().default(true),
     // Retoque de color de la imagen: "natural" (un poco más de contraste y color), "vivo" o "ninguno".
     color: z.enum(["natural", "vivo", "ninguno"]).default("natural"),
+    // Proyecto hecho con solo un audio: no hay imagen de la persona, se ve un fondo animado y
+    // las escenas de apoyo (lo marca `npm run preparar` al recibir un audio).
+    soloAudio: z.boolean().default(false),
     gancho: z.string().nullable(),
     duracionGancho: z.number().positive(),
     cierre: z
@@ -230,6 +273,9 @@ export const esquemaEdicion = z.object({
     })
     .nullable()
     .default(null),
+  // Subtítulos que el video ya trae pegados en la imagen (los detecta `npm run preparar`):
+  // altura de su centro (0 = arriba, 1 = abajo). Con ellos, `opciones.subtitulos` va en false.
+  subtitulosEnVideo: z.object({ altura: z.number().min(0).max(1) }).nullable().default(null),
   // Máscaras de la persona para los elementos de recorte: carpeta (dentro de public/) y tramos
   // [desde, hasta) de cuadros del video original que ya tienen máscara.
   // La llena `npm run recortar` (o revisar y exportar); no se edita a mano.

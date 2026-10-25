@@ -45,6 +45,7 @@
     "lote": "node scripts/lote.mjs",
     "piloto": "node scripts/piloto.mjs",
     "clips": "node scripts/clips.mjs",
+    "apoyo": "node scripts/apoyo.mjs",
     "build": "remotion bundle",
     "upgrade": "remotion upgrade",
     "lint": "eslint src && tsc"

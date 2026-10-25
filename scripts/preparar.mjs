@@ -14,11 +14,15 @@ import {
 } from "./lib/herramientas.mjs";
 import { limpiarAudio } from "./lib/audio.mjs";
 import { detectarCaras } from "./lib/caras.mjs";
+import { detectarSubtitulosPropios } from "./lib/subtitulos-propios.mjs";
 import { estilosDisponibles } from "./lib/produccion.mjs";
 import { transcribir } from "./lib/transcribir.mjs";
 
 const AYUDA = `
-Uso: npm run preparar -- <video> [opciones]
+Uso: npm run preparar -- <video o audio> [opciones]
+
+Con un audio (nota de voz, podcast: mp3, m4a, wav…) se crea un proyecto "solo audio": un fondo
+animado con subtítulos, listo para llenarlo de escenas de apoyo (npm run apoyo).
 
 Opciones:
   --id <nombre>             Nombre del proyecto (por defecto, el del archivo)
@@ -29,6 +33,7 @@ Opciones:
   --idioma <código>         Idioma del audio (por defecto es)
   --formato <9:16|4:5|1:1|16:9>  Formato inicial (por defecto 9:16)
   --sin-subtitulos          No transcribe (más rápido; no habrá subtítulos)
+  --con-subtitulos          Pone subtítulos aunque el video ya traiga los suyos
   --sin-cortes              No corta pausas (solo subtítulos)
   --conservar-muletillas    No corta "eh", "mmm", etc.
   --sin-caras               No busca la cara (los textos no sabrán dónde está)
@@ -52,6 +57,7 @@ const { values: op, positionals } = parseArgs({
     idioma: { type: "string", default: "es" },
     formato: { type: "string", default: "9:16" },
     "sin-subtitulos": { type: "boolean", default: false },
+    "con-subtitulos": { type: "boolean", default: false },
     "sin-cortes": { type: "boolean", default: false },
     "sin-caras": { type: "boolean", default: false },
     "conservar-muletillas": { type: "boolean", default: false },
@@ -117,14 +123,28 @@ const paso = (n, texto) => console.log(`\n[${n}/6] ${texto}`);
 
 // 1. Video de trabajo: H.264 a 30 fps constantes. Evita desfases de los videos
 //    del celular (que graban con fps variables) y funciona en cualquier navegador.
-paso(1, "Convirtiendo el video…");
+//    Un audio solo se vuelve un video vacío del formato elegido: se oye pero no se ve.
+const soloAudio = !ffprobe(original).streams.some((s) => s.codec_type === "video" && s.disposition?.attached_pic !== 1);
+paso(1, soloAudio ? "Es un audio: preparando un video de solo audio…" : "Convirtiendo el video…");
 const video = path.join(carpeta, "video.mp4");
-ffmpeg([
-  "-y", "-i", original,
-  "-r", String(FPS), "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p",
-  "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
-  "-movflags", "+faststart", video,
-]);
+if (soloAudio) {
+  const segundos = parseFloat(ffprobe(original).format.duration);
+  const [w, h] = { "9:16": [540, 960], "4:5": [540, 676], "1:1": [540, 540], "16:9": [960, 540] }[op.formato];
+  ffmpeg([
+    "-y", "-f", "lavfi", "-i", `nullsrc=s=${w}x${h}:r=${FPS}`, "-i", original,
+    "-map", "0:v", "-map", "1:a:0", "-t", String(segundos),
+    "-c:v", "libx264", "-preset", "veryfast", "-crf", "40", "-pix_fmt", "yuv420p",
+    "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
+    "-movflags", "+faststart", video,
+  ]);
+} else {
+  ffmpeg([
+    "-y", "-i", original,
+    "-r", String(FPS), "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p",
+    "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
+    "-movflags", "+faststart", video,
+  ]);
+}
 const info = ffprobe(video);
 const flujoVideo = info.streams.find((s) => s.codec_type === "video");
 const duracion = parseFloat(info.format.duration);
@@ -152,6 +172,15 @@ if (op.transcripcion) {
   ({ palabras, frases } = await transcribir({ wav, modelo: op.modelo, idioma: op.idioma }));
 }
 
+// Si el video ya trae subtítulos pegados en la imagen, no se le ponen otros encima.
+let subtitulosPropios = null;
+if (palabras.length > 0 && !op["con-subtitulos"] && !soloAudio) {
+  subtitulosPropios = detectarSubtitulosPropios({ video, palabras });
+  if (subtitulosPropios?.tiene) {
+    console.log("  El video ya trae subtítulos: no se le ponen otros (--con-subtitulos para ponerlos igual).");
+  }
+}
+
 // 4. Pausas y muletillas.
 paso(4, "Buscando pausas y muletillas…");
 const pausa = parseFloat(op.pausa);
@@ -164,7 +193,9 @@ fs.rmSync(path.dirname(wav), { recursive: true, force: true });
 
 // 5. Dónde está la cara en cada momento, para que ningún texto o gráfico la tape.
 let caras = null;
-if (op["sin-caras"]) {
+if (soloAudio) {
+  paso(5, "Sin cara (solo audio)");
+} else if (op["sin-caras"]) {
   paso(5, "Sin búsqueda de cara (--sin-caras)");
 } else {
   paso(5, "Buscando la cara…");
@@ -189,10 +220,12 @@ const edicion = {
     formato: op.formato,
     enfoqueX: "auto",
     enfoqueY: "auto",
-    subtitulos: palabras.length > 0,
+    subtitulos: palabras.length > 0 && !subtitulosPropios?.tiene,
     estiloSubtitulos: "palabra",
     posicionSubtitulos: 0.7,
-    zoomEnCortes: true,
+    zoomEnCortes: !soloAudio,
+    empuje: !soloAudio,
+    soloAudio,
     gancho: null,
     duracionGancho: 2.5,
     cierre: null,
@@ -204,6 +237,8 @@ const edicion = {
   enfasis: [],
   elementos: [],
   caras,
+  // Subtítulos que el video ya trae en la imagen: dónde están (0 = arriba, 1 = abajo).
+  subtitulosEnVideo: subtitulosPropios?.tiene ? { altura: redondear(subtitulosPropios.altura ?? 0.75) } : null,
 };
 escribirJson(archivoEdicion, edicion);
 

@@ -164,6 +164,13 @@ const momentosDe = (e: Elemento): number[] => {
       return e.pasos.map((p) => p.en);
     case "objeto3d":
       return e.etiquetas.map((p) => p.en);
+    case "apoyo": {
+      // Los puntos sin momento propio se reparten en la primera mitad de la escena.
+      const n = e.puntos.length;
+      return e.puntos.map(
+        (p, i) => p.en ?? e.inicio + (e.fin - e.inicio) * (0.15 + (n > 1 ? (0.4 * i) / (n - 1) : 0)),
+      );
+    }
     default:
       return [];
   }

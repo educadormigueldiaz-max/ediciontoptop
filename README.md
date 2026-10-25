@@ -29,13 +29,17 @@ animaciones con [Remotion](https://www.remotion.dev); tú revisas en el navegado
   celular y lo recibe editado, sin Terminal y sin hablar con Claude. Puede pedir cambios escribiendo.
 - **Clipping**: de un video largo (o un enlace de YouTube) saca clips verticales de los mejores
   momentos, cada uno con cortes, subtítulos y gancho. También desde la página.
+- **Animaciones de apoyo**: escenas animadas por capas (ícono, cifra, pasos, comparación, frase,
+  foto en 3D) que muestran lo que dices, en medio de tu video. Y con **solo un audio** (nota de
+  voz, podcast) crea el video completo animado.
+- **Respeta tus subtítulos**: si el video ya trae subtítulos, no le pone otros encima.
 - **Acabado profesional**: voz limpia y con volumen parejo, color retocado, cámara que se acerca
   lento en cada toma, gancho y subtítulos con animaciones suaves.
 - **Tu cara nunca se tapa**: el programa detecta dónde está, acomoda textos y gráficos alrededor
   y ajusta el recorte para que siempre quede en cuadro.
 - **Variaciones** de un mismo video para probar anuncios.
 - **Skills de criterio** para Claude Code: estilo, ritmo, subtítulos, elementos, 3D, recorte,
-  producción, movimiento y composición.
+  producción, movimiento, composición, clips y apoyo.
 
 ## Instalación en Mac (una sola vez)
 
@@ -100,6 +104,21 @@ enlace (o subes el video) y ves en vivo cada etapa (traer el video, escuchar tod
 crear clips) con porcentaje y tiempo restante. Cada clip aparece para verlo y descargarlo apenas
 termina, aunque los demás se sigan creando.
 
+## Animaciones de apoyo y videos desde un audio
+
+```
+npm run apoyo -- <proyecto>
+```
+
+Claude lee lo que dices y pone escenas animadas a pantalla completa que lo ilustran (skill
+`bydzyne-apoyo`): un ícono con título, una cifra que cuenta, pasos, un antes y después, una frase o
+una foto que flota en 3D. Cada escena se arma por capas (fondo, luces, anillos, partículas y el
+contenido) y la cámara se mueve entre ellas. Opciones: `--cuantas 4`, `--pedido "más datos"`.
+
+**Solo audio**: `npm run preparar -- entrada/nota-de-voz.m4a` acepta un audio (mp3, m4a, wav…) y
+crea un proyecto con fondo animado y subtítulos; después `npm run apoyo` lo llena de escenas de
+principio a fin. Desde la página: sube el audio en vez del video.
+
 ## Piloto automático (para quienes solo suben videos)
 
 ```bash
@@ -130,7 +149,8 @@ Enciende una página en esta Mac. La Terminal muestra la dirección para abrirla
 
 | Comando | Qué hace |
 |---|---|
-| `npm run preparar -- entrada/video.mov` | Convierte, transcribe y corta pausas (`--ayuda` para opciones) |
+| `npm run preparar -- entrada/video.mov` | Convierte, transcribe y corta pausas (`--ayuda` para opciones). También acepta un audio |
+| `npm run apoyo -- <proyecto>` | Agrega escenas animadas que ilustran lo que se dice (con un audio, todo el video) |
 | `npm run dev` | Vista previa en http://localhost:3000 |
 | `npm run lote` | Prepara y revisa todos los videos nuevos de `entrada/` y deja un resumen |
 | `npm run exportar -- <proyecto>` | Exporta a `salida/` (`--formato 1:1` o `--todos`) |

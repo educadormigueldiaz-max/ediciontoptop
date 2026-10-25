@@ -41,4 +41,9 @@ description: Criterio para los subtítulos de ByDzyne (estilo, posición, correc
   Quita muletillas escritas ("eh", "este...") si quedaron.
 
 ## Cuándo no poner subtítulos
+- Si el video ya trae subtítulos pegados en la imagen: `npm run preparar` los detecta solo (lee el
+  texto de algunos cuadros y lo compara con lo que se dice), deja `"subtitulos": false` y guarda
+  dónde están en `subtitulosEnVideo`. Los elementos no los tapan; durante las escenas de apoyo
+  (que sí los tapan) salen los nuestros. Para ponerlos igual: `--con-subtitulos` o
+  `"subtitulos": true`.
 - Si el pedido es solo música o producto sin voz: `"subtitulos": false`.

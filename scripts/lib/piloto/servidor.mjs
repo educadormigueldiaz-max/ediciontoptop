@@ -17,6 +17,8 @@ const PAGINA = path.join(path.dirname(new URL(import.meta.url).pathname), "pagin
 const PANEL_CLIPS = path.join(path.dirname(PAGINA), "clips.html");
 const COOKIE = "bydzyne";
 const EXT_VIDEO = ["mp4", "mov", "m4v", "webm", "mkv", "avi", "3gp"];
+// Un audio solo (nota de voz, podcast) se vuelve un video animado (skill bydzyne-apoyo).
+const EXT_AUDIO = ["mp3", "m4a", "wav", "aac", "ogg", "opus", "flac"];
 const EXT_FOTO = ["jpg", "jpeg", "png", "webp", "heic", "heif"];
 const MAX_VIDEO = 4 * 1024 ** 3;
 const MAX_FOTO = 30 * 1024 ** 2;
@@ -239,8 +241,9 @@ const manejar = async (req, res) => {
       siguiente();
       return enviarJson(res, 200, { id: t.id, enCola: true });
     }
-    if (!EXT_VIDEO.includes(extension(d.nombreVideo))) {
-      return error(res, 400, "Ese archivo no parece un video. Usa MP4 o MOV (los del celular sirven).");
+    const esAudio = EXT_AUDIO.includes(extension(d.nombreVideo));
+    if (!EXT_VIDEO.includes(extension(d.nombreVideo)) && !(esAudio && d.tipo !== "clips")) {
+      return error(res, 400, "Ese archivo no parece un video ni un audio. Usa MP4 o MOV (los del celular sirven) o un audio MP3 o M4A.");
     }
     const fotos = Array.isArray(d.fotos) ? d.fotos : [];
     if (fotos.length > MAX_FOTOS) return error(res, 400, `Puedes subir hasta ${MAX_FOTOS} fotos.`);
@@ -254,8 +257,14 @@ const manejar = async (req, res) => {
       cta: String(d.cta ?? "").trim().slice(0, 200),
       notas: String(d.notas ?? "").trim().slice(0, 1000),
       fotosEsperadas: fotos.length,
+      // Escenas de apoyo animadas en medio del video (con un audio solo, siempre).
+      animaciones: esAudio || d.animaciones === true,
     });
-    anotar(t.id, `Subido por ${usuario}: ${TIPOS[t.tipo]}, ${t.red}, estilo ${estilo}. CTA: ${t.cta || "-"}. Notas: ${t.notas || "-"}`);
+    anotar(
+      t.id,
+      `Subido por ${usuario}: ${TIPOS[t.tipo]}${esAudio ? " (solo audio)" : ""}, ${t.red}, estilo ${estilo}, ` +
+        `animaciones ${t.animaciones ? "sí" : "no"}. CTA: ${t.cta || "-"}. Notas: ${t.notas || "-"}`,
+    );
     return enviarJson(res, 200, { id: t.id });
   }
 
@@ -271,7 +280,8 @@ const manejar = async (req, res) => {
     const clase = url.searchParams.get("clase");
     const ext = extension(url.searchParams.get("nombre"));
     const esVideo = clase === "video";
-    if (esVideo ? !EXT_VIDEO.includes(ext) : !EXT_FOTO.includes(ext)) return error(res, 400, "Tipo de archivo no permitido.");
+    const permitidas = esVideo ? [...EXT_VIDEO, ...(t.tipo === "clips" ? [] : EXT_AUDIO)] : EXT_FOTO;
+    if (!permitidas.includes(ext)) return error(res, 400, "Tipo de archivo no permitido.");
     if (!esVideo && t.fotos.length >= MAX_FOTOS) return error(res, 400, `Puedes subir hasta ${MAX_FOTOS} fotos.`);
     const limite = esVideo ? MAX_VIDEO : MAX_FOTO;
     if (+(req.headers["content-length"] ?? 0) > limite) {

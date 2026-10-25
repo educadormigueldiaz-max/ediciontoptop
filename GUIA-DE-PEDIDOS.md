@@ -34,6 +34,15 @@ Bueno saber:
 - **El video no promete lo que no dijiste.** No se inventan cifras ni resultados. Si en el video
   dices algo riesgoso (ingresos o salud), te avisa.
 
+**Animaciones:** marca *Agregar animaciones en medio del video* y aparecen por momentos escenas
+animadas que muestran lo que dices (un ícono, una cifra, los pasos, una frase). Tapan tu imagen
+unos segundos; tu voz sigue.
+
+**Solo un audio:** en vez del video puedes subir una nota de voz o un audio de podcast (MP3 o M4A).
+Lo recibes como un video animado de principio a fin, con subtítulos.
+
+**Si tu video ya tiene subtítulos**, no se le ponen otros encima.
+
 **Clips de un video largo:** en *¿Qué tipo de video es?* elige **Clips de un video largo**. Sube el
 video o pega el enlace de YouTube (solo videos tuyos o con permiso) y toca *Sacar clips*. Un video de
 1 hora tarda de 30 a 60 minutos. Recibes varios clips cortos, cada uno con su botón de descarga.

@@ -39,6 +39,7 @@ export const golpesDe = (items: ConMomentos[]): Golpe[] => {
       case "tutorial":
         return [entrada, ...cada("click")];
       case "objeto3d":
+      case "apoyo":
         return [entrada, ...cada("pop")];
       default:
         return [entrada];

@@ -19,6 +19,7 @@ import {
   type PropsEditado,
 } from "../edicion/esquema";
 import { Elementos } from "../componentes/Elementos";
+import { Apoyos, esApoyo, FondoSoloAudio } from "../componentes/Apoyo";
 import { VideoEnEscena } from "../componentes/Escena3D";
 import { esEscena } from "../edicion/escenas";
 import { esRecorte, recorteCompleto } from "../edicion/recortes";
@@ -27,6 +28,7 @@ import {
   caraEnSalida,
   colocarElementos,
   enfoqueEfectivo,
+  mediaFranjaSubtitulos,
 } from "../edicion/encuadre";
 import {
   ajustarLetterings,
@@ -114,6 +116,8 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
   // Las escenas 3D transforman el video entero; el resto va encima, en el espacio libre que
   // deja la cara.
   const escenas = useMemo(() => todos.filter(esEscena), [todos]);
+  // Las escenas de apoyo tapan el video entero con una animación propia.
+  const apoyos = useMemo(() => todos.filter(esApoyo), [todos]);
   // Los recortes van encima del video, con la persona recortada adelante. Uno sin recorte
   // completo (falta `npm run recortar`) no se dibuja: sin la persona encima, taparía la cara.
   const recortes = useMemo(
@@ -129,7 +133,9 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
     () =>
       edicion
         ? colocarElementos({
-            items: todos.filter((item) => !esEscena(item) && !esRecorte(item)),
+            items: todos.filter(
+              (item) => !esEscena(item) && !esRecorte(item) && !esApoyo(item),
+            ),
             edicion,
             width,
             height,
@@ -140,21 +146,47 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
   );
   // Efectos de sonido de lo que de verdad se ve (un recorte incompleto no se dibuja ni suena).
   const golpes = useMemo(
-    () => golpesDe([...escenas, ...recortes, ...elementos]),
-    [escenas, recortes, elementos],
+    () => golpesDe([...escenas, ...recortes, ...apoyos, ...elementos]),
+    [escenas, recortes, apoyos, elementos],
   );
   const conVoz = useMemo(
     () => (edicion ? momentosConVoz(edicion, tramos, fps) : []),
     [edicion, tramos, fps],
   );
+  // Durante una escena de apoyo no se ve la cara: los subtítulos no tienen que esquivarla.
+  const caraParaSubtitulos = useCallback(
+    (desde: number, hasta: number) =>
+      apoyos.some(
+        (a) =>
+          desde >= a.desdeFrame && hasta <= a.desdeFrame + a.duracionFrames,
+      )
+        ? null
+        : caraEntre(desde, hasta),
+    [apoyos, caraEntre],
+  );
   if (!edicion) return null;
 
   const { opciones } = edicion;
+  const base = Math.min(width, height);
+  // Si el video ya trae sus subtítulos, los nuestros salen solo durante las escenas de apoyo
+  // (que tapan los del video).
+  const subtitulosSoloEnApoyos =
+    !opciones.subtitulos &&
+    edicion.subtitulosEnVideo !== null &&
+    apoyos.length > 0;
+  const conSubtitulos =
+    (opciones.subtitulos || subtitulosSoloEnApoyos) && captions.length > 0;
+  // Las escenas de apoyo dejan libre la franja de los subtítulos.
+  const limiteApoyos = conSubtitulos
+    ? opciones.posicionSubtitulos * height -
+      mediaFranjaSubtitulos(width, height, opciones.estiloSubtitulos) -
+      base * 0.03
+    : null;
   const finVideo = framesDeVideo(tramos);
   const enfoque = enfoqueEfectivo(edicion, width, height);
   // Sin subtítulos durante un lettering (la frase ya está en pantalla), una escena 3D (tiene
   // sus propios textos), un texto detrás o un marco, o cuando un elemento necesita su espacio.
-  const sinSubtitulos = [
+  const sinSubtitulos: Array<readonly [number, number]> = [
     ...elementos.filter((e) => e.ocultaSubtitulos),
     ...escenas,
     ...recortes.filter((r) => r.elemento.tipo !== "fondo"),
@@ -163,8 +195,24 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
   // los subtítulos se ocultan mientras dura.
   const framesGancho = Math.round(opciones.duracionGancho * fps);
   const caraGancho = opciones.gancho ? caraEntre(0, framesGancho) : null;
-  if (opciones.gancho && colocarGancho({ texto: opciones.gancho, width, height, cara: caraGancho }).debajo) {
+  if (
+    opciones.gancho &&
+    colocarGancho({ texto: opciones.gancho, width, height, cara: caraGancho })
+      .debajo
+  ) {
     sinSubtitulos.push([0, framesGancho]);
+  }
+  // Una escena de frase ya muestra lo que se dice.
+  for (const a of apoyos) {
+    if (a.elemento.modo === "frase") sinSubtitulos.push([a.desdeFrame, a.desdeFrame + a.duracionFrames]);
+  }
+  if (subtitulosSoloEnApoyos) {
+    let desde = 0;
+    for (const a of [...apoyos].sort((x, y) => x.desdeFrame - y.desdeFrame)) {
+      sinSubtitulos.push([desde, a.desdeFrame]);
+      desde = a.desdeFrame + a.duracionFrames;
+    }
+    sinSubtitulos.push([desde, finVideo]);
   }
 
   const { marca } = buscarEstilo(edicion.estilo);
@@ -172,31 +220,39 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
   return (
     <ConEstilo estilo={edicion.estilo}>
       <AbsoluteFill style={{ backgroundColor: marca.colores.fondo }}>
-        <VideoEnEscena escenas={escenas} caraEntre={caraEntre}>
-          <Series>
-            {tramos.map((tramo, i) => (
-              <Series.Sequence
-                key={i}
-                durationInFrames={tramo.duracionFrames}
-                name={`Tramo ${i + 1}`}
-              >
-                <VideoEncuadrado
-                  src={edicion.video}
-                  anchoOriginal={edicion.ancho}
-                  altoOriginal={edicion.alto}
-                  trimBefore={tramo.trimBefore}
-                  duracionFrames={tramo.duracionFrames}
-                  enfoqueX={enfoque.x}
-                  enfoqueY={enfoque.y}
-                  zoom={tramo.zoom}
-                  empuje={tramo.empuje}
-                  color={edicion.opciones.color}
-                  enfasis={edicion.enfasis}
-                />
-              </Series.Sequence>
-            ))}
-          </Series>
-        </VideoEnEscena>
+        {opciones.soloAudio ? (
+          <Sequence durationInFrames={finVideo} name="Fondo animado">
+            <FondoSoloAudio />
+          </Sequence>
+        ) : null}
+        {/* En los proyectos de solo audio el "video" es una imagen vacía: se oye pero no se ve. */}
+        <AbsoluteFill style={{ opacity: opciones.soloAudio ? 0 : 1 }}>
+          <VideoEnEscena escenas={escenas} caraEntre={caraEntre}>
+            <Series>
+              {tramos.map((tramo, i) => (
+                <Series.Sequence
+                  key={i}
+                  durationInFrames={tramo.duracionFrames}
+                  name={`Tramo ${i + 1}`}
+                >
+                  <VideoEncuadrado
+                    src={edicion.video}
+                    anchoOriginal={edicion.ancho}
+                    altoOriginal={edicion.alto}
+                    trimBefore={tramo.trimBefore}
+                    duracionFrames={tramo.duracionFrames}
+                    enfoqueX={enfoque.x}
+                    enfoqueY={enfoque.y}
+                    zoom={tramo.zoom}
+                    empuje={tramo.empuje}
+                    color={edicion.opciones.color}
+                    enfasis={edicion.enfasis}
+                  />
+                </Series.Sequence>
+              ))}
+            </Series>
+          </VideoEnEscena>
+        </AbsoluteFill>
 
         {recortes.length > 0 ? (
           <Sequence durationInFrames={finVideo} name="Recortes">
@@ -210,27 +266,37 @@ export const Editado: React.FC<PropsEditado> = ({ edicion }) => {
           </Sequence>
         ) : null}
 
+        {apoyos.length > 0 ? (
+          <Sequence durationInFrames={finVideo} name="Escenas de apoyo">
+            <Apoyos items={apoyos} limiteAbajo={limiteApoyos} />
+          </Sequence>
+        ) : null}
+
         {elementos.length > 0 ? (
           <Sequence durationInFrames={finVideo} name="Elementos">
             <Elementos items={elementos} />
           </Sequence>
         ) : null}
 
-        {opciones.subtitulos && captions.length > 0 ? (
+        {conSubtitulos ? (
           <Sequence durationInFrames={finVideo} name="Subtítulos">
             <Subtitulos
               captions={captions}
               estilo={opciones.estiloSubtitulos}
               posicion={opciones.posicionSubtitulos}
               ocultarEn={sinSubtitulos}
-              caraEntre={caraEntre}
+              caraEntre={caraParaSubtitulos}
             />
           </Sequence>
         ) : null}
 
         {opciones.gancho ? (
           <Sequence durationInFrames={framesGancho} name="Gancho">
-            <Gancho texto={opciones.gancho} duracionFrames={framesGancho} cara={caraGancho} />
+            <Gancho
+              texto={opciones.gancho}
+              duracionFrames={framesGancho}
+              cara={caraGancho}
+            />
           </Sequence>
         ) : null}
 

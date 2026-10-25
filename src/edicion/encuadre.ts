@@ -254,11 +254,14 @@ export const colocarElementos = (p: {
   const { width, height, edicion } = p;
   const base = Math.min(width, height);
   const { opciones } = edicion;
+  // Si el video trae sus propios subtítulos, los elementos tampoco los tapan.
   const topeSubtitulos = opciones.subtitulos
     ? opciones.posicionSubtitulos * height -
       mediaFranjaSubtitulos(width, height, opciones.estiloSubtitulos) -
       base * 0.03
-    : null;
+    : edicion.subtitulosEnVideo
+      ? edicion.subtitulosEnVideo.altura * height - base * 0.1
+      : null;
 
   return p.items.map((item) => {
     const cara = p.caraEntre(item.desdeFrame, item.desdeFrame + item.duracionFrames);

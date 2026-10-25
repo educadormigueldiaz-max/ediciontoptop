@@ -160,9 +160,9 @@ td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line
       <div class="campo">
         <span class="titulo">1. Tu video</span>
         <label class="archivo" id="caja-video">
-          <input type="file" id="video" accept="video/*">
+          <input type="file" id="video" accept="video/*,audio/*">
           <strong id="texto-video">Toca para elegir el video</strong>
-          <span class="ayuda">De la galería del celular o del computador</span>
+          <span class="ayuda" id="ayuda-video">De la galería del celular o del computador. También sirve un audio (nota de voz, podcast): lo volvemos un video animado.</span>
         </label>
         <div class="campo" id="campo-enlace" hidden>
           <label class="titulo" for="enlace">…o pega el enlace de YouTube</label>
@@ -177,6 +177,13 @@ td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line
       <div class="campo">
         <span class="titulo">3. ¿Dónde lo vas a publicar?</span>
         <div class="opciones" id="redes"></div>
+      </div>
+      <div class="campo" id="campo-animaciones">
+        <span class="titulo">Animaciones</span>
+        <div class="opciones">
+          <label><input type="checkbox" id="animaciones"><span>Agregar animaciones en medio del video</span></label>
+        </div>
+        <span class="ayuda">Escenas animadas que muestran lo que dices (tapan tu imagen unos segundos). Con un audio se ponen siempre.</span>
       </div>
       <div class="campo" id="campo-estilo" hidden>
         <label class="titulo" for="estilo">4. Estilo (colores y letras)</label>
@@ -305,6 +312,8 @@ $("salir").addEventListener("click", async () => { await api("/api/salir", { met
 function cambioDeTipo() {
   const clips = document.querySelector("input[name=tipo]:checked")?.value === "clips";
   $("campo-enlace").hidden = !clips;
+  $("campo-animaciones").hidden = clips;
+  $("ayuda-video").hidden = clips;
   document.querySelector("#form-subir details")?.toggleAttribute("hidden", clips);
   $("boton-subir").textContent = clips ? "Sacar clips" : "Enviar a editar";
 }
@@ -355,6 +364,7 @@ $("form-subir").addEventListener("submit", async (e) => {
         cta: $("cta").value,
         notas: $("notas").value,
         nombreVideo: video?.name ?? "",
+        animaciones: $("animaciones").checked,
         fotos: fotos.map((f) => f.name),
       }),
     });
