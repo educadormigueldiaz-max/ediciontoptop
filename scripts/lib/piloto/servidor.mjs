@@ -181,7 +181,7 @@ const manejar = async (req, res) => {
   if (!sesion.usuario) {
     const mensaje =
       sesion.motivo === "otra-sesion"
-        ? "Tu cuenta se abrió en otro equipo y aquí se cerró. Cada cuenta es personal: si no fuiste tú, avísale a quien administra ByDzyne."
+        ? "Tu cuenta se abrió en otro equipo y aquí se cerró. Cada cuenta es personal: si no fuiste tú, avísale a quien administra esta página."
         : "Entra con tu usuario y contraseña.";
     return error(res, 401, mensaje, { motivo: sesion.motivo });
   }
