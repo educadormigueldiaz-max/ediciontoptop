@@ -1,11 +1,11 @@
 import type { Caja } from "./encuadre";
-import type { Edicion, ElementoRecorte } from "./esquema";
+import { TIPOS_RECORTE, type Edicion, type ElementoRecorte } from "./esquema";
 import type { ElementoEnEditado, Tramo } from "./linea-de-tiempo";
 
 export type RecorteEnEditado = ElementoEnEditado & { elemento: ElementoRecorte };
 
 export const esRecorte = (item: ElementoEnEditado): item is RecorteEnEditado =>
-  ["detras", "fondo", "marco"].includes(item.elemento.tipo);
+  (TIPOS_RECORTE as readonly string[]).includes(item.elemento.tipo);
 
 // Ruta (dentro de public/) de la máscara de un cuadro del video original, o null si ese
 // cuadro todavía no tiene recorte (falta `npm run recortar`).

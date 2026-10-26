@@ -41,7 +41,13 @@ estilo elegido. Tú decides el resto, en este orden:
      ninguna parte, una sola donde menos estorbe. Nunca `pantalla-completa`.
    - Escenas 3D (skill `bydzyne-3d`) y recortes (skill `bydzyne-recorte`): solo si encajan muy
      claro (por ejemplo, mostrar una app paso a paso con capturas que subió). En duda, no.
-   - Nunca dos elementos al mismo tiempo; deja al menos 3 s entre uno y otro.
+   - **Color y efectos** (skill `bydzyne-recorte`): mete mano en el color cuando el tono lo pide.
+     Una frase de suspenso, denuncia o algo grave → `color` en `blanco-y-negro` (o `dramatico`)
+     sobre esa frase entera; un recuerdo → `sepia`. En un reel o anuncio, 1 o 2 por video. Si en
+     ese momento nombra cosas o hay una revelación, puedes sumar un `efecto` detrás (`iconos` o
+     `rayos`). Testimonio: solo `color`, nunca efectos. Si nada en el tono lo pide, no pongas.
+   - Nunca dos elementos al mismo tiempo (salvo un `color`, que sí puede ir con otro); deja al
+     menos 3 s entre uno y otro.
    - **Escenas de apoyo** (`"tipo": "apoyo"`, skill `bydzyne-apoyo`): si la persona pidió
      animaciones, ya vienen puestas. No las quites ni las encimes; puedes corregir un texto mal
      escrito o una cifra que no se dice. Sin animaciones pedidas, no agregues escenas de apoyo.

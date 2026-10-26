@@ -25,7 +25,7 @@ La persona pone sus canciones en `public/musica/`. En `edicion.json` (nivel supe
 
 ## Efectos de sonido
 Suenan solos y bajitos al aparecer cada elemento (`public/sonidos/`, hechos desde cero, CC0):
-- **whoosh**: lettering, imagen, recortes (`detras`, `fondo`, `marco`), escenas 3D y el título
+- **whoosh**: lettering, imagen, recortes (`detras`, `fondo`, `marco`, `efecto`), escenas 3D y el título
   de una lista.
 - **pop**: cada punto de una lista, cada ícono y cada etiqueta de un `objeto3d`.
 - **click**: cada paso de un `tutorial`.

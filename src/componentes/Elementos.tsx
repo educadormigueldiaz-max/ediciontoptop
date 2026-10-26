@@ -73,7 +73,9 @@ const NOMBRES: Record<ElementoColocado["elemento"]["tipo"], string> = {
   detras: "Texto detrás",
   fondo: "Fondo nuevo",
   marco: "Marco",
+  efecto: "Efecto detrás",
   apoyo: "Escena de apoyo",
+  color: "Color",
 };
 
 export const Elementos: React.FC<{ items: ElementoColocado[] }> = ({ items }) => (

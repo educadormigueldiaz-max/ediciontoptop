@@ -1,4 +1,4 @@
-// Recorte de la persona (separarla del fondo) para los elementos "detras", "fondo" y "marco".
+// Recorte de la persona (separarla del fondo) para los elementos "detras", "fondo", "marco" y "efecto".
 // Usa Apple Vision (VNGeneratePersonSegmentationRequest), que viene con macOS: corre en la
 // computadora, sin internet ni descargas. Solo se calculan los momentos que lo necesitan.
 // Las máscaras quedan junto al video, en public/proyectos/<id>/recorte/ (no se suben a git).
@@ -7,7 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { FPS, RAIZ, escribirJson, leerJson } from "./herramientas.mjs";
 
-export const TIPOS_RECORTE = ["detras", "fondo", "marco"];
+export const TIPOS_RECORTE = ["detras", "fondo", "marco", "efecto"];
 // Segundos extra antes y después de cada elemento, por si se mueven un poco sus tiempos.
 const MARGEN = 0.5;
 // Las máscaras no necesitan más resolución que esta (lado más largo, en píxeles): el borde se

@@ -217,7 +217,7 @@ const finHabla = frases.at(-1).fin;
 const inicioPermitido = Math.max(3, edicion.opciones.gancho ? edicion.opciones.duracionGancho : 0);
 const esTrozo = (e) => e.tipo === "apoyo" && e.modo === "video";
 const ocupados = edicion.elementos
-  .filter((e) => op.agregar || !esTrozo(e))
+  .filter((e) => e.tipo !== "color" && (op.agregar || !esTrozo(e)))
   .map((e) => [e.inicio, e.fin, e.tipo === "apoyo" ? `escena de apoyo (${e.modo})` : e.tipo]);
 
 console.log("Claude está eligiendo los trozos…");

@@ -1,6 +1,6 @@
 ---
 name: bydzyne-recorte
-description: Recorte de fondo en ByDzyne - texto detrás de la persona (portada de revista), cambiar el fondo por un color, degradado o imagen, y persona saliendo de un marco (círculo o tarjeta) con lettering detrás. Úsala cuando pidan "texto detrás de mí", "quitar o cambiar el fondo", "fondo de color", "recortarme", "salir de un círculo o marco" o "estilo portada de revista".
+description: Recorte de fondo y color por momentos en ByDzyne - texto detrás de la persona (portada de revista), cambiar el fondo por un color, degradado o imagen, persona saliendo de un marco (círculo o tarjeta), cosas que salen de detrás de la persona (rayos, ondas, íconos) y color de un momento (blanco y negro, sepia, dramático, intenso). Úsala cuando pidan "texto detrás de mí", "quitar o cambiar el fondo", "fondo de color", "recortarme", "salir de un círculo o marco", "estilo portada de revista", "que salgan cosas detrás", "blanco y negro", "colorización" o "más dramático".
 ---
 
 # Recorte de fondo
@@ -11,7 +11,7 @@ momentos de estos elementos**, y la pone encima de todo: lo que va "detrás" nun
 Van en `elementos` de `public/proyectos/<id>/edicion.json`, con tiempos en **segundos del video
 original** (búscalos en `palabras`), como los demás elementos.
 
-## Los 3 tipos
+## Los 4 tipos
 
 ### Texto detrás (`detras`)
 Una frase grande detrás de la persona, como en las portadas de revista: la cabeza tapa la parte
@@ -45,8 +45,35 @@ cabeza asoma por arriba, con una frase opcional detrás.
 - `texto` (opcional, 1 a 4 palabras que se dicen) y `destacar`.
 - La persona se achica: úsalo en frases de impacto, presentaciones ("soy…") o cierres.
 
+### Efecto detrás (`efecto`)
+Algo sale de detrás de la persona; el fondo del video se queda.
+```json
+{ "tipo": "efecto", "inicio": 20.9, "fin": 23.1, "efecto": "iconos", "iconos": ["alerta", "documento", "dinero"] }
+{ "tipo": "efecto", "inicio": 54.4, "fin": 58.2, "efecto": "rayos" }
+```
+- `efecto`: `rayos` (luz que gira detrás de la cabeza: revelación, logro, "esto es lo
+  importante"), `ondas` (anillos que se expanden: anuncio, alerta, "escuchen esto") o `iconos`
+  (de 1 a 5 íconos que suben desde los hombros, uno tras otro: cuando nombra varias cosas).
+- `iconos`: nombres de `src/componentes/iconos.ts` (o lucide.dev) de lo que **dice** en ese momento.
+- Los subtítulos siguen visibles.
+
+## Color de un momento (`color`)
+Cambia el color del video (y de la persona recortada) mientras dura, con entrada y salida suaves.
+Los subtítulos, textos y gráficos conservan sus colores. No necesita recorte.
+```json
+{ "tipo": "color", "inicio": 2.2, "fin": 9.0, "efecto": "blanco-y-negro" }
+```
+- `efecto`: `blanco-y-negro` (suspenso, una denuncia, algo grave o triste), `sepia` (un recuerdo,
+  "hace años…", el pasado), `dramatico` (casi sin color y con mucho contraste: tensión, peligro)
+  o `intenso` (más color: alegría, energía, el momento del logro).
+- Abarca la frase entera: empieza con su primera palabra y termina con la última (2–8 s).
+- Sí puede ir junto con otro elemento (un `detras` o un `efecto` en blanco y negro se ven muy
+  bien: la persona sin color y lo de detrás con color).
+- Máximo 1–2 por video de 60 s; si todo es dramático, nada lo es. Nunca en el cierre.
+- Sin sonido por defecto (`"sonido": true` si se quiere un golpe).
+
 ## Criterio
-- **Duración**: texto detrás y marco, 2–4 s; fondo, 3–6 s.
+- **Duración**: texto detrás, marco y efecto, 2–4 s; fondo, 3–6 s.
 - **Densidad**: máximo un recorte cada 15–20 s, y nunca junto con una escena 3D u otro
   elemento (lista, ícono, imagen, lettering). Deja al menos 0.5 s de video normal entre dos.
 - **Nada en los primeros 0.5 s ni encima del cierre.**
@@ -55,11 +82,13 @@ cabeza asoma por arriba, con una frase opcional detrás.
 - Si caminan otras personas detrás, el programa se queda con la principal (la silueta más
   grande); dos personas de tamaño parecido (una entrevista) quedan las dos.
 - Los textos dicen lo mismo que la voz; no inventes datos.
+- "Ponle colorización" o "más dramático" sin más detalles: un `color` en la frase de más tensión
+  (blanco y negro) y, si hay un momento de logro o revelación, un `efecto` de `rayos` ahí.
 - "Ponle algo tipo revista" sin más detalles: un `detras` con la frase más fuerte y, si el video
   es largo, un `marco` en el cierre. Explica qué pusiste.
 - **Sonido**: cada recorte entra con un whoosh; `"sonido": false` lo apaga en ese elemento
   (`bydzyne-produccion`).
-- Los colores de `fondo` y `marco` salen del estilo del video (`src/marca.ts` o el del cliente
+- Los colores de `fondo`, `marco` y `efecto` salen del estilo del video (`src/marca.ts` o el del cliente
   en `estilos/`).
 
 ## Calcular el recorte

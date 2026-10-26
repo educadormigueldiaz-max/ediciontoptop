@@ -27,6 +27,8 @@ export const VideoEncuadrado: React.FC<{
   empuje?: Tramo["empuje"];
   color?: Edicion["opciones"]["color"];
   mascara?: (cuadroOriginal: number) => string | null;
+  // Filtro extra (el color de un momento) que se suma al retoque de color.
+  filtro?: string;
 }> = ({
   src,
   anchoOriginal,
@@ -40,6 +42,7 @@ export const VideoEncuadrado: React.FC<{
   empuje = null,
   color = "ninguno",
   mascara,
+  filtro,
 }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
@@ -85,7 +88,7 @@ export const VideoEncuadrado: React.FC<{
           top: g.top,
           width: g.ancho,
           height: g.alto,
-          filter: FILTRO_COLOR[color],
+          filter: [FILTRO_COLOR[color], filtro].filter(Boolean).join(" ") || undefined,
           // Blanco = persona, negro = fondo.
           ...(urlMascara
             ? {

@@ -19,6 +19,7 @@ import {
   type RecorteEnEditado,
 } from "../edicion/recortes";
 import { useMarca } from "../edicion/estilos";
+import { buscarIcono } from "./iconos";
 import { fuenteImagen } from "./ImagenInsertada";
 import { normalizar, tamanoQueCabe } from "./Lettering";
 import { VideoEncuadrado } from "./VideoEncuadrado";
@@ -134,6 +135,119 @@ const FondoNuevo: React.FC<{
   );
 };
 
+// Algo que sale de detrás de la persona, centrado en su cabeza: rayos de luz que giran, ondas que
+// se expanden o íconos que suben desde sus hombros. El fondo del video se queda.
+const EfectoDetras: React.FC<{
+  efecto: "rayos" | "ondas" | "iconos";
+  iconos: string[];
+  cara: Caja;
+  duracionFrames: number;
+}> = ({ efecto, iconos, cara, duracionFrames }) => {
+  const marca = useMarca();
+  const frame = useCurrentFrame();
+  const { fps, width, height } = useVideoConfig();
+  const base = Math.min(width, height);
+  const m = margenesSeguros(width, height);
+  const cx = cara.x + cara.ancho / 2;
+  const cy = cara.y + cara.alto / 2;
+  const aparicion = interpolate(frame, [0, 10, duracionFrames - 8, duracionFrames], [0, 1, 1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  if (efecto === "rayos") {
+    const giro = (frame / fps) * 12;
+    const crecer = interpolate(frame, [0, 14], [0.4, 1], { extrapolateRight: "clamp" });
+    return (
+      <AbsoluteFill
+        style={{
+          opacity: aparicion,
+          background: `repeating-conic-gradient(from ${giro}deg at ${cx}px ${cy}px, color-mix(in srgb, ${marca.colores.acento} 60%, transparent) 0deg 7deg, transparent 7deg 20deg)`,
+          maskImage: `radial-gradient(circle ${base * 0.95 * crecer}px at ${cx}px ${cy}px, black 15%, transparent 100%)`,
+        }}
+      />
+    );
+  }
+
+  if (efecto === "ondas") {
+    const ondas = 4;
+    return (
+      <AbsoluteFill style={{ opacity: aparicion }}>
+        {Array.from({ length: ondas }, (_, i) => {
+          const t = ((frame / fps) * 0.55 + i / ondas) % 1;
+          const radio = base * (0.18 + t * 0.85);
+          return (
+            <div
+              key={i}
+              style={{
+                position: "absolute",
+                left: cx - radio,
+                top: cy - radio,
+                width: radio * 2,
+                height: radio * 2,
+                borderRadius: "50%",
+                border: `${base * 0.014}px solid ${i % 2 ? marca.colores.secundario : marca.colores.acento}`,
+                opacity: (1 - t) * 0.85,
+              }}
+            />
+          );
+        })}
+      </AbsoluteFill>
+    );
+  }
+
+  // Íconos: suben uno tras otro desde detrás de los hombros y quedan flotando alrededor de la
+  // cabeza, alternando lados. Nunca pasan por encima de la cara (la persona va adelante).
+  const tamano = base * 0.15;
+  const lado = Math.max(cara.ancho * 0.75 + tamano * 0.6, width * 0.25);
+  const lugares = [
+    { x: -lado, y: 0.1 },
+    { x: lado, y: -0.15 },
+    { x: -lado * 0.8, y: -0.75 },
+    { x: lado * 0.8, y: -0.95 },
+    { x: 0, y: -1.45 },
+  ];
+  return (
+    <AbsoluteFill style={{ opacity: aparicion }}>
+      {iconos.slice(0, lugares.length).map((nombre, i) => {
+        const Icono = buscarIcono(nombre);
+        if (!Icono) return null;
+        const subir = spring({ frame: frame - 4 - i * 6, fps, config: { damping: 12, mass: 0.8 } });
+        const lugar = lugares[i];
+        const finX = Math.min(width - m.lados * 0.5 - tamano / 2, Math.max(m.lados * 0.5 + tamano / 2, cx + lugar.x));
+        const finY = Math.max(m.arriba * 0.5 + tamano / 2, cy + lugar.y * cara.alto);
+        // Salen desde detrás del pecho de la persona.
+        const desdeY = cy + cara.alto * 1.6;
+        const flotar = Math.sin((frame / fps) * 2 + i) * base * 0.008;
+        const x = interpolate(subir, [0, 1], [cx + lugar.x * 0.3, finX]);
+        const y = interpolate(subir, [0, 1], [desdeY, finY]) + flotar;
+        return (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              left: x - tamano / 2,
+              top: y - tamano / 2,
+              width: tamano,
+              height: tamano,
+              borderRadius: "50%",
+              background: `linear-gradient(160deg, ${marca.colores.secundario}, ${marca.colores.primario})`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: `0 ${tamano * 0.06}px ${tamano * 0.2}px rgba(0,0,0,0.35)`,
+              scale: String(interpolate(subir, [0, 1], [0.5, 1])),
+              rotate: `${interpolate(subir, [0, 1], [i % 2 ? 25 : -25, 0])}deg`,
+            }}
+          >
+            <Icono size={tamano * 0.52} color={marca.colores.texto} strokeWidth={2.4} />
+          </div>
+        );
+      })}
+    </AbsoluteFill>
+  );
+};
+
 // Silueta de recorte del marco: todo lo que está arriba de la mitad de la forma, más la mitad de
 // abajo de la forma. Así la persona queda "dentro" abajo y la cabeza sale por arriba.
 const recorteDelMarco = (forma: "circulo" | "tarjeta", c: Caja & { radio: number }, width: number) => {
@@ -172,6 +286,15 @@ export const EscenaRecorte: React.FC<{
         <AbsoluteFill style={{ opacity: aparicion }}>
           <FondoNuevo estilo={elemento.estilo} archivo={elemento.archivo} duracionFrames={duracionFrames} />
         </AbsoluteFill>
+        {persona}
+      </AbsoluteFill>
+    );
+  }
+
+  if (elemento.tipo === "efecto") {
+    return (
+      <AbsoluteFill>
+        <EfectoDetras efecto={elemento.efecto} iconos={elemento.iconos} cara={cara} duracionFrames={duracionFrames} />
         {persona}
       </AbsoluteFill>
     );
@@ -291,7 +414,8 @@ const PersonaDelVideo: React.FC<{
   tramos: Tramo[];
   item: RecorteEnEditado;
   enfoque: { x: number; y: number };
-}> = ({ edicion, tramos, item, enfoque }) => (
+  filtro?: string;
+}> = ({ edicion, tramos, item, enfoque, filtro }) => (
   <AbsoluteFill>
     {tramosDentro(tramos, item.desdeFrame, item.desdeFrame + item.duracionFrames).map((t, i) => (
       <Sequence key={i} from={t.desdeFrame} durationInFrames={t.duracionFrames} name="Persona recortada">
@@ -308,6 +432,8 @@ const PersonaDelVideo: React.FC<{
           color={edicion.opciones.color}
           enfasis={edicion.enfasis}
           mascara={(cuadro) => mascaraDe(edicion.recorte, cuadro)}
+          // Un filtro en un contenedor de la persona recortada le quita la máscara: va en el video.
+          filtro={filtro}
         />
       </Sequence>
     ))}
@@ -318,6 +444,7 @@ const NOMBRES: Record<ElementoRecorte["tipo"], string> = {
   detras: "Texto detrás",
   fondo: "Fondo nuevo",
   marco: "Marco",
+  efecto: "Efecto detrás",
 };
 
 // El texto detrás usa todo el espacio que ocupa la cara mientras dura (para quedar siempre por
@@ -338,7 +465,9 @@ export const Recortes: React.FC<{
   tramos: Tramo[];
   enfoque: { x: number; y: number };
   caraEntre: (desde: number, hasta: number) => Caja | null;
-}> = ({ items, edicion, tramos, enfoque, caraEntre }) => (
+  // Color del momento (elemento "color"): también se aplica a la persona recortada.
+  filtro?: string;
+}> = ({ items, edicion, tramos, enfoque, caraEntre, filtro }) => (
   <AbsoluteFill>
     {items.map((item, i) => (
         <Sequence
@@ -351,7 +480,7 @@ export const Recortes: React.FC<{
             elemento={item.elemento}
             duracionFrames={item.duracionFrames}
             cara={caraDe(item, caraEntre)}
-            persona={<PersonaDelVideo edicion={edicion} tramos={tramos} item={item} enfoque={enfoque} />}
+            persona={<PersonaDelVideo edicion={edicion} tramos={tramos} item={item} enfoque={enfoque} filtro={filtro} />}
           />
         </Sequence>
       ))}

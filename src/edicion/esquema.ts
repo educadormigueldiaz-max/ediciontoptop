@@ -291,6 +291,31 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
     texto: z.string().nullable().default(null),
     destacar: z.string().nullable().default(null),
   }),
+  // Algo que sale de detrás de la persona (el fondo del video se queda): rayos de luz que giran,
+  // ondas que se expanden o íconos que suben desde sus hombros.
+  z
+    .object({
+      tipo: z.literal("efecto"),
+      ...tramo,
+      efecto: z.enum(["rayos", "ondas", "iconos"]).default("rayos"),
+      // Para "iconos": de 1 a 5 nombres de src/componentes/iconos.ts o lucide.dev/icons.
+      iconos: z.array(nombreIcono).max(5).default([]),
+    })
+    .refine((e) => e.efecto !== "iconos" || e.iconos.length > 0, {
+      message: 'El efecto "iconos" necesita "iconos" (por ejemplo ["dinero", "cohete"])',
+    }),
+
+  // --- Color de un momento: cambia el color del video (no el de los textos) mientras dura. ---
+  z.object({
+    tipo: z.literal("color"),
+    ...tramo,
+    sonido: z.boolean().default(false),
+    // "blanco-y-negro" (suspenso, algo serio), "sepia" (recuerdo, el pasado), "dramatico"
+    // (casi sin color y con mucho contraste) o "intenso" (más color: emoción, energía).
+    efecto: z
+      .enum(["blanco-y-negro", "sepia", "dramatico", "intenso"])
+      .default("blanco-y-negro"),
+  }),
 ]);
 
 export type Elemento = z.infer<typeof esquemaElemento>;
@@ -305,15 +330,16 @@ export type ElementoEscena = Extract<
   Elemento,
   { tipo: (typeof TIPOS_ESCENA)[number] }
 >;
-export const TIPOS_RECORTE = ["detras", "fondo", "marco"] as const;
+export const TIPOS_RECORTE = ["detras", "fondo", "marco", "efecto"] as const;
 export type ElementoRecorte = Extract<
   Elemento,
   { tipo: (typeof TIPOS_RECORTE)[number] }
 >;
 export type ElementoApoyo = Extract<Elemento, { tipo: "apoyo" }>;
+export type ElementoColor = Extract<Elemento, { tipo: "color" }>;
 export type ElementoSobreVideo = Exclude<
   Elemento,
-  ElementoEscena | ElementoRecorte | ElementoApoyo
+  ElementoEscena | ElementoRecorte | ElementoApoyo | ElementoColor
 >;
 
 // Estructura de public/proyectos/<id>/edicion.json (la crea `npm run preparar`).

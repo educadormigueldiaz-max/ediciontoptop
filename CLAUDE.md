@@ -76,8 +76,9 @@ Tiempos en **segundos del video original**. El esquema está en `src/edicion/esq
 - `elementos`: gráficos sobre el video: `lista` (motion explicativo), `lettering`, `icono` e
   `imagen` (skill `bydzyne-elementos`), y escenas 3D: `capas`, `perspectiva`, `tutorial` y
   `objeto3d` (skill `bydzyne-3d`), y recorte de fondo: `detras` (texto detrás de la persona),
-  `fondo` (color, degradado o imagen) y `marco` (persona saliendo de un círculo o tarjeta)
-  (skill `bydzyne-recorte`), y `apoyo`: escena animada a pantalla completa por capas que ilustra
+  `fondo` (color, degradado o imagen), `marco` (persona saliendo de un círculo o tarjeta) y
+  `efecto` (rayos, ondas o íconos que salen de detrás de la persona), y `color` (un momento en
+  blanco y negro, sepia, dramático o intenso) (skill `bydzyne-recorte`), y `apoyo`: escena animada a pantalla completa por capas que ilustra
   lo que se dice; con `modo: "escena"` es una ilustración animada con dibujos SVG hechos para el
   video (`public/proyectos/<id>/dibujos/`), cámara y partes que se mueven, y con `modo: "video"` un
   trozo de un video de apoyo de `public/videos-apoyo/` desde el segundo `desde` (skill `bydzyne-apoyo`). Las imágenes de la persona van en `public/imagenes/`.

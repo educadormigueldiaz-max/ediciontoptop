@@ -79,7 +79,7 @@ const inicioPermitido = soloAudio
 // Con --agregar, las escenas de apoyo que ya tiene se quedan y cuentan como ocupadas. Los trozos de
 // videos de apoyo (npm run videos-apoyo) se quedan siempre.
 const ocupados = edicion.elementos
-  .filter((e) => op.agregar || e.tipo !== "apoyo" || e.modo === "video")
+  .filter((e) => e.tipo !== "color" && (op.agregar || e.tipo !== "apoyo" || e.modo === "video"))
   .map((e) => [e.inicio, e.fin, e.tipo === "apoyo" ? `escena de apoyo (${e.modo})` : e.tipo]);
 const desde = op.desde !== undefined ? Number(op.desde) : null;
 const hasta = op.hasta !== undefined ? Number(op.hasta) : null;

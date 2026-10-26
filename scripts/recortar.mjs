@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Recorta a la persona del fondo en los momentos que lo necesitan (elementos "detras",
+// Recorta a la persona del fondo en los momentos que lo necesitan (elementos "detras", "efecto",
 // "fondo" y "marco"). Revisar y exportar lo hacen solos; este comando sirve para verlo
 // enseguida en la vista previa:
 //   npm run recortar -- take-01
@@ -16,7 +16,7 @@ if (!id || !fs.existsSync(archivoEdicion)) {
 }
 
 if (rangosNecesarios(leerJson(archivoEdicion)).length === 0) {
-  console.log(`"${id}" no tiene elementos que necesiten recorte (detras, fondo o marco).`);
+  console.log(`"${id}" no tiene elementos que necesiten recorte (detras, fondo, marco o efecto).`);
   process.exit(0);
 }
 await asegurarRecortes(archivoEdicion);

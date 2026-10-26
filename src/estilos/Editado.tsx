@@ -5,6 +5,7 @@ import {
   Sequence,
   Series,
   staticFile,
+  useCurrentFrame,
   useVideoConfig,
 } from "remotion";
 import { z } from "zod";
@@ -25,6 +26,7 @@ import { esEscena } from "../edicion/escenas";
 import { dibujosDe } from "../edicion/dibujos";
 import { esRecorte, recorteCompleto } from "../edicion/recortes";
 import { Recortes } from "../componentes/Recorte";
+import { colorEn, esColor } from "../edicion/color";
 import {
   caraEnSalida,
   colocarElementos,
@@ -93,6 +95,7 @@ export const calcularMetadatos: CalculateMetadataFunction<
 // Estilo "Crudo → editado": tramos sin pausas, subtítulos, gancho y cierre opcionales.
 export const Editado: React.FC<PropsEditado> = ({ edicion, dibujos }) => {
   const { fps, width, height } = useVideoConfig();
+  const frame = useCurrentFrame();
   const tramos = useMemo(
     () => (edicion ? calcularTramos(edicion, fps) : []),
     [edicion, fps],
@@ -132,6 +135,8 @@ export const Editado: React.FC<PropsEditado> = ({ edicion, dibujos }) => {
   const escenas = useMemo(() => todos.filter(esEscena), [todos]);
   // Las escenas de apoyo tapan el video entero con una animación propia.
   const apoyos = useMemo(() => todos.filter(esApoyo), [todos]);
+  // Momentos con otro color (blanco y negro, sepia…): cambian el video, no los textos.
+  const colores = useMemo(() => todos.filter(esColor), [todos]);
   // Los recortes van encima del video, con la persona recortada adelante. Uno sin recorte
   // completo (falta `npm run recortar`) no se dibuja: sin la persona encima, taparía la cara.
   const recortes = useMemo(
@@ -148,7 +153,11 @@ export const Editado: React.FC<PropsEditado> = ({ edicion, dibujos }) => {
       edicion
         ? colocarElementos({
             items: todos.filter(
-              (item) => !esEscena(item) && !esRecorte(item) && !esApoyo(item),
+              (item) =>
+                !esEscena(item) &&
+                !esRecorte(item) &&
+                !esApoyo(item) &&
+                !esColor(item),
             ),
             edicion,
             width,
@@ -160,8 +169,8 @@ export const Editado: React.FC<PropsEditado> = ({ edicion, dibujos }) => {
   );
   // Efectos de sonido de lo que de verdad se ve (un recorte incompleto no se dibuja ni suena).
   const golpes = useMemo(
-    () => golpesDe([...escenas, ...recortes, ...apoyos, ...elementos]),
-    [escenas, recortes, apoyos, elementos],
+    () => golpesDe([...escenas, ...recortes, ...apoyos, ...elementos, ...colores]),
+    [escenas, recortes, apoyos, elementos, colores],
   );
   const conVoz = useMemo(
     () => (edicion ? momentosConVoz(edicion, tramos, fps) : []),
@@ -203,7 +212,9 @@ export const Editado: React.FC<PropsEditado> = ({ edicion, dibujos }) => {
   const sinSubtitulos: Array<readonly [number, number]> = [
     ...elementos.filter((e) => e.ocultaSubtitulos),
     ...escenas,
-    ...recortes.filter((r) => r.elemento.tipo !== "fondo"),
+    ...recortes.filter(
+      (r) => r.elemento.tipo !== "fondo" && r.elemento.tipo !== "efecto",
+    ),
   ].map((e) => [e.desdeFrame, e.desdeFrame + e.duracionFrames] as const);
   // Gancho y cara de los primeros segundos: si el gancho no cabe encima de la cara, va debajo y
   // los subtítulos se ocultan mientras dura.
@@ -231,6 +242,7 @@ export const Editado: React.FC<PropsEditado> = ({ edicion, dibujos }) => {
   }
 
   const { marca } = buscarEstilo(edicion.estilo);
+  const color = colorEn(colores, frame);
 
   return (
     <ConEstilo estilo={edicion.estilo}>
@@ -241,7 +253,9 @@ export const Editado: React.FC<PropsEditado> = ({ edicion, dibujos }) => {
           </Sequence>
         ) : null}
         {/* En los proyectos de solo audio el "video" es una imagen vacía: se oye pero no se ve. */}
-        <AbsoluteFill style={{ opacity: opciones.soloAudio ? 0 : 1 }}>
+        <AbsoluteFill
+          style={{ opacity: opciones.soloAudio ? 0 : 1, filter: color.filtro }}
+        >
           <VideoEnEscena escenas={escenas} caraEntre={caraEntre}>
             <Series>
               {tramos.map((tramo, i) => (
@@ -267,6 +281,13 @@ export const Editado: React.FC<PropsEditado> = ({ edicion, dibujos }) => {
               ))}
             </Series>
           </VideoEnEscena>
+          {color.vineta > 0 ? (
+            <AbsoluteFill
+              style={{
+                background: `radial-gradient(ellipse at 50% 45%, transparent 45%, rgba(0,0,0,${color.vineta}) 100%)`,
+              }}
+            />
+          ) : null}
         </AbsoluteFill>
 
         {recortes.length > 0 ? (
@@ -277,6 +298,7 @@ export const Editado: React.FC<PropsEditado> = ({ edicion, dibujos }) => {
               tramos={tramos}
               enfoque={enfoque}
               caraEntre={caraEntre}
+              filtro={color.filtro}
             />
           </Sequence>
         ) : null}
