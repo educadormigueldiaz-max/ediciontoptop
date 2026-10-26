@@ -180,6 +180,7 @@ export const nuevoTrabajo = (datos) => {
     error: null,
     video: null,
     fotos: [],
+    apoyos: [],
     versiones: [],
     pendiente: { tipo: "nuevo", pedido: null },
     enColaDesde: null,

@@ -188,7 +188,12 @@ td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line
       <div class="campo" id="campo-videos-apoyo">
         <label class="titulo" for="videos-apoyo">Videos de apoyo (opcional)</label>
         <textarea id="videos-apoyo" rows="2" maxlength="1000" placeholder="Pega enlaces de YouTube, uno por línea"></textarea>
-        <span class="ayuda">Se ponen trozos de estos videos justo cuando hablas de lo que muestran. Usa videos tuyos, con permiso o libres de derechos: los de otros pueden hacer que te bajen el video.</span>
+        <label class="archivo" id="caja-apoyos">
+          <input type="file" id="apoyos" accept="video/*" multiple>
+          <strong id="texto-apoyos">O toca para subir videos de apoyo</strong>
+          <span class="ayuda">Hasta 5 videos (MP4 o MOV)</span>
+        </label>
+        <span class="ayuda">Se ponen trozos de estos videos justo cuando hablas de lo que muestran. Pega enlaces o sube los archivos. Usa videos tuyos, con permiso o libres de derechos: los de otros pueden hacer que te bajen el video.</span>
       </div>
       <div class="campo" id="campo-estilo" hidden>
         <label class="titulo" for="estilo">4. Estilo (colores y letras)</label>
@@ -333,6 +338,11 @@ $("video").addEventListener("change", () => {
   $("texto-video").textContent = f ? `✓ ${f.name} (${(f.size / 1e6).toFixed(0)} MB)` : "Toca para elegir el video";
   $("caja-video").classList.toggle("lleno", Boolean(f));
 });
+$("apoyos").addEventListener("change", () => {
+  const n = $("apoyos").files.length;
+  $("texto-apoyos").textContent = n ? `✓ ${n} video${n > 1 ? "s" : ""} de apoyo` : "O toca para subir videos de apoyo";
+  $("caja-apoyos").classList.toggle("lleno", n > 0);
+});
 $("fotos").addEventListener("change", () => {
   const n = $("fotos").files.length;
   $("texto-fotos").textContent = n ? `✓ ${n} foto${n > 1 ? "s" : ""}` : "Toca para elegir fotos";
@@ -361,6 +371,8 @@ $("form-subir").addEventListener("submit", async (e) => {
   if (!video && !enlace) return avisar($("subir-aviso"), tipo === "clips" ? "Elige el video o pega el enlace de YouTube." : "Elige el video primero.");
   const fotos = tipo === "clips" ? [] : [...$("fotos").files];
   if (fotos.length > 6) return avisar($("subir-aviso"), "Puedes subir hasta 6 fotos.");
+  const apoyos = tipo === "clips" ? [] : [...$("apoyos").files];
+  if (apoyos.length > 5) return avisar($("subir-aviso"), "Puedes subir hasta 5 videos de apoyo.");
   avisar($("subir-aviso"), "");
   $("boton-subir").disabled = true;
   $("progreso").hidden = false;
@@ -378,6 +390,7 @@ $("form-subir").addEventListener("submit", async (e) => {
         animaciones: $("animaciones").checked,
         videosApoyo: $("videos-apoyo").value.split(/\s+/).filter(Boolean),
         fotos: fotos.map((f) => f.name),
+        apoyos: apoyos.map((f) => f.name),
       }),
     });
     if (enlace) {
@@ -388,7 +401,7 @@ $("form-subir").addEventListener("submit", async (e) => {
       cargarVideos();
       return;
     }
-    const total = video.size + fotos.reduce((t, f) => t + f.size, 0);
+    const total = [...fotos, ...apoyos].reduce((t, f) => t + f.size, video.size);
     let hecho = 0;
     const avanzar = (base, tamano) => (p) => {
       const pct = Math.round(((base + p * tamano) / total) * 100);
@@ -398,10 +411,12 @@ $("form-subir").addEventListener("submit", async (e) => {
     await subirArchivo(id, video, "video", avanzar(0, video.size));
     hecho = video.size;
     for (const f of fotos) { await subirArchivo(id, f, "foto", avanzar(hecho, f.size)); hecho += f.size; }
+    for (const f of apoyos) { await subirArchivo(id, f, "apoyo", avanzar(hecho, f.size)); hecho += f.size; }
     await api(`/api/trabajos/${id}/enviar`, { method: "POST" });
     $("form-subir").reset();
     $("video").dispatchEvent(new Event("change"));
     $("fotos").dispatchEvent(new Event("change"));
+    $("apoyos").dispatchEvent(new Event("change"));
     cambioDeTipo();
     avisar($("subir-aviso"), "¡Recibido! Tu video ya está en la cola. Aquí abajo ves cómo va.", "bien");
     abiertos.add(id);

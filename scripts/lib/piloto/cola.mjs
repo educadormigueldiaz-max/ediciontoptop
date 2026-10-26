@@ -186,9 +186,10 @@ const crearAnimaciones = async (t) => {
   return parseFloat(r.salida.match(/Costo aprox\.: ([\d.]+)/)?.[1] ?? "0");
 };
 
-// Trozos de los videos de apoyo que la persona pegó (antes que las animaciones: estas llenan el resto).
+// Trozos de los videos de apoyo que la persona pegó o subió (antes que las animaciones: estas llenan el resto).
 const ponerVideosDeApoyo = async (t) => {
-  const r = await node("videos-apoyo.mjs", [t.proyecto, ...t.videosApoyo, ...(t.notas ? ["--pedido", t.notas] : [])], { limiteMin: 40 });
+  const fuentes = [...(t.videosApoyo ?? []), ...(t.apoyos ?? []).map((f) => path.join(carpetaTrabajo(t.id), "subidos", f))];
+  const r = await node("videos-apoyo.mjs", [t.proyecto, ...fuentes, ...(t.notas ? ["--pedido", t.notas] : [])], { limiteMin: 40 });
   anotar(t.id, `Videos de apoyo (código ${r.codigo}):\n${r.salida.slice(-1500)}`);
   return parseFloat(r.salida.match(/Costo aprox\.: ([\d.]+)/)?.[1] ?? "0");
 };
@@ -399,7 +400,7 @@ const procesar = async (id) => {
     paso("editando", "Cortando pausas y escribiendo subtítulos");
     await preparar(t);
     const soloAudio = leerJson(path.join(CARPETA_PROYECTOS, t.proyecto, "edicion.json")).opciones.soloAudio === true;
-    if (t.videosApoyo?.length && !soloAudio) {
+    if ((t.videosApoyo?.length || t.apoyos?.length) && !soloAudio) {
       paso("editando", "Buscando los trozos de los videos de apoyo");
       costo += await ponerVideosDeApoyo(t);
     }

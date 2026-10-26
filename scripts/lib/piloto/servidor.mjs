@@ -29,6 +29,9 @@ const EXT_FOTO = ["jpg", "jpeg", "png", "webp", "heic", "heif"];
 const MAX_VIDEO = 4 * 1024 ** 3;
 const MAX_FOTO = 30 * 1024 ** 2;
 const MAX_FOTOS = 6;
+// Videos de apoyo subidos como archivo (además de los enlaces).
+const MAX_APOYO = 2 * 1024 ** 3;
+const MAX_APOYOS = 5;
 
 // Estilos que se pueden elegir en la página (el de ejemplo no).
 const estilos = () => estilosDisponibles().filter((e) => e !== "ejemplo");
@@ -258,6 +261,9 @@ const manejar = async (req, res) => {
     const fotos = Array.isArray(d.fotos) ? d.fotos : [];
     if (fotos.length > MAX_FOTOS) return error(res, 400, `Puedes subir hasta ${MAX_FOTOS} fotos.`);
     if (fotos.some((f) => !EXT_FOTO.includes(extension(f)))) return error(res, 400, "Las fotos deben ser JPG, PNG o HEIC.");
+    const apoyos = d.tipo === "clips" || !Array.isArray(d.apoyos) ? [] : d.apoyos;
+    if (apoyos.length > MAX_APOYOS) return error(res, 400, `Puedes subir hasta ${MAX_APOYOS} videos de apoyo.`);
+    if (apoyos.some((f) => !EXT_VIDEO.includes(extension(f)))) return error(res, 400, "Los videos de apoyo deben ser MP4 o MOV.");
     const t = nuevoTrabajo({
       usuario,
       nombre: aId(String(d.nombreVideo)).slice(0, 40),
@@ -271,11 +277,12 @@ const manejar = async (req, res) => {
       animaciones: esAudio || d.animaciones === true,
       // Enlaces de YouTube de donde sacar trozos de apoyo (npm run videos-apoyo).
       videosApoyo: d.tipo === "clips" ? [] : enlacesDeApoyo(d.videosApoyo),
+      apoyosEsperados: apoyos.length,
     });
     anotar(
       t.id,
       `Subido por ${usuario}: ${TIPOS[t.tipo]}${esAudio ? " (solo audio)" : ""}, ${t.red}, estilo ${estilo}, ` +
-        `animaciones ${t.animaciones ? "sí" : "no"}, videos de apoyo ${t.videosApoyo.length || "no"}. ` +
+        `animaciones ${t.animaciones ? "sí" : "no"}, videos de apoyo ${t.videosApoyo.length + apoyos.length || "no"}. ` +
         `CTA: ${t.cta || "-"}. Notas: ${t.notas || "-"}`,
     );
     return enviarJson(res, 200, { id: t.id });
@@ -287,20 +294,32 @@ const manejar = async (req, res) => {
   if (!t || (t.usuario !== usuario && !esAdmin)) return error(res, 404, "Ese video no existe.");
   const accion = m[2];
 
-  // Subir el video o una foto: el archivo viene en el cuerpo, tal cual.
+  // Subir el video, una foto o un video de apoyo: el archivo viene en el cuerpo, tal cual.
   if (metodo === "PUT" && accion === "archivo") {
     if (t.estado !== "subiendo") return error(res, 409, "Este video ya se envió.");
     const clase = url.searchParams.get("clase");
     const ext = extension(url.searchParams.get("nombre"));
     const esVideo = clase === "video";
-    const permitidas = esVideo ? [...EXT_VIDEO, ...(t.tipo === "clips" ? [] : EXT_AUDIO)] : EXT_FOTO;
+    const esApoyo = clase === "apoyo";
+    const apoyos = t.apoyos ?? [];
+    const permitidas = esVideo ? [...EXT_VIDEO, ...(t.tipo === "clips" ? [] : EXT_AUDIO)] : esApoyo ? EXT_VIDEO : EXT_FOTO;
     if (!permitidas.includes(ext)) return error(res, 400, "Tipo de archivo no permitido.");
-    if (!esVideo && t.fotos.length >= MAX_FOTOS) return error(res, 400, `Puedes subir hasta ${MAX_FOTOS} fotos.`);
-    const limite = esVideo ? MAX_VIDEO : MAX_FOTO;
-    if (+(req.headers["content-length"] ?? 0) > limite) {
-      return error(res, 413, esVideo ? "El video pesa más de 4 GB. Recórtalo o grábalo en menor calidad." : "La foto pesa más de 30 MB.");
+    if (clase === "foto" && t.fotos.length >= MAX_FOTOS) return error(res, 400, `Puedes subir hasta ${MAX_FOTOS} fotos.`);
+    if (esApoyo && (t.tipo === "clips" || apoyos.length >= MAX_APOYOS)) {
+      return error(res, 400, `Puedes subir hasta ${MAX_APOYOS} videos de apoyo.`);
     }
-    const nombre = esVideo ? `video.${ext}` : `foto-${t.fotos.length + 1}.${ext}`;
+    const limite = esVideo ? MAX_VIDEO : esApoyo ? MAX_APOYO : MAX_FOTO;
+    if (+(req.headers["content-length"] ?? 0) > limite) {
+      return error(
+        res,
+        413,
+        esVideo ? "El video pesa más de 4 GB. Recórtalo o grábalo en menor calidad."
+          : esApoyo ? "Un video de apoyo pesa más de 2 GB. Recórtalo antes de subirlo."
+          : "La foto pesa más de 30 MB.",
+      );
+    }
+    // Los de apoyo llevan el id del trabajo: van a una biblioteca compartida y no deben chocar.
+    const nombre = esVideo ? `video.${ext}` : esApoyo ? `apoyo-${t.id}-${apoyos.length + 1}.${ext}` : `foto-${t.fotos.length + 1}.${ext}`;
     const destino = path.join(carpetaTrabajo(t.id), "subidos", nombre);
     let recibidos = 0;
     let excedido = false;
@@ -326,14 +345,17 @@ const manejar = async (req, res) => {
     }
     let final = nombre;
     // Las fotos HEIC del iPhone se pasan a JPG para que se vean en el video.
-    if (!esVideo && ["heic", "heif"].includes(ext)) {
+    if (clase === "foto" && ["heic", "heif"].includes(ext)) {
       final = nombre.replace(/\.(heic|heif)$/, ".jpg");
       const r = spawnSync("sips", ["-s", "format", "jpeg", destino, "--out", path.join(path.dirname(destino), final)]);
       fs.rmSync(destino, { force: true });
       if (r.status !== 0) return error(res, 400, "No pudimos abrir esa foto. Envíala en JPG o PNG.");
     }
     const actual = leerTrabajo(t.id);
-    actualizarTrabajo(t.id, esVideo ? { video: final } : { fotos: [...actual.fotos, final] });
+    actualizarTrabajo(
+      t.id,
+      esVideo ? { video: final } : esApoyo ? { apoyos: [...(actual.apoyos ?? []), final] } : { fotos: [...actual.fotos, final] },
+    );
     return enviarJson(res, 200, { ok: true });
   }
 
