@@ -32,6 +32,7 @@ pide en español lo que quiere ver ("corta las pausas y pon subtítulos") y tú 
 | `npm run preparar -- <video o audio> [opciones]` | Convierte, transcribe, corta pausas y ubica la cara. Con un audio crea un proyecto de solo audio. Si el video ya trae subtítulos, no pone otros. `--ayuda` muestra las opciones |
 | `npm run apoyo -- <id>` | Escenas de apoyo animadas que ilustran lo que se dice; en solo audio, todo el video. Al final revisa con cuadros que las escenas dibujadas tengan sentido; `--revisar` hace solo eso (skill `bydzyne-apoyo`) |
 | `npm run videos-apoyo -- <id> <enlace o archivo>…` | Pone trozos de videos de apoyo (YouTube o archivos) cuando la persona dice lo que muestran; Claude los mira, elige y revisa (skill `bydzyne-apoyo`, `videos.md`) |
+| `npm run resincronizar -- <id>…` | Vuelve a escuchar el video y corrige cuándo sale cada palabra de los subtítulos, sin cambiar sus textos |
 | `npm run caras -- <id>` | Vuelve a buscar la cara en un proyecto (no toca la edición) |
 | `npm run recortar -- <id>` | Separa a la persona del fondo para `detras`, `fondo` y `marco` (revisar y exportar lo hacen solos) |
 | `npm run lote [-- opciones de preparar]` | Prepara y revisa todos los videos nuevos de `entrada/` y deja un resumen en `salida/lote-<fecha>.md` |

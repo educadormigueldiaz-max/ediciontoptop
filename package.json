@@ -39,6 +39,7 @@
     "preparar": "node scripts/preparar.mjs",
     "caras": "node scripts/caras.mjs",
     "recortar": "node scripts/recortar.mjs",
+    "resincronizar": "node scripts/resincronizar.mjs",
     "duplicar": "node scripts/duplicar.mjs",
     "revisar": "node scripts/revisar.mjs",
     "exportar": "node scripts/exportar.mjs",

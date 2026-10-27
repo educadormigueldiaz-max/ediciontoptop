@@ -40,6 +40,15 @@ description: Criterio para los subtítulos de ByDzyne (estilo, posición, correc
 - Signos: deja `.`, `?` y `!` al final de las frases (cortan la página del subtítulo).
   Quita muletillas escritas ("eh", "este...") si quedaron.
 
+## Tiempos (cuándo sale cada palabra)
+- Los tiempos salen de la voz: el momento en que Whisper oye cada palabra, ajustado a las
+  pausas reales del audio (ninguna palabra empieza en un silencio y, después de una pausa, la
+  primera sale cuando vuelve la voz). No los inventes ni los repartas a ojo.
+- Si piden "los subtítulos salen tarde/antes/todos juntos" en un proyecto viejo:
+  `npm run resincronizar -- <id>` escucha el video otra vez y corrige los tiempos de todas las
+  palabras sin cambiar sus textos (deja una copia en `edicion.antes-de-resincronizar.json`).
+  Después, `npm run revisar` y exportar. Desde el piloto no se puede correr: anótalo en el resumen.
+
 ## Cuándo no poner subtítulos
 - Si el video ya trae subtítulos pegados en la imagen: `npm run preparar` los detecta solo (lee el
   texto de algunos cuadros y lo compara con lo que se dice), deja `"subtitulos": false` y guarda
