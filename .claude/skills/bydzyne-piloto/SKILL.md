@@ -51,6 +51,8 @@ estilo elegido. Tú decides el resto, en este orden:
    - **Escenas de apoyo** (`"tipo": "apoyo"`, skill `bydzyne-apoyo`): si la persona pidió
      animaciones, ya vienen puestas. No las quites ni las encimes; puedes corregir un texto mal
      escrito o una cifra que no se dice. Sin animaciones pedidas, no agregues escenas de apoyo.
+     Vienen de la clase que eligió la persona (con personajes, con textos o textos y figuras);
+     si cambias o agregas una a mano, que sea de esa misma clase.
    - **Solo audio** (`opciones.soloAudio: true`): no hay imagen de la persona; las escenas de
      apoyo llenan el video. No agregues otros elementos, solo gancho y cierre si corresponde.
 7. **Formato**: `9:16` salvo que la red sea YouTube horizontal (`16:9`). Deja `enfoqueX/Y` en "auto".
@@ -73,6 +75,8 @@ corto", "sin gráficos", "corrige el nombre"). Haz **solo** eso, con el menor ca
 - "Corrige <palabra>": cambia `texto` de esas palabras, sin tocar tiempos.
 - "Más / menos animaciones", "cambia esta animación", "sin animaciones": edita las escenas de
   apoyo con la skill `bydzyne-apoyo` (en solo audio, nunca dejes huecos sin escena).
+- "Ponlo con figuras", "los pasos en un camino": cambia el `modo` de esas escenas a `camino`
+  (pasos sobre una línea punteada) o a la clase que pida; eso sí lo haces tú (no lleva dibujos).
 - "Pon una animación cuando digo…" (una escena nueva con dibujos): no la escribas tú; agrega al
   RESUMEN una línea `ANIMACIONES: <qué escena, con qué dibujos y en qué segundos>` y el sistema la
   crea con `npm run apoyo -- --agregar` (conserva las que ya había).

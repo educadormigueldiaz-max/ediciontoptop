@@ -30,7 +30,7 @@ pide en español lo que quiere ver ("corta las pausas y pon subtítulos") y tú 
 | `npm run instalar` | Instala Whisper y descarga el modelo (solo la primera vez) |
 | `npm run actualizar` | Trae la última versión desde GitHub e instala lo nuevo |
 | `npm run preparar -- <video o audio> [opciones]` | Convierte, transcribe, corta pausas y ubica la cara. Con un audio crea un proyecto de solo audio. Si el video ya trae subtítulos, no pone otros. `--ayuda` muestra las opciones |
-| `npm run apoyo -- <id>` | Escenas de apoyo animadas que ilustran lo que se dice; en solo audio, todo el video. Al final revisa con cuadros que las escenas dibujadas tengan sentido; `--revisar` hace solo eso (skill `bydzyne-apoyo`) |
+| `npm run apoyo -- <id> [--tipo personajes\|textos\|figuras]` | Escenas de apoyo animadas que ilustran lo que se dice; en solo audio, todo el video. `--tipo` elige la clase: con personajes, con textos, o textos y figuras (pasos sobre un camino punteado). Al final revisa con cuadros que las escenas dibujadas tengan sentido; `--revisar` hace solo eso (skill `bydzyne-apoyo`) |
 | `npm run videos-apoyo -- <id> <enlace o archivo>…` | Pone trozos de videos de apoyo (YouTube o archivos) cuando la persona dice lo que muestran; Claude los mira, elige y revisa (skill `bydzyne-apoyo`, `videos.md`) |
 | `npm run resincronizar -- <id>…` | Vuelve a escuchar el video y corrige cuándo sale cada palabra de los subtítulos, sin cambiar sus textos |
 | `npm run caras -- <id>` | Vuelve a buscar la cara en un proyecto (no toca la edición) |
@@ -80,7 +80,7 @@ Tiempos en **segundos del video original**. El esquema está en `src/edicion/esq
   `fondo` (color, degradado o imagen), `marco` (persona saliendo de un círculo o tarjeta) y
   `efecto` (rayos, ondas o íconos que salen de detrás de la persona), y `color` (un momento en
   blanco y negro, sepia, dramático o intenso) (skill `bydzyne-recorte`), y `apoyo`: escena animada a pantalla completa por capas que ilustra
-  lo que se dice; con `modo: "escena"` es una ilustración animada con dibujos SVG hechos para el
+  lo que se dice; con `modo: "camino"` son pasos sobre un camino punteado que se dibuja; con `modo: "escena"` es una ilustración animada con dibujos SVG hechos para el
   video (`public/proyectos/<id>/dibujos/`), cámara y partes que se mueven, y con `modo: "video"` un
   trozo de un video de apoyo de `public/videos-apoyo/` desde el segundo `desde` (skill `bydzyne-apoyo`). Las imágenes de la persona van en `public/imagenes/`.
 - `caras`: dónde está la cara en cada momento. Lo llena el programa; no se edita a mano.

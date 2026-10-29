@@ -184,6 +184,15 @@ td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line
           <label><input type="checkbox" id="animaciones"><span>Agregar animaciones en medio del video</span></label>
         </div>
         <span class="ayuda">Escenas animadas que muestran lo que dices (tapan tu imagen unos segundos). Con un audio se ponen siempre.</span>
+        <div id="campo-tipo-animacion" hidden>
+          <span class="titulo">¿Cómo quieres las animaciones?</span>
+          <div class="opciones">
+            <label><input type="radio" name="tipoAnimacion" value="personajes" checked><span>Con personajes</span></label>
+            <label><input type="radio" name="tipoAnimacion" value="textos"><span>Con textos</span></label>
+            <label><input type="radio" name="tipoAnimacion" value="figuras"><span>Textos y figuras</span></label>
+          </div>
+          <span class="ayuda" id="ayuda-tipo-animacion"></span>
+        </div>
       </div>
       <div class="campo" id="campo-videos-apoyo">
         <label class="titulo" for="videos-apoyo">Videos de apoyo (opcional)</label>
@@ -332,7 +341,22 @@ $("video").addEventListener("change", () => {
   const f = $("video").files[0];
   $("texto-video").textContent = f ? `✓ ${f.name} (${(f.size / 1e6).toFixed(0)} MB)` : "Toca para elegir el video";
   $("caja-video").classList.toggle("lleno", Boolean(f));
+  cambioDeAnimaciones();
 });
+// Clase de animaciones: se elige cuando se piden (con un audio siempre van).
+const AYUDA_TIPO_ANIMACION = {
+  personajes: "Dibujos de personajes que actúan lo que dices.",
+  textos: "Tus frases, cifras e ideas en letras grandes que se mueven.",
+  figuras: "Texto con figuras: por ejemplo, si dices paso 1, paso 2 y paso 3, salen sobre un camino de líneas punteadas.",
+};
+const esAudio = (f) => Boolean(f) && (f.type.startsWith("audio/") || /\.(mp3|m4a|wav|aac|ogg|opus|flac)$/i.test(f.name));
+function cambioDeAnimaciones() {
+  $("campo-tipo-animacion").hidden = !($("animaciones").checked || esAudio($("video").files[0]));
+  $("ayuda-tipo-animacion").textContent = AYUDA_TIPO_ANIMACION[document.querySelector("input[name=tipoAnimacion]:checked")?.value] ?? "";
+}
+$("animaciones").addEventListener("change", cambioDeAnimaciones);
+document.querySelectorAll("input[name=tipoAnimacion]").forEach((r) => r.addEventListener("change", cambioDeAnimaciones));
+cambioDeAnimaciones();
 // En la misma caja van fotos y videos de apoyo; se separan por tipo.
 const esVideoDeApoyo = (f) => f.type.startsWith("video/") || /\.(mp4|mov|m4v|webm|mkv|avi|3gp)$/i.test(f.name);
 const plural = (n, palabra) => `${n} ${palabra}${n > 1 ? "s" : ""}`;
@@ -385,6 +409,7 @@ $("form-subir").addEventListener("submit", async (e) => {
         notas: $("notas").value,
         nombreVideo: video?.name ?? "",
         animaciones: $("animaciones").checked,
+        tipoAnimacion: $("campo-tipo-animacion").hidden ? null : document.querySelector("input[name=tipoAnimacion]:checked")?.value,
         videosApoyo: $("videos-apoyo").value.split(/\s+/).filter(Boolean),
         fotos: fotos.map((f) => f.name),
         apoyos: apoyos.map((f) => f.name),
@@ -393,6 +418,7 @@ $("form-subir").addEventListener("submit", async (e) => {
     if (enlace) {
       $("form-subir").reset();
       cambioDeTipo();
+      cambioDeAnimaciones();
       avisar($("subir-aviso"), "¡Recibido! El video ya está en la cola. Aquí abajo ves cómo va.", "bien");
       abiertos.add(id);
       cargarVideos();

@@ -201,6 +201,7 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
       // concepto: ícono grande y título. dato: una cifra grande (siempre una que se dice).
       // pasos: 2–4 tarjetas que aparecen una a una. comparar: dos tarjetas, antes y después.
       // frase: cita grande palabra por palabra. imagen: una foto de public/ que flota en 3D.
+      // camino: 2–4 pasos sobre un camino punteado que se dibuja de uno a otro.
       // escena: una ilustración animada (dibujos hechos para este video, por capas, con cámara).
       // video: un trozo de un video de apoyo (`npm run videos-apoyo`), desde el segundo `desde`.
       modo: z
@@ -208,6 +209,7 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
           "concepto",
           "dato",
           "pasos",
+          "camino",
           "comparar",
           "frase",
           "imagen",
@@ -247,7 +249,7 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
       if (e.modo === "concepto" && !e.titulo && !e.texto)
         falta('necesita "titulo" o "texto"');
       if (e.modo === "dato" && !e.cifra) falta('necesita "cifra"');
-      if (e.modo === "pasos" && e.puntos.length < 2)
+      if ((e.modo === "pasos" || e.modo === "camino") && e.puntos.length < 2)
         falta('necesita de 2 a 4 "puntos"');
       if (e.modo === "comparar" && e.puntos.length !== 2)
         falta('necesita exactamente 2 "puntos"');

@@ -181,7 +181,11 @@ const preparar = async (t) => {
 
 // Escenas de apoyo (skill bydzyne-apoyo). Devuelve lo que costó. Si fallan, el video sigue sin ellas.
 const crearAnimaciones = async (t) => {
-  const r = await node("apoyo.mjs", [t.proyecto, "--tope", "1", ...(t.notas ? ["--pedido", t.notas] : [])], { limiteMin: 20 });
+  const r = await node(
+    "apoyo.mjs",
+    [t.proyecto, "--tope", "1", ...(t.tipoAnimacion ? ["--tipo", t.tipoAnimacion] : []), ...(t.notas ? ["--pedido", t.notas] : [])],
+    { limiteMin: 20 },
+  );
   anotar(t.id, `Animaciones (código ${r.codigo}):\n${r.salida.slice(-1500)}`);
   return parseFloat(r.salida.match(/Costo aprox\.: ([\d.]+)/)?.[1] ?? "0");
 };

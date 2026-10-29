@@ -275,6 +275,8 @@ const manejar = async (req, res) => {
       fotosEsperadas: fotos.length,
       // Escenas de apoyo animadas en medio del video (con un audio solo, siempre).
       animaciones: esAudio || d.animaciones === true,
+      // Clase de animaciones (personajes, textos o figuras: `npm run apoyo -- --tipo`); null = mezcla.
+      tipoAnimacion: ["personajes", "textos", "figuras"].includes(d.tipoAnimacion) ? d.tipoAnimacion : null,
       // Enlaces de YouTube de donde sacar trozos de apoyo (npm run videos-apoyo).
       videosApoyo: d.tipo === "clips" ? [] : enlacesDeApoyo(d.videosApoyo),
       apoyosEsperados: apoyos.length,
@@ -282,7 +284,7 @@ const manejar = async (req, res) => {
     anotar(
       t.id,
       `Subido por ${usuario}: ${TIPOS[t.tipo]}${esAudio ? " (solo audio)" : ""}, ${t.red}, estilo ${estilo}, ` +
-        `animaciones ${t.animaciones ? "sí" : "no"}, videos de apoyo ${t.videosApoyo.length + apoyos.length || "no"}. ` +
+        `animaciones ${t.animaciones ? (t.tipoAnimacion ? `con ${t.tipoAnimacion}` : "sí") : "no"}, videos de apoyo ${t.videosApoyo.length + apoyos.length || "no"}. ` +
         `CTA: ${t.cta || "-"}. Notas: ${t.notas || "-"}`,
     );
     return enviarJson(res, 200, { id: t.id });

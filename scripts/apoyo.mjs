@@ -20,6 +20,9 @@ Opciones:
   --modelo <nombre> Modelo de Claude (por defecto, el de la cuenta)
   --tope <usd>      Gasto máximo de Claude para diseñar las escenas (por defecto 1; cada dibujo
                     de las escenas ilustradas tiene su propio tope de 0.8)
+  --tipo <tipo>     Qué clase de animaciones: personajes (escenas dibujadas con personajes que
+                    actúan lo que se dice), textos (textos, cifras e íconos) o figuras (textos con
+                    figuras: pasos sobre un camino punteado, comparaciones, cifras). Sin --tipo, mezcla
   --sin-dibujos     Sin escenas ilustradas (solo texto, íconos y cifras: más rápido y barato)
   --agregar         Agrega escenas y conserva las que ya tiene (y reusa sus dibujos)
   --desde <seg> --hasta <seg>  Solo crea escenas en ese tramo (segundos del original)
@@ -32,6 +35,7 @@ const { values: op, positionals } = parseArgs({
   options: {
     cuantas: { type: "string" },
     pedido: { type: "string" },
+    tipo: { type: "string" },
     modelo: { type: "string" },
     tope: { type: "string", default: "1" },
     "sin-dibujos": { type: "boolean", default: false },
@@ -49,6 +53,36 @@ if (op.ayuda || !id) {
   console.log(AYUDA);
   process.exit(id ? 0 : 1);
 }
+// Clase de animaciones que eligió la persona: qué modos se pueden usar y cómo se le explica a Claude.
+const TIPOS = {
+  personajes: {
+    modos: ["escena"],
+    criterio:
+      "La persona eligió ANIMACIONES CON PERSONAJES: todas las escenas son ilustradas (modo escena) y " +
+      "en cada una hay al menos un personaje (una persona, un animal o un objeto con cara y cuerpo) que " +
+      "actúa lo que se dice: camina, señala, celebra, se preocupa, maneja, construye. Usa pocos personajes " +
+      "y repítelos entre escenas (el mismo dibujo) para que parezca una historia.",
+  },
+  textos: {
+    modos: ["concepto", "dato", "pasos", "comparar", "frase", "imagen"],
+    criterio:
+      "La persona eligió ANIMACIONES CON TEXTOS: escenas de texto en movimiento (frase, concepto con " +
+      "título, dato con cifra, pasos y comparaciones en tarjetas), sin dibujos.",
+  },
+  figuras: {
+    modos: ["camino", "comparar", "dato", "concepto", "imagen"],
+    criterio:
+      "La persona eligió ANIMACIONES CON TEXTOS Y FIGURAS: cada escena combina texto con figuras que se " +
+      "mueven. Cuando dice pasos, etapas, un proceso, un recorrido o una lista en orden, usa el modo " +
+      "camino (los pasos sobre un camino punteado que se dibuja de uno a otro); para un antes y después, " +
+      "comparar; para un número, dato; para una idea, concepto con su ícono. Prefiere camino siempre que se pueda.",
+  },
+};
+if (op.tipo && !TIPOS[op.tipo]) {
+  console.error(`Tipo desconocido "${op.tipo}". Usa: ${Object.keys(TIPOS).join(", ")}.`);
+  process.exit(1);
+}
+const tipo = op.tipo ? TIPOS[op.tipo] : null;
 const archivoEdicion = path.join(CARPETA_PROYECTOS, id, "edicion.json");
 if (!fs.existsSync(archivoEdicion)) {
   console.error(`No existe el proyecto "${id}". Corre primero: npm run preparar -- <video o audio>`);
@@ -115,6 +149,9 @@ const coloresDelEstilo = (estilo) => {
   return colores;
 };
 
+const MODOS = (tipo?.modos ?? ["concepto", "dato", "pasos", "camino", "comparar", "frase", "imagen", "escena"]).filter(
+  (m) => !(op["sin-dibujos"] && m === "escena"),
+);
 const skill = fs.readFileSync(path.join(RAIZ, ".claude", "skills", "bydzyne-apoyo", "SKILL.md"), "utf8");
 const tarea = [
   skill,
@@ -123,6 +160,7 @@ const tarea = [
     ? `Este es un proyecto de SOLO AUDIO de ${editado.toFixed(0)} s: las escenas cubren todo, desde ${inicioPermitido} s hasta el final (${frases.at(-1).fin.toFixed(1)} s).`
     : `Este es un video donde sale la persona (${editado.toFixed(0)} s editados): escenas de apoyo en medio, desde ${inicioPermitido} s y terminando antes de ${(frases.at(-1).fin - 2).toFixed(1)} s.`,
   op.cuantas ? `Haz exactamente ${op.cuantas} escenas.` : "",
+  tipo ? `${tipo.criterio} Modos permitidos: ${MODOS.join(", ")}.` : "",
   desde !== null || hasta !== null
     ? `Crea escenas SOLO entre ${desde ?? inicioPermitido} s y ${hasta ?? "el final"}${hasta !== null ? " s" : ""}.`
     : "",
@@ -198,7 +236,6 @@ const icono = (n) => {
   const limpio = n.trim().normalize("NFD").replace(/[̀-ͯ]/g, "");
   return alias.has(limpio.toLowerCase()) || icons[pascal(limpio)] ? n.trim() : null;
 };
-const MODOS = ["concepto", "dato", "pasos", "comparar", "frase", "imagen", ...(op["sin-dibujos"] ? [] : ["escena"])];
 const pedidos = new Map(
   listaDibujos
     .filter((d) => nombreDibujo(d?.nombre) && texto(d?.descripcion))
@@ -248,7 +285,7 @@ for (const e of [...propuestas].sort((a, b) => a.inicio - b.inicio)) {
     : (desde !== null && inicio < desde - 0.5) || (hasta !== null && final > hasta + 0.5) ? "fuera del tramo pedido"
     : e.modo === "concepto" && !escena.titulo && !escena.texto ? "sin título"
     : e.modo === "dato" && !escena.cifra ? "sin cifra"
-    : e.modo === "pasos" && puntos.length < 2 ? "pocos pasos"
+    : (e.modo === "pasos" || e.modo === "camino") && puntos.length < 2 ? "pocos pasos"
     : e.modo === "comparar" && puntos.length !== 2 ? "no son dos cosas"
     : e.modo === "frase" && !escena.texto ? "sin frase"
     : e.modo === "imagen" && !escena.archivo ? "sin foto"

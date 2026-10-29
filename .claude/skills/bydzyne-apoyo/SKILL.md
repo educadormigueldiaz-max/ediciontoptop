@@ -26,11 +26,25 @@ corregido (hasta 3 veces). `npm run apoyo -- <id> --revisar` hace solo esa revis
 | `concepto` | Ícono grande en un círculo de luz + título | `icono`, `titulo` (o `texto`), `texto` opcional abajo |
 | `dato` | Una cifra enorme que cuenta hacia arriba + explicación | `cifra` (máx. 14 letras), `texto`, `titulo` opcional |
 | `pasos` | 2–4 tarjetas numeradas que aparecen una a una | `puntos` (2–4), `titulo` opcional |
+| `camino` | Los pasos sobre un **camino punteado** que se dibuja de uno a otro (una luz en la punta) y llega a cada parada justo cuando se dice; cada parada es un círculo con número o ícono y su texto al lado | `puntos` (2–4), `titulo` opcional |
 | `comparar` | Dos tarjetas: la primera apagada (antes, mal), la segunda encendida (después, bien) | `puntos` (exactamente 2), `titulo` opcional |
 | `frase` | Cita grande, palabra por palabra, con comillas | `texto` (la frase tal como la dice), `destacar` |
 | `imagen` | Una foto que flota y gira en 3D con un título | `archivo` (de `public/`), `titulo` opcional |
 | `video` | Un trozo de un video de apoyo a pantalla completa, sin su sonido (lo pone `npm run videos-apoyo`; criterio en `videos.md`) | `archivo` (`videos-apoyo/<nombre>/video.mp4`), `desde` (segundo del video de apoyo), `volumen` (0) |
 | `escena` | **Ilustración animada**: dibujos hechos para este momento (un Fórmula 1 en la pista, una casa que se construye, dinero que crece), por capas y con cámara | `escena`, `titulo` opcional |
+
+## Tipo de animaciones que eligió la persona (`--tipo`)
+En la página (o con `npm run apoyo -- <id> --tipo <tipo>`) la persona elige una de tres clases.
+Respétala: es lo que quiere ver.
+- `personajes` — **animación con personajes**: todas las escenas son ilustradas (`escena`) y en
+  cada una hay un personaje (persona, animal u objeto con cara) que actúa lo que se dice.
+  Repite los mismos personajes entre escenas para que se sienta una historia.
+- `textos` — **animación con textos**: `frase`, `concepto`, `dato`, `pasos`, `comparar` (sin dibujos).
+- `figuras` — **textos y figuras**: el texto va con figuras que se mueven. Pasos, etapas o un
+  proceso en orden → `camino` (paso 1, paso 2, paso 3 sobre una línea punteada); antes y
+  después → `comparar`; un número → `dato`; una idea → `concepto` con ícono.
+Sin tipo, mezcla los modos con el criterio de abajo (`camino` en vez de `pasos` cuando lo que se
+cuenta es un recorrido o un proceso en orden).
 
 ## Escenas ilustradas (`modo: "escena"`): el nivel más alto
 Cuando la persona cuenta algo que se puede **ver** (una metáfora, una historia, un lugar, un
@@ -85,7 +99,8 @@ ruedas giran, la cámara se acerca; después otros carros que lo pasan.
   momentos más visuales. En solo audio: todas las que se puedan imaginar.
 
 Cada punto: `{ "texto": "…", "icono": "…" o null, "en": segundo o null }` (null = se reparten
-solos en la primera mitad). `destacar` = palabra(s) del título o la frase en color de acento.
+solos en la primera mitad). En `camino`, pon `en` = el segundo en que dice cada paso: el trazo
+llega a esa parada en ese momento. `destacar` = palabra(s) del título o la frase en color de acento.
 
 ```json
 { "tipo": "apoyo", "inicio": 12.4, "fin": 17.2, "modo": "pasos", "titulo": "Cómo empezar",

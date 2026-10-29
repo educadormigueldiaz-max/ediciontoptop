@@ -1,4 +1,5 @@
 import { Video } from "@remotion/media";
+import { getLength, getPointAtLength } from "@remotion/paths";
 import {
   AbsoluteFill,
   Easing,
@@ -486,6 +487,272 @@ const Subtexto: React.FC<{
   );
 };
 
+// Una parada del camino: círculo con número (o ícono) que aparece al llegar el trazo, y su texto
+// al lado.
+const Parada: React.FC<{
+  x: number;
+  y: number;
+  tamano: number;
+  numero: number;
+  icono: string | null;
+  texto: string;
+  caja: Area;
+  alinear: "left" | "right" | "center";
+  desde: number;
+}> = ({ x, y, tamano, numero, icono, texto, caja, alinear, desde }) => {
+  const marca = useMarca();
+  const frame = useCurrentFrame();
+  const { fps, width, height } = useVideoConfig();
+  const base = Math.min(width, height);
+  const Icono = icono ? buscarIcono(icono) : null;
+  const llega = spring({
+    frame: frame - desde,
+    fps,
+    config: { damping: 12, stiffness: 180 },
+    durationInFrames: 16,
+  });
+  const p = useEntrada(desde + 4);
+  const onda = interpolate(frame - desde, [0, 20], [0, 1], LIMITE);
+  return (
+    <>
+      <div
+        style={{
+          position: "absolute",
+          left: x - tamano / 2,
+          top: y - tamano / 2,
+          width: tamano,
+          height: tamano,
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "50%",
+            border: `${tamano * 0.04}px solid ${marca.colores.acento}`,
+            scale: 1 + onda * 0.8,
+            opacity: frame < desde ? 0 : (1 - onda) * 0.8,
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "50%",
+            background: marca.colores.acento,
+            boxShadow: `0 ${tamano * 0.08}px ${tamano * 0.3}px ${marca.colores.acento}88`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: marca.fuente,
+            fontWeight: 900,
+            fontSize: tamano * 0.46,
+            color: marca.colores.textoSobreAcento,
+            scale: Math.max(0, llega),
+          }}
+        >
+          {Icono ? (
+            <Icono
+              size={tamano * 0.5}
+              color={marca.colores.textoSobreAcento}
+              strokeWidth={2.4}
+            />
+          ) : (
+            numero
+          )}
+        </div>
+      </div>
+      <div
+        style={{
+          ...entradaDesdeAtras(p, base),
+          position: "absolute",
+          left: caja.x,
+          top: caja.y,
+          width: caja.ancho,
+          height: caja.alto,
+          display: "flex",
+          alignItems: "center",
+          justifyContent:
+            alinear === "left"
+              ? "flex-start"
+              : alinear === "right"
+                ? "flex-end"
+                : "center",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: marca.fuente,
+            fontWeight: 800,
+            fontSize: tamanoQueCabe(
+              texto.split(/\s+/),
+              caja.ancho,
+              caja.alto,
+              base,
+              0.07,
+            ),
+            lineHeight: 1.1,
+            textAlign: alinear,
+            color: marca.colores.texto,
+            textShadow: `0 ${base * 0.004}px ${base * 0.02}px rgba(0,0,0,0.5)`,
+            textWrap: "balance",
+          }}
+        >
+          {texto}
+        </div>
+      </div>
+    </>
+  );
+};
+
+// Pasos sobre un camino punteado: el trazo avanza de una parada a la siguiente (llega justo
+// cuando se dice cada paso) con una luz en la punta; el camino que falta se ve apenas.
+const Camino: React.FC<{ item: ApoyoEnEditado; area: Area }> = ({
+  item,
+  area,
+}) => {
+  const frame = useCurrentFrame();
+  const marca = useMarca();
+  const { width, height } = useVideoConfig();
+  const base = Math.min(width, height);
+  const { elemento: e, momentos } = item;
+  const n = e.puntos.length;
+  const horizontal = width > height;
+  const altoTitulo = e.titulo ? area.alto * 0.18 : 0;
+  const arriba = altoTitulo + (e.titulo ? base * 0.04 : base * 0.02);
+  const alto = area.alto - arriba - base * 0.02;
+  const ancho = area.ancho;
+  const tramo = horizontal ? ancho / n : alto / n;
+  const tamano = Math.min(base * 0.15, tramo * (horizontal ? 0.4 : 0.5));
+  // Paradas en zigzag: en vertical bajan de un lado al otro; en horizontal avanzan subiendo y
+  // bajando, con el texto debajo de cada una.
+  const paradas = e.puntos.map((_, i) =>
+    horizontal
+      ? { x: tramo * (i + 0.5), y: arriba + alto * (i % 2 === 0 ? 0.25 : 0.5) }
+      : { x: ancho * (i % 2 === 0 ? 0.2 : 0.8), y: arriba + tramo * (i + 0.5) },
+  );
+  const tramos = paradas.slice(1).map((b, i) => {
+    const a = paradas[i];
+    const d = horizontal
+      ? `M ${a.x} ${a.y} C ${a.x + tramo * 0.6} ${a.y} ${b.x - tramo * 0.6} ${b.y} ${b.x} ${b.y}`
+      : `M ${a.x} ${a.y} C ${a.x} ${a.y + tramo * 0.65} ${b.x} ${b.y - tramo * 0.65} ${b.x} ${b.y}`;
+    // El trazo sale un poco después de la parada y llega cuando aparece la siguiente.
+    const llega = momentos[i + 1] ?? 0;
+    const sale = Math.min((momentos[i] ?? 0) + 8, llega - 6);
+    return { d, largo: getLength(d), sale, llega };
+  });
+  const separacion = base * 0.032;
+  const punto = base * 0.009;
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: area.x,
+        top: area.y,
+        width: area.ancho,
+        height: area.alto,
+      }}
+    >
+      {e.titulo ? (
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            width: area.ancho,
+            height: altoTitulo,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Titulo
+            texto={e.titulo}
+            destacar={e.destacar}
+            ancho={area.ancho}
+            alto={altoTitulo}
+            desde={0}
+            maximo={0.09}
+          />
+        </div>
+      ) : null}
+      <svg
+        width={area.ancho}
+        height={area.alto}
+        style={{ position: "absolute", left: 0, top: 0, overflow: "visible" }}
+      >
+        {tramos.map((t, i) => {
+          const avance = interpolate(frame, [t.sale, t.llega], [0, 1], {
+            ...LIMITE,
+            easing: Easing.inOut(Easing.quad),
+          });
+          const cuantos = Math.max(2, Math.floor(t.largo / separacion));
+          const hecho = avance * t.largo;
+          const punta = getPointAtLength(t.d, hecho) ?? paradas[i];
+          return (
+            <g key={i}>
+              {Array.from({ length: cuantos + 1 }, (_, k) => {
+                const en = (k / cuantos) * t.largo;
+                const q = getPointAtLength(t.d, en) ?? paradas[i];
+                const visto = interpolate(hecho - en, [0, separacion * 1.5], [0, 1], LIMITE);
+                return (
+                  <circle
+                    key={k}
+                    cx={q.x}
+                    cy={q.y}
+                    r={punto * (0.6 + 0.4 * visto)}
+                    fill={marca.colores.texto}
+                    opacity={0.16 + 0.84 * visto}
+                  />
+                );
+              })}
+              {avance > 0 && avance < 1 ? (
+                <circle
+                  cx={punta.x}
+                  cy={punta.y}
+                  r={punto * 2.2}
+                  fill={marca.colores.acento}
+                  style={{
+                    filter: `drop-shadow(0 0 ${punto * 2}px ${marca.colores.acento})`,
+                  }}
+                />
+              ) : null}
+            </g>
+          );
+        })}
+      </svg>
+      {e.puntos.map((p, i) => {
+        const { x, y } = paradas[i];
+        const lejos = tamano * 0.5 + base * 0.03;
+        const caja: Area = horizontal
+          ? {
+              x: x - tramo * 0.48,
+              y: y + lejos,
+              ancho: tramo * 0.96,
+              alto: alto * 0.24,
+            }
+          : i % 2 === 0
+            ? { x: x + lejos, y: y - tramo * 0.26, ancho: ancho - x - lejos, alto: tramo * 0.52 }
+            : { x: 0, y: y - tramo * 0.26, ancho: x - lejos, alto: tramo * 0.52 };
+        return (
+          <Parada
+            key={i}
+            x={x}
+            y={y}
+            tamano={tamano}
+            numero={i + 1}
+            icono={p.icono}
+            texto={p.texto}
+            caja={caja}
+            alinear={horizontal ? "center" : i % 2 === 0 ? "left" : "right"}
+            desde={momentos[i] ?? 0}
+          />
+        );
+      })}
+    </div>
+  );
+};
+
 // Contenido principal de la escena según su modo, dentro de `area`.
 const Contenido: React.FC<{ item: ApoyoEnEditado; area: Area }> = ({
   item,
@@ -654,6 +921,8 @@ const Contenido: React.FC<{ item: ApoyoEnEditado; area: Area }> = ({
         </div>
       );
     }
+    case "camino":
+      return <Camino item={item} area={area} />;
     case "frase": {
       const texto = e.texto ?? "";
       const palabras = texto.trim().split(/\s+/);
