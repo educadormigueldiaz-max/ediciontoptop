@@ -188,9 +188,12 @@ export const elementosEnElEditado = (
     const desde = aFrameEditado(elemento.inicio, tramos, fps, "inicio");
     const hasta = aFrameEditado(elemento.fin, tramos, fps, "fin");
     if (desde === null || hasta === null || hasta - desde < MIN_FRAMES_ELEMENTO) return [];
+    // Lo último que aparece necesita tiempo para entrar y leerse antes de que el elemento se vaya:
+    // ningún punto aparece en el último 1.2 s (o el último tercio, si el elemento es corto).
+    const ultimo = hasta - desde - Math.min(Math.round(1.2 * fps), Math.floor((hasta - desde) / 3));
     const momentos = momentosDe(elemento).map((en) => {
       const f = aFrameEditado(en, tramos, fps, "inicio");
-      return Math.max(0, Math.min((f ?? desde) - desde, hasta - desde - 1));
+      return Math.max(0, Math.min((f ?? desde) - desde, ultimo));
     });
     return [{ elemento, desdeFrame: desde, duracionFrames: hasta - desde, momentos }];
   });

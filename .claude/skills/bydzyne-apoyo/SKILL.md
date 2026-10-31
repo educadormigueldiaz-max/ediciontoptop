@@ -100,7 +100,8 @@ ruedas giran, la cámara se acerca; después otros carros que lo pasan.
 
 Cada punto: `{ "texto": "…", "icono": "…" o null, "en": segundo o null }` (null = se reparten
 solos en la primera mitad). En `camino`, pon `en` = el segundo en que dice cada paso: el trazo
-llega a esa parada en ese momento. `destacar` = palabra(s) del título o la frase en color de acento.
+llega a esa parada en ese momento. El último punto aparece **al menos 1.5 s antes de `fin`** (si lo dice
+al final, alarga `fin`): necesita tiempo para entrar y leerse antes de que la escena se cierre. `destacar` = palabra(s) del título o la frase en color de acento.
 
 ```json
 { "tipo": "apoyo", "inicio": 12.4, "fin": 17.2, "modo": "pasos", "titulo": "Cómo empezar",

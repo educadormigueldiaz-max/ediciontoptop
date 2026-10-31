@@ -255,13 +255,25 @@ const ilustracion = (i) => limpiarIlustracion(i, (n) => pedidos.has(n) || yaDibu
 const fin = frases.at(-1).fin;
 const escenas = [];
 const descartadas = [];
-for (const e of [...propuestas].sort((a, b) => a.inicio - b.inicio)) {
+const ordenadas = [...propuestas].sort((a, b) => a.inicio - b.inicio);
+for (const [k, e] of ordenadas.entries()) {
   const inicio = redondear(Math.max(inicioPermitido, Number(e.inicio)));
-  const final = redondear(Math.min(fin + (soloAudio ? 1 : 0), Number(e.fin)));
+  let final = redondear(Math.min(fin + (soloAudio ? 1 : 0), Number(e.fin)));
   const puntos = (Array.isArray(e.puntos) ? e.puntos : [])
     .filter((p) => texto(p?.texto))
     .slice(0, 4)
     .map((p) => ({ texto: texto(p.texto), icono: icono(p.icono), en: Number.isFinite(p.en) ? redondear(p.en) : null }));
+  // El último punto necesita 1.5 s en pantalla: si sale muy al final, la escena se alarga hasta
+  // donde se pueda (sin pisar la siguiente escena, otro elemento ni el final del video).
+  const ultimoEn = Math.max(...puntos.map((p) => p.en ?? -Infinity));
+  if (Number.isFinite(ultimoEn) && final < ultimoEn + 1.5) {
+    const tope = Math.min(
+      fin + (soloAudio ? 1 : 0),
+      Number(ordenadas[k + 1]?.inicio ?? Infinity) - 0.3,
+      ...ocupados.filter(([a]) => a >= final).map(([a]) => a - 0.3),
+    );
+    final = redondear(Math.max(final, Math.min(ultimoEn + 1.5, tope)));
+  }
   const escena = {
     tipo: "apoyo",
     inicio,
