@@ -15,6 +15,7 @@ import {
 
 const PAGINA = path.join(path.dirname(new URL(import.meta.url).pathname), "pagina.html");
 const PANEL_CLIPS = path.join(path.dirname(PAGINA), "clips.html");
+const ESTILO = path.join(path.dirname(PAGINA), "estilo.css");
 const COOKIE = "bydzyne";
 const EXT_VIDEO = ["mp4", "mov", "m4v", "webm", "mkv", "avi", "3gp"];
 // Un audio solo (nota de voz, podcast) se vuelve un video animado (skill bydzyne-apoyo).
@@ -164,6 +165,12 @@ const manejar = async (req, res) => {
   if (metodo === "GET" && (ruta === "/" || ruta === "/index.html")) {
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
     res.end(fs.readFileSync(PAGINA));
+    return;
+  }
+  // El aspecto común de las dos páginas (colores, letras, botones).
+  if (metodo === "GET" && ruta === "/estilo.css") {
+    res.writeHead(200, { "Content-Type": "text/css; charset=utf-8", "Cache-Control": "no-cache" });
+    res.end(fs.readFileSync(ESTILO));
     return;
   }
   if (metodo === "GET" && ruta === "/clips") {
