@@ -169,6 +169,15 @@ const ayudaEstilo = () => { $("estilo-ayuda").textContent = yo?.nombresEstilos?.
 let verTodos = false;
 let refresco = null;
 const abiertos = new Set();
+// Videos desplegados en la lista (los demás se ven en una sola línea; los que se están editando, siempre abiertos).
+const expandidos = new Set();
+// Dónde queda "Mis videos": al lado en computador, abajo en el celular.
+const dondeEstaLaLista = () => (matchMedia("(min-width: 1040px)").matches ? "aquí al lado" : "más abajo");
+const avisarRecibido = (id) => {
+  avisar($("subir-aviso"), `¡Recibido! Tu video ya está en la cola. En "Mis videos", ${dondeEstaLaLista()}, ves cómo va.`, "bien");
+  expandidos.add(id);
+  $("lista").scrollTop = 0;
+};
 
 const api = async (ruta, opciones = {}) => {
   const r = await fetch(ruta, {
@@ -360,8 +369,7 @@ $("form-subir").addEventListener("submit", async (e) => {
       $("form-subir").reset();
       cambioDeTipo();
       cambioDeAnimaciones();
-      avisar($("subir-aviso"), "¡Recibido! El video ya está en la cola. Aquí abajo ves cómo va.", "bien");
-      abiertos.add(id);
+      avisarRecibido(id);
       cargarVideos(true);
       return;
     }
@@ -383,8 +391,7 @@ $("form-subir").addEventListener("submit", async (e) => {
     $("video").dispatchEvent(new Event("change"));
     $("fotos").dispatchEvent(new Event("change"));
     cambioDeTipo();
-    avisar($("subir-aviso"), "¡Recibido! Tu video ya está en la cola. Aquí abajo ves cómo va.", "bien");
-    abiertos.add(id);
+    avisarRecibido(id);
     cargarVideos(true);
   } catch (err) {
     avisar($("subir-aviso"), err.message);
@@ -431,15 +438,17 @@ function tarjetaVideo(t) {
       ${i === 0 && !t.clips ? `<video controls playsinline preload="metadata" src="/api/trabajos/${t.id}/archivo?nombre=${encodeURIComponent(v.archivos[0].archivo)}#t=0.8"></video>` : ""}
       ${i === 0 && t.clips ? "" : `<div class="descargas">${v.archivos.map((a) => `<a class="boton ${i === 0 ? "" : "suave"}" href="/api/trabajos/${t.id}/archivo?nombre=${encodeURIComponent(a.archivo)}&descargar=1">Descargar ${esc(a.red)} <small>(${a.megas} MB)</small></a>`).join("")}</div>`}
     </div>`).join("");
+  const abierto = trabajando || t.estado === "problema" || expandidos.has(t.id);
   return `
-    <article class="video" data-id="${t.id}">
-      <div class="cabeza">
+    <article class="video ${abierto ? "abierto" : "cerrado"}" data-id="${t.id}">
+      <div class="cabeza" ${trabajando ? "" : `data-abrir role="button" tabindex="0" aria-expanded="${abierto}"`}>
         <div>
           <h3>${esc(t.nombre)}</h3>
           <p class="detalle">${esc(t.tipo)} · ${esc(t.red)} · ${fecha(t.creado)}${t.usuario ? ` · <strong>${esc(t.usuario)}</strong>${t.costo ? ` · ≈ ${t.costo} USD` : ""}` : ""}</p>
         </div>
-        <span class="estado ${t.estado}">${esc(t.estadoTexto)}</span>
+        <span class="estado-y-flecha"><span class="estado ${t.estado}">${esc(t.estadoTexto)}</span>${trabajando ? "" : `<span class="flecha" aria-hidden="true">▾</span>`}</span>
       </div>
+      ${abierto ? `
       ${trabajando ? `<div class="pasos" aria-hidden="true">${pasos}</div><p class="ayuda">${esc(t.enCola ? (t.enCola === 1 ? "Eres el siguiente." : `Hay ${t.enCola - 1} video${t.enCola > 2 ? "s" : ""} antes que el tuyo.`) : t.paso)}${t.pedidoEnCurso ? ` · Cambio: “${esc(t.pedidoEnCurso)}”` : ""}</p>` : ""}
       ${t.error ? `<div class="aviso mal">${esc(t.error)}</div>` : ""}
       ${t.estado === "problema" ? `<button class="boton suave" type="button" data-accion="reintentar">Intentar de nuevo</button>` : ""}
@@ -450,7 +459,7 @@ function tarjetaVideo(t) {
           <textarea placeholder="Escribe qué cambiar. Por ejemplo: quita el inicio, otro gancho, sin música" maxlength="600"></textarea>
           <button class="boton" type="button" data-accion="cambios">Enviar cambios</button>
         </details>` : ""}
-      ${!trabajando ? `<button class="boton suave" type="button" data-accion="borrar" style="justify-self:start">Borrar</button>` : ""}
+      ${!trabajando ? `<button class="boton suave" type="button" data-accion="borrar" style="justify-self:start">Borrar</button>` : ""}` : ""}
     </article>`;
 }
 
@@ -472,7 +481,7 @@ async function cargarVideos(forzar = false) {
   $("ver-todos").classList.toggle("activa", verTodos);
   $("ver-mios").setAttribute("aria-pressed", String(!verTodos));
   $("ver-todos").setAttribute("aria-pressed", String(verTodos));
-  $("lista").innerHTML = datos.trabajos.length ? datos.trabajos.map(tarjetaVideo).join("") : `<p class="vacio">Todavía no has subido videos. Sube el primero aquí al lado.</p>`;
+  $("lista").innerHTML = datos.trabajos.length ? datos.trabajos.map(tarjetaVideo).join("") : `<p class="vacio">Todavía no has subido videos. Sube el primero con el formulario.</p>`;
 }
 
 $("lista").addEventListener("toggle", (e) => {
@@ -480,7 +489,19 @@ $("lista").addEventListener("toggle", (e) => {
   if (art && e.target.matches("[data-cambios]")) e.target.open ? abiertos.add(art.dataset.id + "-c") : abiertos.delete(art.dataset.id + "-c");
 }, true);
 
+// Tocar la cabeza de un video lo abre o lo cierra.
+const alternar = (cabeza) => {
+  const id = cabeza.closest(".video").dataset.id;
+  expandidos.has(id) ? expandidos.delete(id) : expandidos.add(id);
+  cargarVideos(true);
+};
+$("lista").addEventListener("keydown", (e) => {
+  const cabeza = e.target.closest("[data-abrir]");
+  if (cabeza && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); alternar(cabeza); }
+});
 $("lista").addEventListener("click", async (e) => {
+  const cabeza = e.target.closest("[data-abrir]");
+  if (cabeza) return alternar(cabeza);
   const boton = e.target.closest("button[data-accion]");
   if (!boton) return;
   const art = boton.closest(".video");

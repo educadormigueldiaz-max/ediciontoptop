@@ -124,6 +124,19 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 .video { border: 1px solid var(--linea); border-radius: 16px; padding: 18px; display: grid; gap: 12px; background: var(--superficie-2); }
 .video:hover { border-color: var(--linea-fuerte); }
 .video .cabeza { display: flex; justify-content: space-between; align-items: start; gap: 10px; flex-wrap: wrap; }
+.video .cabeza[data-abrir] { cursor: pointer; }
+.video .cabeza[data-abrir]:hover h3 { color: var(--cian); }
+.video.cerrado { padding-block: 14px; }
+.estado-y-flecha { display: inline-flex; align-items: center; gap: 10px; }
+.flecha { color: var(--tinta-suave); font-size: 18px; line-height: 1; }
+.video.abierto .flecha { transform: rotate(180deg); }
+/* En computador, "Mis videos" se queda quieto al lado y su lista se recorre por dentro. */
+@media (min-width: 1040px) {
+  #mis-videos { position: sticky; top: 88px; max-height: calc(100vh - 112px); grid-template-rows: auto minmax(0, 1fr); }
+  #mis-videos .lista { overflow-y: auto; padding-right: 6px; margin-right: -6px; overscroll-behavior: contain; align-content: start; }
+  #mis-videos .lista::-webkit-scrollbar { width: 8px; }
+  #mis-videos .lista::-webkit-scrollbar-thumb { background: var(--linea-fuerte); border-radius: 999px; }
+}
 .video h3 { font-size: 18px; font-weight: 700; word-break: break-word; }
 .video .detalle { color: var(--tinta-suave); font-size: 14px; }
 .estado { font-weight: 700; font-size: 13px; padding: 4px 12px; border-radius: 999px; white-space: nowrap; border: 1px solid currentColor; }
