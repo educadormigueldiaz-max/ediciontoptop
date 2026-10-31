@@ -6,81 +6,108 @@
 <title>Videos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..900&family=Source+Sans+3:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Sans+3:wght@400;600;700&display=swap">
 <style>
-/* Una columna pensada para el celular: arriba la marca, luego "Subir video" y "Mis videos". */
+/* Página completa con aire tecnológico: fondo oscuro con cuadrícula y luces, tarjetas de vidrio,
+   acentos cian y violeta. En computador, "Subir video" y "Mis videos" van lado a lado. */
 :root {
-  --papel: #EEF0F3;
-  --superficie: #FFFFFF;
-  --tinta: #151A21;
-  --tinta-suave: #5B6370;
-  --linea: #D7DBE1;
-  --pizarra: #4A515D;
-  --degradado: linear-gradient(135deg, #808897 0%, #5F6673 55%, #4A515D 100%);
-  --sobre-pizarra: #FFFFFF;
-  --boton: #1E2229;
+  --papel: #070B14;
+  --campo: rgba(8, 13, 26, 0.7);
+  --superficie: rgba(19, 27, 46, 0.62);
+  --superficie-2: rgba(28, 38, 62, 0.55);
+  --tinta: #E8EEF8;
+  --tinta-suave: #93A1B8;
+  --linea: rgba(125, 160, 255, 0.16);
+  --linea-fuerte: rgba(125, 160, 255, 0.32);
+  --cian: #22D3EE;
+  --violeta: #8B5CF6;
+  --degradado: linear-gradient(120deg, #22D3EE 0%, #6366F1 50%, #A855F7 100%);
+  --degradado-boton: linear-gradient(120deg, #0891B2 0%, #4F46E5 55%, #7C3AED 100%);
+  --boton: #4F46E5;
   --sobre-boton: #FFFFFF;
-  --elegido: #1E2229;
-  --bien: #0E7C6B;
-  --bien-suave: #E1F2EE;
-  --espera: #8A5A00;
-  --espera-suave: #FBF0D9;
-  --mal: #B42318;
-  --mal-suave: #FDECEA;
-  --trabajando: #2457C5;
-  --trabajando-suave: #E6EDFB;
-  --f-titulo: "Archivo", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --elegido: #4F46E5;
+  --bien: #34D399; --bien-suave: rgba(52, 211, 153, 0.12);
+  --espera: #FBBF24; --espera-suave: rgba(251, 191, 36, 0.12);
+  --mal: #F87171; --mal-suave: rgba(248, 113, 113, 0.12);
+  --trabajando: #22D3EE; --trabajando-suave: rgba(34, 211, 238, 0.12);
+  --f-titulo: "Space Grotesk", "Avenir Next", "Segoe UI", system-ui, sans-serif;
   --f-texto: "Source Sans 3", "Helvetica Neue", Arial, system-ui, sans-serif;
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --papel: #12151A; --superficie: #1B2028; --tinta: #E9ECF0; --tinta-suave: #A2AAB5; --linea: #2E3540;
-    --pizarra: #2A2F38; --degradado: linear-gradient(135deg, #3E4450 0%, #2A2F38 55%, #1E2229 100%);
-    --boton: #E9ECF0; --sobre-boton: #12151A; --elegido: #E9ECF0;
-    --bien: #4CC3AE; --bien-suave: #133029; --espera: #F0B64A; --espera-suave: #33270E;
-    --mal: #F97066; --mal-suave: #3A1715; --trabajando: #7FA6FF; --trabajando-suave: #17233F;
-    color-scheme: dark;
-  }
+  color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
-body { background: var(--papel); color: var(--tinta); font-family: var(--f-texto); font-size: 17px; line-height: 1.5; }
-h1, h2, h3 { font-family: var(--f-titulo); margin: 0; line-height: 1.15; text-wrap: balance; }
+body { background: var(--papel); color: var(--tinta); font-family: var(--f-texto); font-size: 17px; line-height: 1.5; min-height: 100vh; overflow-x: hidden; }
+h1, h2, h3 { font-family: var(--f-titulo); margin: 0; line-height: 1.12; text-wrap: balance; letter-spacing: -0.01em; }
 p { margin: 0; }
+a { color: var(--cian); }
 button, input, select, textarea { font: inherit; color: inherit; }
-.centro { max-width: 46rem; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+.centro { width: 100%; max-width: 1280px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+@media (min-width: 720px) { .centro { padding-left: 32px; padding-right: 32px; } }
 
-/* Marca */
-.barra { background: var(--degradado); background-color: var(--pizarra); color: var(--sobre-pizarra); padding-top: env(safe-area-inset-top); }
-.barra .centro { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 18px; flex-wrap: wrap; }
-.marca { display: inline-flex; align-items: center; gap: 0.6em; font-size: 22px; line-height: 1; color: var(--sobre-pizarra); }
-.marca svg { width: 1.55em; height: 1.55em; flex: none; }
-.marca .palabra { font-family: var(--f-titulo); font-weight: 800; font-stretch: 125%; letter-spacing: 0.04em; }
-.marca .contorno { color: transparent; -webkit-text-stroke: 0.06em var(--sobre-pizarra); }
-.quien { display: flex; align-items: center; gap: 10px; font-size: 15px; }
-.quien button { background: transparent; border: 1px solid rgba(255,255,255,0.5); color: var(--sobre-pizarra); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+/* Fondo: cuadrícula que se desvanece y dos luces de color. */
+.fondo-tec { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.fondo-tec::before { content: ""; position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(125,160,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(125,160,255,0.07) 1px, transparent 1px);
+  background-size: 44px 44px; mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000 30%, transparent 85%); -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000 30%, transparent 85%); }
+.fondo-tec i { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.5; }
+.fondo-tec i:nth-child(1) { width: 520px; height: 520px; background: #0EA5E9; top: -180px; left: -120px; }
+.fondo-tec i:nth-child(2) { width: 560px; height: 560px; background: #7C3AED; top: -120px; right: -180px; opacity: 0.4; }
+.fondo-tec i:nth-child(3) { width: 420px; height: 420px; background: #4F46E5; bottom: -220px; left: 35%; opacity: 0.25; }
 
-main { padding-block: 24px 64px; display: grid; gap: 24px; }
-.tarjeta { background: var(--superficie); border: 1px solid var(--linea); border-radius: 16px; padding: 20px; display: grid; gap: 18px; }
-.tarjeta > h2 { font-size: 24px; font-weight: 800; }
+/* Barra de arriba */
+.barra { position: sticky; top: 0; z-index: 10; padding-top: env(safe-area-inset-top); background: rgba(7, 11, 20, 0.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--linea); }
+.barra .centro { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 14px; flex-wrap: wrap; }
+.marca { display: inline-flex; align-items: center; gap: 10px; font-family: var(--f-titulo); font-weight: 700; font-size: 21px; letter-spacing: 0.02em; }
+.marca .logo { width: 34px; height: 34px; border-radius: 10px; background: var(--degradado); display: grid; place-items: center; box-shadow: 0 0 24px rgba(99, 102, 241, 0.55); }
+.marca .logo svg { width: 18px; height: 18px; }
+.quien { display: flex; align-items: center; gap: 14px; font-size: 15px; color: var(--tinta-suave); flex-wrap: wrap; }
+.quien a { color: var(--tinta); text-decoration: none; font-weight: 600; }
+.quien a:hover { color: var(--cian); }
+.quien button { background: transparent; border: 1px solid var(--linea-fuerte); color: var(--tinta); border-radius: 999px; padding: 6px 16px; cursor: pointer; }
+.quien button:hover { border-color: var(--cian); }
+
+/* Portada */
+.portada { padding-block: 48px 28px; display: grid; gap: 16px; }
+.portada .etiqueta { justify-self: start; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--cian); border: 1px solid rgba(34, 211, 238, 0.35); background: rgba(34, 211, 238, 0.08); border-radius: 999px; padding: 5px 14px; }
+.portada .etiqueta::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--cian); box-shadow: 0 0 10px var(--cian); }
+.portada h1 { font-size: clamp(34px, 6vw, 64px); font-weight: 700; max-width: 16ch; }
+.portada h1 .brillo { background: var(--degradado); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.portada p { color: var(--tinta-suave); font-size: clamp(17px, 2vw, 20px); max-width: 52ch; }
+.virtudes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.virtudes span { font-size: 15px; font-weight: 600; padding: 8px 14px; border-radius: 12px; background: var(--superficie); border: 1px solid var(--linea); }
+
+main { padding-block: 8px 72px; display: grid; gap: 24px; }
+.tablero { display: grid; gap: 24px; align-items: start; }
+@media (min-width: 1040px) { .tablero { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); } }
+.tarjeta { background: var(--superficie); border: 1px solid var(--linea); border-radius: 20px; padding: 24px; display: grid; gap: 20px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04); }
+.tarjeta .tarjeta { background: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.tarjeta > h2, .tarjeta h2 { font-size: 26px; font-weight: 700; }
+#entrar { max-width: 460px; width: 100%; justify-self: center; }
 .ayuda { color: var(--tinta-suave); font-size: 15px; }
-label.titulo, .titulo { font-weight: 700; display: block; margin-bottom: 8px; }
+label.titulo, .titulo { font-weight: 700; display: block; margin-bottom: 10px; }
 .campo { display: grid; gap: 0; }
-input[type=text], input[type=password], textarea, select {
-  width: 100%; border: 1.5px solid var(--linea); border-radius: 12px; background: var(--papel); padding: 14px; font-size: 17px;
-}
+input[type=text], input[type=password], input[type=url], textarea, select {
+  width: 100%; border: 1px solid var(--linea-fuerte); border-radius: 12px; background: var(--campo); padding: 14px; font-size: 17px; }
+select option { background: #0F1626; }
+input::placeholder, textarea::placeholder { color: #66748C; }
+input:hover, textarea:hover, select:hover { border-color: rgba(34, 211, 238, 0.45); }
 textarea { min-height: 90px; resize: vertical; }
-input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, .archivo:focus-within { outline: 3px solid var(--trabajando); outline-offset: 2px; }
+input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, .archivo:focus-within, a:focus-visible { outline: 2px solid var(--cian); outline-offset: 2px; }
 
-/* Botones grandes */
-.boton { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; padding: 0 24px; border-radius: 14px; border: 0; background: var(--boton); color: var(--sobre-boton); font-weight: 700; font-size: 18px; cursor: pointer; text-decoration: none; }
+/* Botones */
+.boton { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 54px; padding: 0 26px; border-radius: 14px; border: 0; background: var(--degradado-boton); color: var(--sobre-boton); font-weight: 700; font-size: 18px; cursor: pointer; text-decoration: none; box-shadow: 0 8px 28px rgba(79, 70, 229, 0.4); }
+.boton:hover { filter: brightness(1.12); }
 .boton.ancho { width: 100%; }
-.boton.suave { background: transparent; color: var(--tinta); border: 1.5px solid var(--linea); min-height: 48px; font-size: 16px; }
+.boton.suave { background: var(--superficie-2); color: var(--tinta); border: 1px solid var(--linea-fuerte); min-height: 46px; font-size: 16px; box-shadow: none; }
+.boton.suave:hover { border-color: var(--cian); filter: none; }
 .boton[disabled] { opacity: 0.5; cursor: wait; }
 
 /* Elegir archivo */
-.archivo { position: relative; border: 2px dashed var(--linea); border-radius: 14px; padding: 22px; text-align: center; background: var(--papel); cursor: pointer; }
+.archivo { position: relative; border: 1.5px dashed var(--linea-fuerte); border-radius: 16px; padding: 28px 20px; text-align: center; background: linear-gradient(180deg, rgba(34, 211, 238, 0.05), rgba(124, 58, 237, 0.05)); cursor: pointer; display: grid; gap: 4px; justify-items: center; }
+.archivo::before { content: ""; width: 44px; height: 44px; border-radius: 12px; margin-bottom: 6px; background: var(--degradado) center / 100% no-repeat;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3E%3Cpolyline points='17 8 12 3 7 8'/%3E%3Cline x1='12' y1='3' x2='12' y2='15'/%3E%3C/svg%3E") center / 70% no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3E%3Cpolyline points='17 8 12 3 7 8'/%3E%3Cline x1='12' y1='3' x2='12' y2='15'/%3E%3C/svg%3E") center / 70% no-repeat; }
+.archivo:hover { border-color: var(--cian); }
 .archivo input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
 .archivo strong { display: block; font-size: 19px; }
 .archivo.lleno { border-style: solid; border-color: var(--bien); background: var(--bien-suave); }
@@ -89,58 +116,78 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 .opciones { display: flex; flex-wrap: wrap; gap: 10px; }
 .opciones label { position: relative; }
 .opciones input { position: absolute; opacity: 0; inset: 0; }
-.opciones span { display: inline-flex; align-items: center; min-height: 48px; padding: 0 18px; border-radius: 999px; border: 1.5px solid var(--linea); background: var(--papel); font-weight: 600; cursor: pointer; }
-.opciones input:checked + span { background: var(--elegido); color: var(--sobre-boton); border-color: var(--elegido); }
-.opciones input:focus-visible + span { outline: 3px solid var(--trabajando); outline-offset: 2px; }
+.opciones span { display: inline-flex; align-items: center; min-height: 46px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--linea-fuerte); background: var(--campo); font-weight: 600; cursor: pointer; }
+.opciones span:hover { border-color: rgba(34, 211, 238, 0.55); }
+.opciones input:checked + span { background: var(--degradado-boton); color: var(--sobre-boton); border-color: transparent; box-shadow: 0 0 20px rgba(99, 102, 241, 0.45); }
+.opciones input:focus-visible + span { outline: 2px solid var(--cian); outline-offset: 2px; }
+#campo-tipo-animacion { margin-top: 16px; padding: 16px; border-radius: 14px; border: 1px solid var(--linea); background: var(--superficie-2); }
 
-.barra-progreso { height: 10px; border-radius: 999px; background: var(--linea); overflow: hidden; }
-.barra-progreso div { height: 100%; width: 0; background: var(--bien); }
-.aviso { border-radius: 12px; padding: 12px 14px; font-size: 16px; }
-.aviso.mal { background: var(--mal-suave); color: var(--mal); }
-.aviso.bien { background: var(--bien-suave); color: var(--bien); }
+.barra-progreso { height: 10px; border-radius: 999px; background: var(--superficie-2); overflow: hidden; }
+.barra-progreso div { height: 100%; width: 0; background: var(--degradado); box-shadow: 0 0 12px var(--cian); }
+.aviso { border-radius: 12px; padding: 12px 14px; font-size: 16px; border: 1px solid transparent; }
+.aviso.mal { background: var(--mal-suave); color: var(--mal); border-color: rgba(248, 113, 113, 0.3); }
+.aviso.bien { background: var(--bien-suave); color: var(--bien); border-color: rgba(52, 211, 153, 0.3); }
 
 /* Mis videos */
 .lista { display: grid; gap: 14px; }
-.video { border: 1px solid var(--linea); border-radius: 14px; padding: 16px; display: grid; gap: 12px; background: var(--superficie); }
+.video { border: 1px solid var(--linea); border-radius: 16px; padding: 18px; display: grid; gap: 12px; background: var(--superficie-2); }
+.video:hover { border-color: var(--linea-fuerte); }
 .video .cabeza { display: flex; justify-content: space-between; align-items: start; gap: 10px; flex-wrap: wrap; }
 .video h3 { font-size: 18px; font-weight: 700; word-break: break-word; }
 .video .detalle { color: var(--tinta-suave); font-size: 14px; }
-.estado { font-weight: 700; font-size: 14px; padding: 4px 12px; border-radius: 999px; white-space: nowrap; }
+.estado { font-weight: 700; font-size: 13px; padding: 4px 12px; border-radius: 999px; white-space: nowrap; border: 1px solid currentColor; }
 .estado.listo { background: var(--bien-suave); color: var(--bien); }
 .estado.en-cola, .estado.subiendo { background: var(--espera-suave); color: var(--espera); }
 .estado.editando, .estado.revisando, .estado.exportando { background: var(--trabajando-suave); color: var(--trabajando); }
 .estado.problema { background: var(--mal-suave); color: var(--mal); }
 .pasos { display: flex; gap: 6px; }
-.pasos i { flex: 1; height: 6px; border-radius: 999px; background: var(--linea); }
-.pasos i.hecho { background: var(--bien); }
-.pasos i.ahora { background: var(--trabajando); }
+.pasos i { flex: 1; height: 6px; border-radius: 999px; background: var(--superficie); border: 1px solid var(--linea); }
+.pasos i.hecho { background: var(--bien); border-color: transparent; }
+.pasos i.ahora { background: var(--cian); border-color: transparent; box-shadow: 0 0 10px var(--cian); }
 .version { border-top: 1px solid var(--linea); padding-top: 12px; display: grid; gap: 10px; }
-.version video { width: 100%; max-height: 70vh; border-radius: 12px; background: #000; }
+.version video { width: 100%; max-height: 70vh; border-radius: 12px; background: #000; border: 1px solid var(--linea); }
 .descargas { display: flex; flex-wrap: wrap; gap: 8px; }
 .cambios { display: grid; gap: 8px; }
 details summary { cursor: pointer; font-weight: 700; padding: 6px 0; }
-.vacio { text-align: center; color: var(--tinta-suave); padding: 18px; }
+details summary:hover { color: var(--cian); }
+.vacio { text-align: center; color: var(--tinta-suave); padding: 28px; border: 1px dashed var(--linea); border-radius: 14px; }
 table { width: 100%; border-collapse: collapse; font-size: 15px; }
-td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--linea); }
+td, th { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--linea); }
+th { color: var(--tinta-suave); font-weight: 600; }
 .tabla { overflow-x: auto; }
 .pestanas { display: flex; gap: 8px; }
 [hidden] { display: none !important; }
-@media (prefers-reduced-motion: no-preference) { .barra-progreso div { transition: width 0.3s; } }
+@media (prefers-reduced-motion: no-preference) {
+  .barra-progreso div { transition: width 0.3s; }
+  .boton, .opciones span, .archivo, input, textarea, select, .video { transition: border-color 0.2s, filter 0.2s, box-shadow 0.2s; }
+  .fondo-tec i { animation: flotar 18s ease-in-out infinite alternate; }
+  .fondo-tec i:nth-child(2) { animation-duration: 22s; }
+  @keyframes flotar { to { transform: translate(60px, 40px) scale(1.1); } }
+}
 </style>
 </head>
 <body>
+<div class="fondo-tec" aria-hidden="true"><i></i><i></i><i></i></div>
 <header class="barra">
   <div class="centro">
-    <span class="marca"><span class="palabra">Videos</span></span>
+    <span class="marca"><span class="logo"><svg viewBox="0 0 24 24" fill="white"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg></span>Videos</span>
     <div class="quien" id="quien" hidden>
-      <a href="/clips" style="color:inherit">Panel de clips</a>
+      <a href="/clips">Panel de clips</a>
       <span id="nombre"></span>
       <button id="salir" type="button">Salir</button>
     </div>
   </div>
 </header>
 
+<section class="portada centro">
+  <span class="etiqueta">Edición automática</span>
+  <h1>Sube tu video. <span class="brillo">Recíbelo editado.</span></h1>
+  <p>Cortes, subtítulos, animaciones y el tamaño justo para cada red. Tú grabas; del resto nos encargamos.</p>
+  <div class="virtudes"><span>✂️ Cortes y subtítulos</span><span>✨ Animaciones</span><span>📱 Listo para cada red</span></div>
+</section>
+
 <main class="centro">
+
   <!-- Entrar -->
   <section class="tarjeta" id="entrar" hidden>
     <h2>Entra a tu cuenta</h2>
@@ -153,6 +200,7 @@ td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line
     </form>
   </section>
 
+  <div class="tablero">
   <!-- Subir -->
   <section class="tarjeta" id="subir" hidden>
     <h2>Subir un video</h2>
@@ -246,6 +294,8 @@ td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line
     </div>
     <div class="lista" id="lista"></div>
   </section>
+
+  </div>
 
   <!-- Personas (solo administración) -->
   <section class="tarjeta" id="personas" hidden>
