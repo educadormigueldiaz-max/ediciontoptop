@@ -138,6 +138,14 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 .version { border-top: 1px solid var(--linea); padding-top: 12px; display: grid; gap: 10px; }
 .version video { width: 100%; max-height: 70vh; border-radius: 12px; background: #000; border: 1px solid var(--linea); }
 .descargas { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Clips de un grupo en "Mis videos", para verlos, descargarlos o mandarlos a editar. */
+.mini-clips { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+.mini-clip { display: grid; gap: 8px; align-content: start; padding: 10px; border-radius: 14px; border: 1px solid var(--linea); background: var(--campo); }
+.mini-clip video { width: 100%; aspect-ratio: 9 / 16; object-fit: contain; background: #000; border-radius: 10px; }
+.mini-clip strong { font-size: 15px; line-height: 1.25; }
+.mini-clip .boton { min-height: 42px; font-size: 15px; padding: 0 12px; }
+.clip-elegido { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border-radius: 12px; background: var(--trabajando-suave); border: 1px solid rgba(34, 211, 238, 0.35); }
+.clip-elegido .boton { min-height: 38px; font-size: 14px; padding: 0 14px; }
 .cambios { display: grid; gap: 8px; }
 details summary { cursor: pointer; font-weight: 700; padding: 6px 0; }
 details summary:hover { color: var(--cian); }

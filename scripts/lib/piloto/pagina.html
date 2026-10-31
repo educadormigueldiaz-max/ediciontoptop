@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Videos</title>
+<title>Edición de videos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Sans+3:wght@400;600;700&display=swap">
@@ -13,7 +13,7 @@
 <div class="fondo-tec" aria-hidden="true"><i></i><i></i><i></i></div>
 <header class="barra">
   <div class="centro">
-    <span class="marca"><span class="logo"><svg viewBox="0 0 24 24" fill="white"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg></span>Videos</span>
+    <span class="marca"><span class="logo"><svg viewBox="0 0 24 24" fill="white"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg></span>Edición de videos</span>
     <div class="quien" id="quien" hidden>
       <a href="/clips">Panel de clips</a>
       <span id="nombre"></span>
@@ -55,6 +55,11 @@
           <strong id="texto-video">Toca para elegir el video</strong>
           <span class="ayuda" id="ayuda-video">De la galería del celular o del computador. También sirve un audio (nota de voz, podcast): lo volvemos un video animado.</span>
         </label>
+        <div class="clip-elegido" id="clip-elegido" hidden>
+          <span>🎬 Vas a editar <strong id="clip-elegido-nombre"></strong>. Elige abajo cómo lo quieres (por ejemplo, con animaciones).</span>
+          <button class="boton suave" type="button" id="quitar-clip">Quitar</button>
+        </div>
+        <span class="ayuda" id="ayuda-clips-mios">¿Ya sacaste clips? En "Mis videos" toca <strong>Editar este clip</strong> en el que quieras.</span>
         <div class="campo" id="campo-enlace" hidden>
           <label class="titulo" for="enlace">…o pega el enlace de YouTube</label>
           <input type="url" id="enlace" inputmode="url" placeholder="https://www.youtube.com/watch?v=…">
@@ -205,6 +210,7 @@ async function iniciar() {
   $("personas").hidden = !yo.admin;
   if (yo.admin) cargarPersonas();
   await cargarVideos();
+  elegirClipDeLaDireccion();
   clearInterval(refresco);
   refresco = setInterval(cargarVideos, 5000);
 }
@@ -227,6 +233,8 @@ function cambioDeTipo() {
   $("campo-animaciones").hidden = clips;
   $("campo-videos-apoyo").hidden = clips;
   $("ayuda-video").hidden = clips;
+  $("ayuda-clips-mios").hidden = clips;
+  if (clips && clipElegido) { clipElegido = null; pintarClipElegido(); }
   document.querySelector("#form-subir details")?.toggleAttribute("hidden", clips);
   $("boton-subir").textContent = clips ? "Sacar clips" : "Enviar a editar";
 }
@@ -234,8 +242,37 @@ $("video").addEventListener("change", () => {
   const f = $("video").files[0];
   $("texto-video").textContent = f ? `✓ ${f.name} (${(f.size / 1e6).toFixed(0)} MB)` : "Toca para elegir el video";
   $("caja-video").classList.toggle("lleno", Boolean(f));
+  if (f) { clipElegido = null; pintarClipElegido(); }
   cambioDeAnimaciones();
 });
+// Un clip del panel de clips como video a editar (en vez de subir un archivo).
+let clipElegido = null; // { id, n, titulo }
+function pintarClipElegido() {
+  $("clip-elegido").hidden = !clipElegido;
+  $("ayuda-clips-mios").hidden = Boolean(clipElegido) || document.querySelector("input[name=tipo]:checked")?.value === "clips";
+  $("clip-elegido-nombre").textContent = clipElegido ? `el clip ${clipElegido.n}: ${clipElegido.titulo}` : "";
+  if (clipElegido) {
+    $("texto-video").textContent = "✓ Clip elegido (o toca para subir otro video)";
+    $("caja-video").classList.add("lleno");
+  } else if (!$("video").files[0]) {
+    $("texto-video").textContent = "Toca para elegir el video";
+    $("caja-video").classList.remove("lleno");
+  }
+}
+function elegirClip(clip) {
+  clipElegido = clip;
+  $("video").value = "";
+  // Un clip se edita como video normal, no se vuelve a cortar en clips.
+  if (document.querySelector("input[name=tipo]:checked")?.value === "clips") {
+    document.querySelector("input[name=tipo]:not([value=clips])").checked = true;
+    cambioDeTipo();
+  }
+  pintarClipElegido();
+  cambioDeAnimaciones();
+  $("subir").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("quitar-clip").addEventListener("click", () => { clipElegido = null; pintarClipElegido(); });
+
 // Clase de animaciones: se elige cuando se piden (con un audio siempre van).
 const AYUDA_TIPO_ANIMACION = {
   personajes: "Dibujos de personajes que actúan lo que dices.",
@@ -285,7 +322,8 @@ $("form-subir").addEventListener("submit", async (e) => {
   const video = $("video").files[0];
   const tipo = document.querySelector("input[name=tipo]:checked").value;
   const enlace = tipo === "clips" && !video ? $("enlace").value.trim() : "";
-  if (!video && !enlace) return avisar($("subir-aviso"), tipo === "clips" ? "Elige el video o pega el enlace de YouTube." : "Elige el video primero.");
+  const clip = !video && tipo !== "clips" ? clipElegido : null;
+  if (!video && !enlace && !clip) return avisar($("subir-aviso"), tipo === "clips" ? "Elige el video o pega el enlace de YouTube." : "Elige el video primero.");
   const elegidos = tipo === "clips" ? [] : [...$("fotos").files];
   const fotos = elegidos.filter((f) => !esVideoDeApoyo(f));
   const apoyos = elegidos.filter(esVideoDeApoyo);
@@ -310,6 +348,7 @@ $("form-subir").addEventListener("submit", async (e) => {
         cta: $("cta").value,
         notas: $("notas").value,
         nombreVideo: video?.name ?? "",
+        desdeClip: clip ? { id: clip.id, n: clip.n } : null,
         animaciones: $("animaciones").checked,
         tipoAnimacion: $("campo-tipo-animacion").hidden ? null : document.querySelector("input[name=tipoAnimacion]:checked")?.value,
         videosApoyo: $("videos-apoyo").value.split(/\s+/).filter(Boolean),
@@ -326,19 +365,21 @@ $("form-subir").addEventListener("submit", async (e) => {
       cargarVideos(true);
       return;
     }
-    const total = [...fotos, ...apoyos].reduce((t, f) => t + f.size, video.size);
+    const total = [...fotos, ...apoyos].reduce((t, f) => t + f.size, video?.size ?? 0) || 1;
     let hecho = 0;
     const avanzar = (base, tamano) => (p) => {
       const pct = Math.round(((base + p * tamano) / total) * 100);
       $("progreso-barra").style.width = `${pct}%`;
       $("progreso-texto").textContent = `Subiendo… ${pct} %`;
     };
-    await subirArchivo(id, video, "video", avanzar(0, video.size));
-    hecho = video.size;
+    // Con un clip elegido el video ya está en el servidor: solo se suben fotos y videos de apoyo.
+    if (video) await subirArchivo(id, video, "video", avanzar(0, video.size));
+    hecho = video?.size ?? 0;
     for (const f of fotos) { await subirArchivo(id, f, "foto", avanzar(hecho, f.size)); hecho += f.size; }
     for (const f of apoyos) { await subirArchivo(id, f, "apoyo", avanzar(hecho, f.size)); hecho += f.size; }
     await api(`/api/trabajos/${id}/enviar`, { method: "POST" });
     $("form-subir").reset();
+    clipElegido = null;
     $("video").dispatchEvent(new Event("change"));
     $("fotos").dispatchEvent(new Event("change"));
     cambioDeTipo();
@@ -358,6 +399,26 @@ $("form-subir").addEventListener("submit", async (e) => {
 // ---------- Mis videos ----------
 const ORDEN = ["en-cola", "editando", "revisando", "exportando", "listo"];
 
+// Los clips de un grupo, cada uno con su video, sus descargas y "Editar este clip".
+const tituloClip = (a) => a.red.replace(/^clip \d+:\s*/, "").replace(/ \([^)]+\)$/, "");
+function clipsParaEditar(t, v) {
+  const grupos = new Map();
+  for (const a of v.archivos) {
+    const n = parseInt(/^clip-(\d+)-/.exec(a.archivo)?.[1] ?? "0", 10);
+    if (!n) continue;
+    if (!grupos.has(n)) grupos.set(n, { n, titulo: tituloClip(a), archivos: [] });
+    grupos.get(n).archivos.push(a);
+  }
+  const enlace = (a) => `/api/trabajos/${t.id}/archivo?nombre=${encodeURIComponent(a.archivo)}`;
+  return `<div class="mini-clips">${[...grupos.values()].map((c) => `
+    <div class="mini-clip">
+      <video controls playsinline preload="metadata" src="${enlace(c.archivos[0])}#t=1"></video>
+      <strong>${c.n}. ${esc(c.titulo)}</strong>
+      <button class="boton" type="button" data-accion="editar-clip" data-n="${c.n}" data-titulo="${esc(c.titulo)}">Editar este clip</button>
+      ${c.archivos.map((a) => `<a class="boton suave" href="${enlace(a)}&descargar=1">Descargar${c.archivos.length > 1 ? ` ${esc(/\(([^)]+)\)$/.exec(a.red)?.[1] ?? "")}` : ""} <small>(${a.megas} MB)</small></a>`).join("")}
+    </div>`).join("")}</div>`;
+}
+
 function tarjetaVideo(t) {
   const paso = ORDEN.indexOf(t.estado);
   const pasos = ORDEN.slice(1).map((_, i) => `<i class="${paso > i + 1 || t.estado === "listo" ? "hecho" : paso === i + 1 ? "ahora" : ""}"></i>`).join("");
@@ -366,8 +427,9 @@ function tarjetaVideo(t) {
     <div class="version">
       <p><strong>Versión ${v.n}</strong> · ${fecha(v.fecha)}${v.pedido ? ` · pediste: “${esc(v.pedido)}”` : ""}</p>
       ${v.resumen ? `<p class="ayuda">${esc(v.resumen)}</p>` : ""}
-      ${i === 0 ? `<video controls playsinline preload="metadata" src="/api/trabajos/${t.id}/archivo?nombre=${encodeURIComponent(v.archivos[0].archivo)}#t=0.8"></video>` : ""}
-      <div class="descargas">${v.archivos.map((a) => `<a class="boton ${i === 0 ? "" : "suave"}" href="/api/trabajos/${t.id}/archivo?nombre=${encodeURIComponent(a.archivo)}&descargar=1">Descargar ${esc(a.red)} <small>(${a.megas} MB)</small></a>`).join("")}</div>
+      ${i === 0 && t.clips ? clipsParaEditar(t, v) : ""}
+      ${i === 0 && !t.clips ? `<video controls playsinline preload="metadata" src="/api/trabajos/${t.id}/archivo?nombre=${encodeURIComponent(v.archivos[0].archivo)}#t=0.8"></video>` : ""}
+      ${i === 0 && t.clips ? "" : `<div class="descargas">${v.archivos.map((a) => `<a class="boton ${i === 0 ? "" : "suave"}" href="/api/trabajos/${t.id}/archivo?nombre=${encodeURIComponent(a.archivo)}&descargar=1">Descargar ${esc(a.red)} <small>(${a.megas} MB)</small></a>`).join("")}</div>`}
     </div>`).join("");
   return `
     <article class="video" data-id="${t.id}">
@@ -424,6 +486,7 @@ $("lista").addEventListener("click", async (e) => {
   const art = boton.closest(".video");
   const id = art.dataset.id;
   const accion = boton.dataset.accion;
+  if (accion === "editar-clip") return elegirClip({ id, n: Number(boton.dataset.n), titulo: boton.dataset.titulo });
   try {
     if (accion === "cambios") {
       const pedido = art.querySelector("textarea").value.trim();
@@ -481,6 +544,20 @@ $("tabla-personas").addEventListener("click", async (e) => {
   if (b.dataset.seguro !== "1") { b.dataset.seguro = "1"; b.textContent = "¿Seguro?"; return; }
   try { const r = await api(`/api/personas?usuario=${encodeURIComponent(b.dataset.borrar)}`, { method: "DELETE" }); cargarPersonas(); } catch (err) { avisar($("persona-aviso"), err.message); }
 });
+
+// Desde el panel de clips ("Editar en Edición de videos") se llega con /?clip=<id>-<n>.
+async function elegirClipDeLaDireccion() {
+  const m = /^([a-z0-9]{10})-(\d+)$/.exec(new URLSearchParams(location.search).get("clip") ?? "");
+  if (!m) return;
+  history.replaceState(null, "", "/");
+  try {
+    const { trabajos } = await api("/api/trabajos?todos=1");
+    const t = trabajos.find((x) => x.id === m[1]);
+    const a = t?.versiones[0]?.archivos.find((x) => x.archivo.startsWith(`clip-${m[2].padStart(2, "0")}-`));
+    if (a) elegirClip({ id: t.id, n: Number(m[2]), titulo: tituloClip(a) });
+    else avisar($("subir-aviso"), "Ese clip ya no existe.");
+  } catch (err) { avisar($("subir-aviso"), err.message); }
+}
 
 iniciar();
 $("estilo").addEventListener("change", ayudaEstilo);

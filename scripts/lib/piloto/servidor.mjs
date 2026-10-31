@@ -261,8 +261,22 @@ const manejar = async (req, res) => {
       siguiente();
       return enviarJson(res, 200, { id: t.id, enCola: true });
     }
-    const esAudio = EXT_AUDIO.includes(extension(d.nombreVideo));
-    if (!EXT_VIDEO.includes(extension(d.nombreVideo)) && !(esAudio && d.tipo !== "clips")) {
+    // Un clip ya sacado (panel de clips) que se manda a editar como video nuevo: se usa su corte
+    // original, sin subtítulos ni gancho, para que no salgan dos veces.
+    let origen = null;
+    if (d.desdeClip && d.tipo !== "clips") {
+      const grupo = /^[a-z0-9]{10}$/.test(String(d.desdeClip.id)) ? leerTrabajo(String(d.desdeClip.id)) : null;
+      const n = parseInt(d.desdeClip.n, 10);
+      const prefijo = `clip-${String(n).padStart(2, "0")}-`;
+      const archivo = grupo?.versiones[0]?.archivos.find((a) => a.archivo.startsWith(prefijo));
+      const crudo = grupo ? path.join(CARPETA_PROYECTOS, `${grupo.proyecto}-clip-${String(n).padStart(2, "0")}`, "video.mp4") : "";
+      if (!grupo || grupo.tipo !== "clips" || (grupo.usuario !== usuario && !esAdmin) || !archivo || !fs.existsSync(crudo)) {
+        return error(res, 404, "Ese clip ya no existe.");
+      }
+      origen = { crudo, grupo: grupo.id, n, titulo: archivo.red.replace(/^clip \d+:\s*/, "").replace(/ \([^)]+\)$/, "") };
+    }
+    const esAudio = !origen && EXT_AUDIO.includes(extension(d.nombreVideo));
+    if (!origen && !EXT_VIDEO.includes(extension(d.nombreVideo)) && !(esAudio && d.tipo !== "clips")) {
       return error(res, 400, "Ese archivo no parece un video ni un audio. Usa MP4 o MOV (los del celular sirven) o un audio MP3 o M4A.");
     }
     const fotos = Array.isArray(d.fotos) ? d.fotos : [];
@@ -273,7 +287,7 @@ const manejar = async (req, res) => {
     if (apoyos.some((f) => !EXT_VIDEO.includes(extension(f)))) return error(res, 400, "Los videos de apoyo deben ser MP4 o MOV.");
     const t = nuevoTrabajo({
       usuario,
-      nombre: aId(String(d.nombreVideo)).slice(0, 40),
+      nombre: aId(origen ? `clip ${origen.n} ${origen.titulo}` : String(d.nombreVideo)).slice(0, 40),
       tipo: d.tipo,
       red: d.red,
       estilo,
@@ -287,10 +301,16 @@ const manejar = async (req, res) => {
       // Enlaces de YouTube de donde sacar trozos de apoyo (npm run videos-apoyo).
       videosApoyo: d.tipo === "clips" ? [] : enlacesDeApoyo(d.videosApoyo),
       apoyosEsperados: apoyos.length,
+      ...(origen ? { desdeClip: { id: origen.grupo, n: origen.n }, video: "video.mp4" } : {}),
     });
+    if (origen) {
+      // Enlace al mismo archivo (no ocupa espacio); si no se puede, una copia.
+      const destino = path.join(carpetaTrabajo(t.id), "subidos", "video.mp4");
+      try { fs.linkSync(origen.crudo, destino); } catch { fs.copyFileSync(origen.crudo, destino); }
+    }
     anotar(
       t.id,
-      `Subido por ${usuario}: ${TIPOS[t.tipo]}${esAudio ? " (solo audio)" : ""}, ${t.red}, estilo ${estilo}, ` +
+      `${origen ? `Clip ${origen.n} de ${origen.grupo} mandado a editar` : "Subido"} por ${usuario}: ${TIPOS[t.tipo]}${esAudio ? " (solo audio)" : ""}, ${t.red}, estilo ${estilo}, ` +
         `animaciones ${t.animaciones ? (t.tipoAnimacion ? `con ${t.tipoAnimacion}` : "sí") : "no"}, videos de apoyo ${t.videosApoyo.length + apoyos.length || "no"}. ` +
         `CTA: ${t.cta || "-"}. Notas: ${t.notas || "-"}`,
     );
