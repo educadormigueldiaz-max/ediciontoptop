@@ -27,6 +27,15 @@ const asegurarFfmpeg = () => {
   }
 };
 
+// Duración en segundos de un video de YouTube, sin descargarlo (para cobrarlo en tokens antes). null si no se pudo.
+export const duracionDeYoutube = async (url) => {
+  await asegurarYtdlp();
+  const env = { ...process.env, PATH: `${path.dirname(process.execPath)}:${process.env.PATH}` };
+  const r = spawnSync(YTDLP, ["--no-playlist", "--skip-download", "--print", "duration", "--js-runtimes", `node:${process.execPath}`, url], { encoding: "utf8", env, timeout: 90000 });
+  const segundos = parseFloat(String(r.stdout ?? "").trim().split("\n").pop());
+  return Number.isFinite(segundos) && segundos > 0 ? segundos : null;
+};
+
 // Descarga un video de YouTube en `carpeta` y devuelve la ruta del archivo. `alAvanzar(pct, listo)`
 // recibe el avance (0–99).
 export const descargarDeYoutube = async (url, { carpeta, alAvanzar = () => {} }) => {

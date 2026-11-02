@@ -15,6 +15,7 @@
   <div class="centro">
     <span class="marca"><span class="logo"><svg viewBox="0 0 24 24" fill="white"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg></span>Edición de videos</span>
     <div class="quien" id="quien" hidden>
+      <span class="tokens" id="tokens" hidden></span>
       <a href="/clips">Panel de clips</a>
       <span id="nombre"></span>
       <button id="salir" type="button">Salir</button>
@@ -45,6 +46,17 @@
 
   <div class="tablero">
   <!-- Subir -->
+  <!-- Kreo: cada video se paga con tokens del plan del editor -->
+  <section class="tarjeta" id="kreo" hidden>
+    <h2>Conecta tu cuenta de Kreo</h2>
+    <p class="ayuda">Cada video se paga con los tokens de tu plan del editor. En Kreo entra a <strong>Mi cuenta → Editor y tokens</strong>, toca <strong>Crear llave</strong>, cópiala y pégala aquí. Solo se hace una vez.</p>
+    <div class="aviso mal" id="kreo-aviso" hidden></div>
+    <form id="form-kreo" class="tarjeta" style="border:0;padding:0">
+      <div class="campo"><label class="titulo" for="kreo-llave">Llave de Kreo</label><input type="password" id="kreo-llave" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="kreo_…" required></div>
+      <button class="boton ancho" type="submit">Conectar</button>
+    </form>
+  </section>
+
   <section class="tarjeta" id="subir" hidden>
     <h2>Subir un video</h2>
     <form id="form-subir" class="tarjeta" style="border:0;padding:0">
@@ -122,6 +134,7 @@
           </div>
         </div>
       </details>
+      <div class="aviso" id="kreo-estado" hidden></div>
       <div class="aviso mal" id="subir-aviso" hidden></div>
       <div id="progreso" hidden>
         <p class="ayuda" id="progreso-texto">Subiendo…</p>
@@ -196,10 +209,28 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 function mostrarEntrar(mensaje) {
   clearInterval(refresco);
   yo = null;
-  for (const id of ["subir", "mis-videos", "personas", "quien"]) $(id).hidden = true;
+  clearInterval(refrescoKreo);
+  for (const id of ["subir", "mis-videos", "personas", "quien", "kreo", "tokens"]) $(id).hidden = true;
   $("entrar").hidden = false;
   avisar($("entrar-aviso"), mensaje && mensaje !== "Entra con tu usuario y contraseña." ? mensaje : "");
 }
+
+// Kreo: si esta persona paga tokens, primero conecta su cuenta; después se ven sus tokens arriba.
+function pintarKreo(k) {
+  $("kreo").hidden = !k || k.conectado;
+  $("subir").hidden = Boolean(k && !k.conectado);
+  $("tokens").hidden = !(k && k.conectado && !k.error);
+  if (k && k.conectado && !k.error) $("tokens").textContent = `🎟 ${Number(k.tokens).toLocaleString("es-CO")} tokens`;
+  const problema = !k || !k.conectado ? "" : k.error
+    || (!k.activo ? "Tu plan del editor en Kreo no está al día. Paga tu mensualidad en Kreo para seguir editando." : "")
+    || (k.bajo ? `Te quedan pocos tokens (${Number(k.tokens).toLocaleString("es-CO")}). Puedes comprar más en Kreo → Editor y tokens.` : "");
+  avisar($("kreo-estado"), problema, "espera");
+}
+async function actualizarKreo() {
+  if (!yo?.kreo?.conectado) return;
+  try { yo.kreo = (await api("/api/yo")).kreo; pintarKreo(yo.kreo); } catch {}
+}
+let refrescoKreo = null;
 
 async function iniciar() {
   try { yo = await api("/api/yo"); } catch { return; }
@@ -208,6 +239,9 @@ async function iniciar() {
   $("nombre").textContent = yo.nombre;
   $("subir").hidden = false;
   $("mis-videos").hidden = false;
+  pintarKreo(yo.kreo);
+  clearInterval(refrescoKreo);
+  refrescoKreo = setInterval(actualizarKreo, 30000);
   $("tipos").innerHTML = Object.entries(yo.tipos).map(([k, v], i) => `<label><input type="radio" name="tipo" value="${k}" ${i === 0 ? "checked" : ""}><span>${esc(v)}</span></label>`).join("");
   $("redes").innerHTML = Object.entries(yo.redes).map(([k, v], i) => `<label><input type="radio" name="red" value="${k}" ${i === 0 ? "checked" : ""}><span>${esc(v)}</span></label>`).join("");
   $("campo-estilo").hidden = Boolean(yo.estiloFijo);
@@ -231,6 +265,16 @@ $("form-entrar").addEventListener("submit", async (e) => {
     $("clave").value = "";
     iniciar();
   } catch (err) { avisar($("entrar-aviso"), err.message); }
+});
+$("form-kreo").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  try {
+    const r = await api("/api/kreo", { method: "POST", body: JSON.stringify({ llave: $("kreo-llave").value }) });
+    $("kreo-llave").value = "";
+    avisar($("kreo-aviso"), "");
+    yo.kreo = r.kreo;
+    pintarKreo(yo.kreo);
+  } catch (err) { avisar($("kreo-aviso"), err.message); }
 });
 $("salir").addEventListener("click", async () => { await api("/api/salir", { method: "POST" }).catch(() => {}); mostrarEntrar(); });
 

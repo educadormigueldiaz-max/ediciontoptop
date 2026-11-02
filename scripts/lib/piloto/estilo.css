@@ -56,6 +56,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .quien a:hover { color: var(--cian); }
 .quien button { background: transparent; border: 1px solid var(--linea-fuerte); color: var(--tinta); border-radius: 999px; padding: 6px 16px; cursor: pointer; }
 .quien button:hover { border-color: var(--cian); }
+.quien .tokens { font-weight: 700; color: var(--tinta); background: var(--superficie-2); border: 1px solid var(--linea-fuerte); border-radius: 999px; padding: 5px 12px; white-space: nowrap; }
 
 /* Portada */
 .portada { padding-block: 48px 28px; display: grid; gap: 16px; }
@@ -118,6 +119,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 .aviso { border-radius: 12px; padding: 12px 14px; font-size: 16px; border: 1px solid transparent; }
 .aviso.mal { background: var(--mal-suave); color: var(--mal); border-color: rgba(248, 113, 113, 0.3); }
 .aviso.bien { background: var(--bien-suave); color: var(--bien); border-color: rgba(52, 211, 153, 0.3); }
+.aviso.espera { background: var(--espera-suave); color: var(--espera); border-color: rgba(251, 191, 36, 0.3); }
 
 /* Mis videos */
 .lista { display: grid; gap: 14px; }

@@ -6,6 +6,7 @@
 //   npm run piloto -- --personas           Lista las personas
 //   npm run piloto -- --al-iniciar         Que arranque solo al prender la Mac
 //   npm run piloto -- --no-iniciar         Quita el arranque automático
+//   npm run piloto -- --kreo http://localhost:8770   Cobra cada video en tokens de Kreo (--kreo no lo apaga)
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -15,6 +16,7 @@ import { CARPETA_WHISPER, RAIZ } from "./lib/herramientas.mjs";
 import { estilosDisponibles } from "./lib/produccion.mjs";
 import { CLAUDE, configurarCola, retomar, siguiente } from "./lib/piloto/cola.mjs";
 import { CARPETA_PILOTO, guardarPersona, nombreValido, personas, registrar } from "./lib/piloto/datos.mjs";
+import { configurarKreo, kreoUrl } from "./lib/piloto/kreo.mjs";
 import { crearServidor } from "./lib/piloto/servidor.mjs";
 
 const { values: op } = parseArgs({
@@ -28,12 +30,29 @@ const { values: op } = parseArgs({
     tope: { type: "string" },
     "al-iniciar": { type: "boolean", default: false },
     "no-iniciar": { type: "boolean", default: false },
+    kreo: { type: "string" },
     ayuda: { type: "boolean", default: false },
   },
 });
 
 if (op.ayuda) {
-  console.log(fs.readFileSync(new URL(import.meta.url), "utf8").split("\n").slice(1, 9).map((l) => l.replace(/^\/\/ ?/, "")).join("\n"));
+  console.log(fs.readFileSync(new URL(import.meta.url), "utf8").split("\n").slice(1, 10).map((l) => l.replace(/^\/\/ ?/, "")).join("\n"));
+  process.exit(0);
+}
+
+// ---------- Kreo (tokens) ----------
+if (op.kreo !== undefined) {
+  const url = op.kreo.trim();
+  if (url === "no") {
+    configurarKreo(null);
+    console.log("Listo: el piloto ya no cobra tokens de Kreo.");
+  } else if (!/^https?:\/\/[^\s]+$/.test(url)) {
+    console.error("Escribe la dirección de Kreo completa, por ejemplo: --kreo http://localhost:8770");
+    process.exit(1);
+  } else {
+    configurarKreo(url);
+    console.log(`Listo: cada video se cobra en tokens de Kreo (${kreoUrl()}).\nCada persona pega su llave de Kreo en la página. Las cuentas de administración no pagan.\nReinicia el piloto si ya estaba encendido.`);
+  }
   process.exit(0);
 }
 

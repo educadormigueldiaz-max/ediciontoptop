@@ -92,6 +92,15 @@ export const borrarPersona = (usuario) => {
   cerrarSesionesDe(usuario);
 };
 
+// Llave de Kreo de la persona (para cobrar sus videos en tokens). null la quita.
+export const guardarLlaveKreo = (usuario, llave) => {
+  const todas = personas();
+  if (!todas[usuario]) return;
+  if (llave) todas[usuario].kreo = llave;
+  else delete todas[usuario].kreo;
+  escribirJson(ARCHIVO_PERSONAS, todas);
+};
+
 export const comprobarClave = (usuario, clave) => {
   const p = personas()[usuario];
   return p && typeof clave === "string" && claveCorrecta(clave, p.clave) ? p : null;

@@ -10,8 +10,9 @@ import { archivoProgreso, posicionEnCola, siguiente } from "./cola.mjs";
 import {
   ESTADOS, REDES_PILOTO, TIPOS, abrirSesion, actualizarTrabajo, anotar, borrarPersona, carpetaTrabajo,
   cerrarSesion, comprobarClave, guardarPersona, leerSesion, leerTrabajo, nombreValido, nuevoTrabajo,
-  personas, registrar, trabajos,
+  personas, registrar, trabajos, guardarLlaveKreo,
 } from "./datos.mjs";
+import { cobraKreo, kreoUrl, mensajeKreo, saldoKreo, validarLlave } from "./kreo.mjs";
 
 const PAGINA = path.join(path.dirname(new URL(import.meta.url).pathname), "pagina.html");
 const PANEL_CLIPS = path.join(path.dirname(PAGINA), "clips.html");
@@ -155,6 +156,20 @@ const borrarTodo = (t) => {
   }
 };
 
+// ---------- Kreo ----------
+
+const FALTA_KREO = "Conecta tu cuenta de Kreo (arriba en esta página) para editar tus videos.";
+const faltaKreo = (persona) => cobraKreo(persona) && !persona.kreo;
+
+// Lo que la página muestra de Kreo: null si esta persona no paga tokens
+const estadoKreo = async (persona) => {
+  if (!cobraKreo(persona)) return null;
+  if (!persona.kreo) return { conectado: false };
+  const r = await saldoKreo(persona.kreo);
+  if (!r.ok) return { conectado: true, error: mensajeKreo(r) };
+  return { conectado: true, activo: r.editor_activo, tokens: r.tokens?.total ?? 0, bajo: Boolean(r.tokens?.bajo) };
+};
+
 // ---------- Rutas ----------
 
 const manejar = async (req, res) => {
@@ -217,6 +232,7 @@ const manejar = async (req, res) => {
 
   if (metodo === "GET" && ruta === "/api/yo") {
     return enviarJson(res, 200, {
+      kreo: await estadoKreo(persona),
       usuario,
       nombre: persona.nombre,
       admin: esAdmin,
@@ -228,6 +244,23 @@ const manejar = async (req, res) => {
     });
   }
 
+  // Conectar o quitar la cuenta de Kreo (la llave se crea en Kreo → Mi cuenta → Editor y tokens)
+  if (metodo === "POST" && ruta === "/api/kreo") {
+    if (!kreoUrl()) return error(res, 400, "Esta página no está conectada con Kreo.");
+    const { llave, quitar } = await leerCuerpo(req);
+    if (quitar) {
+      guardarLlaveKreo(usuario, null);
+      return enviarJson(res, 200, { ok: true });
+    }
+    const k = String(llave ?? "").trim();
+    if (!/^kreo_[\w-]{20,60}$/.test(k)) return error(res, 400, "Esa no parece una llave de Kreo. Empieza por kreo_");
+    const r = await validarLlave(k);
+    if (!r.ok) return error(res, 400, mensajeKreo(r));
+    guardarLlaveKreo(usuario, k);
+    registrar(`${usuario} conectó su cuenta de Kreo (${r.usuario?.nombre ?? ""})`);
+    return enviarJson(res, 200, { ok: true, kreo: await estadoKreo({ ...persona, kreo: k }) });
+  }
+
   if (metodo === "GET" && ruta === "/api/trabajos") {
     const posiciones = posicionEnCola();
     const lista = trabajos().filter((t) => (esAdmin && url.searchParams.get("todos") === "1") || t.usuario === usuario);
@@ -235,6 +268,7 @@ const manejar = async (req, res) => {
   }
 
   if (metodo === "POST" && ruta === "/api/trabajos") {
+    if (faltaKreo(persona)) return error(res, 402, FALTA_KREO);
     const d = await leerCuerpo(req);
     if (!TIPOS[d.tipo]) return error(res, 400, "Elige el tipo de video.");
     if (!REDES_PILOTO[d.red]) return error(res, 400, "Elige la red social.");
@@ -399,6 +433,7 @@ const manejar = async (req, res) => {
   }
 
   if (metodo === "POST" && accion === "cambios") {
+    if (faltaKreo(persona)) return error(res, 402, FALTA_KREO);
     if (t.estado !== "listo") return error(res, 409, "Espera a que el video esté listo para pedir cambios.");
     const { pedido, clip } = await leerCuerpo(req);
     const texto = String(pedido ?? "").trim().slice(0, 600);
@@ -424,6 +459,7 @@ const manejar = async (req, res) => {
   }
 
   if (metodo === "POST" && accion === "reintentar") {
+    if (faltaKreo(persona)) return error(res, 402, FALTA_KREO);
     if (t.estado !== "problema") return error(res, 409, "Este video no tiene un problema que reintentar.");
     actualizarTrabajo(t.id, { estado: "en-cola", paso: "Esperando turno", error: null, enColaDesde: new Date().toISOString() });
     anotar(t.id, "Reintento.");

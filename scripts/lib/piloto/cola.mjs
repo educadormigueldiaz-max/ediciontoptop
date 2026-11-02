@@ -5,11 +5,13 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { CARPETA_PROYECTOS, CARPETA_SALIDA, RAIZ, aId, leerJson } from "../herramientas.mjs";
+import { CARPETA_PROYECTOS, CARPETA_SALIDA, RAIZ, aId, ffprobe, leerJson } from "../herramientas.mjs";
+import { duracionDeYoutube } from "../youtube.mjs";
 import { REDES, TODAS_LAS_REDES } from "../produccion.mjs";
 import {
-  TIPOS, actualizarTrabajo, anotar, carpetaTrabajo, leerTrabajo, registrar, trabajos,
+  TIPOS, actualizarTrabajo, anotar, carpetaTrabajo, leerTrabajo, personas, registrar, trabajos,
 } from "./datos.mjs";
+import { cobraKreo, confirmarTokens, liberarTokens, mensajeKreo, reservarTokens } from "./kreo.mjs";
 
 // Tope de gasto de Claude por cada paso de edición (dólares). Se cambia con --tope.
 let TOPE_POR_PASO = 2;
@@ -465,6 +467,43 @@ const procesar = async (id) => {
   registrar(`Listo ${id} v${version}`);
 };
 
+// ---------- Tokens de Kreo ----------
+
+// Qué se cobra y por cuántos minutos: video nuevo = edición; video largo = clips; cambios = cambios.
+// Los minutos son los del video que subió (o del de YouTube). Un cambio a un clip cuenta como 1 minuto.
+const minutosDe = async (t) => {
+  if (t.pendiente?.tipo === "cambio-clip") return 1;
+  let segundos = null;
+  const archivo = t.video ? path.join(carpetaTrabajo(t.id), "subidos", t.video) : null;
+  if (archivo && fs.existsSync(archivo)) segundos = parseFloat(ffprobe(archivo).format?.duration);
+  else if (t.enlace) segundos = await duracionDeYoutube(t.enlace);
+  if (!(segundos > 0)) throw new ErrorClaro("No pudimos medir cuánto dura tu video para calcular los tokens. Intenta de nuevo.");
+  return Math.max(0.5, Math.ceil((segundos / 60) * 10) / 10);
+};
+
+// Aparta los tokens antes de editar. Devuelve el cobro en curso (o null si esta persona no paga).
+const apartarTokens = async (id) => {
+  const t = leerTrabajo(id);
+  const persona = personas()[t.usuario];
+  if (!cobraKreo(persona)) return null;
+  if (!persona.kreo) throw new ErrorClaro("Conecta tu cuenta de Kreo (arriba en esta página) para editar tus videos.");
+  const operacion = t.tipo === "clips" ? (t.pendiente?.tipo === "cambio-clip" ? "cambios" : "clipping") : t.pendiente?.tipo === "nuevo" ? "edicion" : "cambios";
+  const minutos = await minutosDe(t);
+  const r = await reservarTokens(persona.kreo, operacion, minutos);
+  if (!r.ok) throw new ErrorClaro(mensajeKreo(r), JSON.stringify(r));
+  actualizarTrabajo(id, { kreoReserva: r.reserva });
+  anotar(id, `Kreo: ${r.tokens} tokens apartados (${operacion}, ${minutos} min). Quedan ${r.saldo?.total ?? "?"}.`);
+  return { llave: persona.kreo, reserva: r.reserva, tokens: r.tokens };
+};
+
+const cerrarCobro = async (id, cobro, bien) => {
+  const r = bien ? await confirmarTokens(cobro.llave, cobro.reserva) : await liberarTokens(cobro.llave, cobro.reserva);
+  anotar(id, bien
+    ? (r.ok ? `Kreo: se cobraron ${r.usados} tokens.` : "Kreo: no se pudo confirmar el cobro (Kreo devolverá la reserva sola).")
+    : (r.ok ? `Kreo: se devolvieron ${cobro.tokens} tokens.` : "Kreo: no se pudo devolver la reserva ahora (Kreo la devuelve sola en 6 horas)."));
+  actualizarTrabajo(id, { kreoReserva: null });
+};
+
 // ---------- La cola ----------
 
 let ocupado = false;
@@ -484,9 +523,13 @@ export const siguiente = async () => {
   // Que la Mac no se duerma mientras edita.
   const despierta = spawn("caffeinate", ["-i", "-s"], { stdio: "ignore" });
   despierta.on("error", () => {});
+  let cobro = null;
   try {
+    cobro = await apartarTokens(id);
     await procesar(id);
+    if (cobro) await cerrarCobro(id, cobro, true);
   } catch (e) {
+    if (cobro) await cerrarCobro(id, cobro, false).catch(() => {});
     const mensaje = e instanceof ErrorClaro ? e.message : "Algo falló al editar este video. Puedes intentarlo de nuevo.";
     anotar(id, `PROBLEMA: ${mensaje}\n${e.detalle ?? e.stack ?? ""}`.slice(0, 8000));
     registrar(`Problema en ${id}: ${mensaje}`);
@@ -509,7 +552,10 @@ export const siguiente = async () => {
 export const retomar = () => {
   for (const t of trabajos()) {
     if (["editando", "revisando", "exportando"].includes(t.estado)) {
-      actualizarTrabajo(t.id, { estado: "en-cola", paso: "En espera (se retoma)", enColaDesde: t.enColaDesde ?? t.actualizado });
+      // Los tokens apartados antes del apagón se devuelven: al retomar se apartan otra vez
+      const llave = personas()[t.usuario]?.kreo;
+      if (t.kreoReserva && llave) liberarTokens(llave, t.kreoReserva).catch(() => {});
+      actualizarTrabajo(t.id, { estado: "en-cola", paso: "En espera (se retoma)", enColaDesde: t.enColaDesde ?? t.actualizado, kreoReserva: null });
       anotar(t.id, "Se retoma después de reiniciar.");
     }
   }
