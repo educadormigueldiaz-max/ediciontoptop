@@ -34,6 +34,10 @@ const MAX_FOTOS = 6;
 // Videos de apoyo subidos como archivo (además de los enlaces).
 const MAX_APOYO = 2 * 1024 ** 3;
 const MAX_APOYOS = 5;
+// Rondas de cambios por video (o por clip) para las personas que pagan tokens.
+const RONDAS_CAMBIOS = 3;
+const rondasHechas = (t, n) =>
+  t.tipo === "clips" ? (t.cambiosClips ?? []).filter((c) => c.n === n).length : Math.max(0, (t.versiones?.length ?? 1) - 1);
 
 // Estilos que se pueden elegir en la página (el de ejemplo no).
 const estilos = () => estilosDisponibles().filter((e) => e !== "ejemplo");
@@ -110,6 +114,7 @@ const vista = (t, posiciones, conDueno) => ({
   error: t.error,
   enCola: posiciones.get(t.id) ?? null,
   pedidoEnCurso: t.pendiente?.tipo === "cambio" ? t.pendiente.pedido : null,
+  rondasQuedan: t.tipo === "clips" ? null : Math.max(0, RONDAS_CAMBIOS - rondasHechas(t)),
   versiones: t.versiones,
   progreso: t.tipo === "clips" ? leerProgreso(t) : null,
   // Cambio a un clip en curso (el grupo sigue listo y los demás clips se pueden ver).
@@ -445,6 +450,9 @@ const manejar = async (req, res) => {
       if (!(n > 0) || !t.versiones[0]?.archivos.some((a) => a.archivo.startsWith(prefijo))) {
         return error(res, 404, "Ese clip no existe.");
       }
+    }
+    if (!persona.admin && rondasHechas(t, n) >= RONDAS_CAMBIOS) {
+      return error(res, 409, `Ya usaste las ${RONDAS_CAMBIOS} rondas de cambios de este ${t.tipo === "clips" ? "clip" : "video"}. Si necesitas otro ajuste, súbelo de nuevo como video nuevo.`);
     }
     actualizarTrabajo(t.id, {
       estado: "en-cola",

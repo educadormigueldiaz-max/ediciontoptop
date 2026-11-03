@@ -497,9 +497,10 @@ function tarjetaVideo(t) {
       ${t.error ? `<div class="aviso mal">${esc(t.error)}</div>` : ""}
       ${t.estado === "problema" ? `<button class="boton suave" type="button" data-accion="reintentar">Intentar de nuevo</button>` : ""}
       ${versiones}
-      ${t.estado === "listo" && !t.clips ? `
+      ${t.estado === "listo" && !t.clips && t.rondasQuedan === 0 && !yo?.admin ? `<p class="ayuda">Ya usaste las 3 rondas de cambios de este video. Si necesitas otro ajuste, súbelo de nuevo como video nuevo.</p>` : ""}
+      ${t.estado === "listo" && !t.clips && (t.rondasQuedan > 0 || yo?.admin) ? `
         <details class="cambios" ${abiertos.has(t.id + "-c") ? "open" : ""} data-cambios>
-          <summary>Pedir cambios</summary>
+          <summary>Pedir cambios${yo?.admin ? "" : ` (te ${t.rondasQuedan === 1 ? "queda 1 ronda" : `quedan ${t.rondasQuedan} rondas`})`}</summary>
           <textarea placeholder="Escribe qué cambiar. Por ejemplo: quita el inicio, otro gancho, sin música" maxlength="600"></textarea>
           <button class="boton" type="button" data-accion="cambios">Enviar cambios</button>
         </details>` : ""}
