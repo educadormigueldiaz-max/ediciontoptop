@@ -12,9 +12,11 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
+import { createContext, useContext } from "react";
 import { margenesSeguros } from "../edicion/encuadre";
 import type { ElementoApoyo } from "../edicion/esquema";
 import { useMarca } from "../edicion/estilos";
+import { elegirVariantes, VARIANTE_BASE, type Entrada, type FondoEscena, type Variante } from "../edicion/variantes";
 import type { ElementoEnEditado } from "../edicion/linea-de-tiempo";
 import type { Marca } from "../marca";
 import { buscarIcono } from "./iconos";
@@ -56,8 +58,9 @@ const Capa: React.FC<{
 export const FondoEnCapas: React.FC<{
   frame: number;
   semilla: string;
+  tipo?: FondoEscena;
   children?: React.ReactNode;
-}> = ({ frame, semilla, children }) => {
+}> = ({ frame, semilla, tipo = "capas", children }) => {
   const marca = useMarca();
   const { fps, width, height } = useVideoConfig();
   const base = Math.min(width, height);
@@ -86,6 +89,8 @@ export const FondoEnCapas: React.FC<{
             transform: `rotateX(${giroX}deg) rotateY(${giroY}deg)`,
           }}
         >
+{tipo === "capas" ? (
+            <>
           {/* Lejos: anillos que giran y una trama de puntos. */}
           <Capa z={-900} perspectiva={perspectiva}>
             <AbsoluteFill
@@ -139,6 +144,10 @@ export const FondoEnCapas: React.FC<{
               );
             })}
           </Capa>
+            </>
+          ) : (
+            <FondoDistinto tipo={tipo} t={t} semilla={semilla} perspectiva={perspectiva} />
+          )}
           {children}
           {/* Cerca: partículas que suben despacio. */}
           <Capa z={200} perspectiva={perspectiva}>
@@ -177,16 +186,177 @@ export const FondoEnCapas: React.FC<{
   );
 };
 
+// Los otros fondos (el de capas está en FondoEnCapas). Todos usan los colores del estilo y se mueven
+// despacio, para que el texto encima se lea.
+const FondoDistinto: React.FC<{
+  tipo: Exclude<FondoEscena, "capas">;
+  t: number;
+  semilla: string;
+  perspectiva: number;
+}> = ({ tipo, t, semilla, perspectiva }) => {
+  const marca = useMarca();
+  const { width, height } = useVideoConfig();
+  const base = Math.min(width, height);
+  const { primario, secundario, acento, texto } = marca.colores;
+  switch (tipo) {
+    case "rejilla":
+      // Piso de cuadrícula en perspectiva que avanza hacia la cámara, con un horizonte de luz.
+      return (
+        <Capa z={-300} perspectiva={perspectiva}>
+          <AbsoluteFill style={{ background: `linear-gradient(transparent 38%, ${secundario}55 50%, transparent 62%)` }} />
+          <div
+            style={{
+              position: "absolute",
+              left: -width,
+              width: width * 3,
+              top: height * 0.5,
+              height: height * 1.4,
+              transformOrigin: "50% 0",
+              transform: "rotateX(72deg)",
+              backgroundImage: `linear-gradient(${texto}38 ${base * 0.003}px, transparent ${base * 0.003}px), linear-gradient(90deg, ${texto}38 ${base * 0.003}px, transparent ${base * 0.003}px)`,
+              backgroundSize: `${base * 0.12}px ${base * 0.12}px`,
+              backgroundPosition: `0 ${(t * base * 0.1) % (base * 0.12)}px`,
+              maskImage: "linear-gradient(transparent, black 25%, black 70%, transparent)",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              left: -width,
+              width: width * 3,
+              bottom: height * 0.5,
+              height: height * 1.4,
+              transformOrigin: "50% 100%",
+              transform: "rotateX(-72deg)",
+              backgroundImage: `linear-gradient(${texto}1c ${base * 0.003}px, transparent ${base * 0.003}px), linear-gradient(90deg, ${texto}1c ${base * 0.003}px, transparent ${base * 0.003}px)`,
+              backgroundSize: `${base * 0.12}px ${base * 0.12}px`,
+              backgroundPosition: `0 ${-(t * base * 0.1) % (base * 0.12)}px`,
+              maskImage: "linear-gradient(transparent, black 30%, black 75%, transparent)",
+            }}
+          />
+        </Capa>
+      );
+    case "rayos":
+      // Rayos de luz que giran detrás, desde el centro.
+      return (
+        <Capa z={-700} perspectiva={perspectiva}>
+          <AbsoluteFill
+            style={{
+              background: `repeating-conic-gradient(from ${t * 8}deg at 50% 45%, ${primario}55 0deg 9deg, transparent 9deg 22.5deg)`,
+              maskImage: "radial-gradient(circle at 50% 45%, black 10%, transparent 70%)",
+              scale: 1.6,
+            }}
+          />
+          <AbsoluteFill style={{ background: `radial-gradient(circle at 50% 45%, ${acento}40, transparent 35%)` }} />
+        </Capa>
+      );
+    case "bokeh":
+      // Luces grandes y borrosas de varios colores que flotan.
+      return (
+        <Capa z={-500} perspectiva={perspectiva}>
+          {Array.from({ length: 9 }, (_, i) => {
+            const tam = base * (0.12 + random(`${semilla}-b${i}`) * 0.32);
+            const x = random(`${semilla}-bx${i}`) * width;
+            const y = random(`${semilla}-by${i}`) * height;
+            const color = [primario, secundario, acento][i % 3];
+            return (
+              <div
+                key={i}
+                style={{
+                  position: "absolute",
+                  left: x - tam / 2 + Math.sin(t * 0.5 + i) * base * 0.06,
+                  top: y - tam / 2 + Math.cos(t * 0.4 + i * 1.7) * base * 0.06,
+                  width: tam,
+                  height: tam,
+                  borderRadius: "50%",
+                  background: color,
+                  opacity: 0.18 + random(`${semilla}-bo${i}`) * 0.22,
+                  filter: `blur(${base * (0.015 + random(`${semilla}-bb${i}`) * 0.05)}px)`,
+                }}
+              />
+            );
+          })}
+        </Capa>
+      );
+    case "franjas":
+      // Franjas diagonales que se deslizan y una luz grande que cruza.
+      return (
+        <Capa z={-600} perspectiva={perspectiva}>
+          <AbsoluteFill
+            style={{
+              backgroundImage: `repeating-linear-gradient(-35deg, ${texto}12 0 ${base * 0.03}px, transparent ${base * 0.03}px ${base * 0.09}px)`,
+              backgroundPosition: `${t * base * 0.05}px 0`,
+              maskImage: "linear-gradient(100deg, transparent, black 30%, black 70%, transparent)",
+              scale: 1.4,
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              left: width * (0.5 + Math.sin(t * 0.3) * 0.35) - base * 0.4,
+              top: height * 0.35 - base * 0.4,
+              width: base * 0.8,
+              height: base * 0.8,
+              borderRadius: "50%",
+              background: secundario,
+              opacity: 0.25,
+              filter: `blur(${base * 0.09}px)`,
+            }}
+          />
+        </Capa>
+      );
+    case "formas": {
+      // Figuras de línea (círculos, cuadrados, triángulos y cruces) que flotan y giran.
+      const figuras = ["circulo", "cuadro", "triangulo", "cruz"] as const;
+      return (
+        <Capa z={-450} perspectiva={perspectiva}>
+          {Array.from({ length: 12 }, (_, i) => {
+            const forma = figuras[Math.floor(random(`${semilla}-ff${i}`) * figuras.length)];
+            const tam = base * (0.04 + random(`${semilla}-fs${i}`) * 0.08);
+            const x = random(`${semilla}-fx${i}`) * width;
+            const y = ((random(`${semilla}-fy${i}`) * height * 1.2 - t * base * 0.03 * (1 + (i % 3))) % (height * 1.2) + height * 1.2) % (height * 1.2) - height * 0.1;
+            const color = [primario, secundario, acento, texto][i % 4];
+            const trazo = base * 0.005;
+            return (
+              <svg
+                key={i}
+                width={tam}
+                height={tam}
+                viewBox="0 0 10 10"
+                style={{ position: "absolute", left: x, top: y, rotate: `${t * (20 + i * 7) * (i % 2 ? -1 : 1)}deg`, opacity: 0.5, overflow: "visible" }}
+              >
+                {forma === "circulo" ? <circle cx="5" cy="5" r="4" fill="none" stroke={color} strokeWidth={(trazo / tam) * 10} /> : null}
+                {forma === "cuadro" ? <rect x="1" y="1" width="8" height="8" rx="1" fill="none" stroke={color} strokeWidth={(trazo / tam) * 10} /> : null}
+                {forma === "triangulo" ? <path d="M5 1 L9 9 L1 9 Z" fill="none" stroke={color} strokeWidth={(trazo / tam) * 10} strokeLinejoin="round" /> : null}
+                {forma === "cruz" ? <path d="M5 1 V9 M1 5 H9" stroke={color} strokeWidth={(trazo / tam) * 14} strokeLinecap="round" /> : null}
+              </svg>
+            );
+          })}
+        </Capa>
+      );
+    }
+  }
+};
+
 // Entrada de cada pieza: llega desde atrás (profundidad), sin rebote.
+// La variante de la escena en curso (la pone Escena para todo lo que va adentro).
+const VarianteEscena = createContext<Variante>(VARIANTE_BASE);
+const useVariante = () => useContext(VarianteEscena);
+const REBOTA: ReadonlySet<Entrada> = new Set(["abajo", "escala"]);
+
+// Según la variante, las piezas llegan suaves o con un pequeño rebote.
 const useEntrada = (desde: number) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  return spring({
-    frame: frame - desde,
-    fps,
-    config: { damping: 200 },
-    durationInFrames: 18,
-  });
+  const { entrada } = useVariante();
+  return REBOTA.has(entrada)
+    ? spring({ frame: frame - desde, fps, config: { damping: 13, mass: 0.7 } })
+    : spring({
+        frame: frame - desde,
+        fps,
+        config: { damping: 200 },
+        durationInFrames: 18,
+      });
 };
 
 const entradaDesdeAtras = (p: number, base: number): React.CSSProperties => ({
@@ -194,6 +364,31 @@ const entradaDesdeAtras = (p: number, base: number): React.CSSProperties => ({
   transform: `translateZ(${interpolate(p, [0, 1], [-base * 0.5, 0])}px) translateY(${interpolate(p, [0, 1], [base * 0.04, 0])}px)`,
   filter: p < 0.99 ? `blur(${(1 - p) * base * 0.012}px)` : undefined,
 });
+
+// Cómo llega una pieza (tarjeta, cifra, texto) según la entrada de la escena. `p` va de 0 a 1.
+const moverEntrada = (p: number, base: number, entrada: Entrada): React.CSSProperties => {
+  const visible = Math.min(1, Math.max(0, p));
+  switch (entrada) {
+    case "atras":
+      return entradaDesdeAtras(p, base);
+    case "abajo":
+      return { opacity: visible, transform: `translateY(${(1 - p) * base * 0.14}px)` };
+    case "escala":
+      return { opacity: Math.min(1, visible * 2), transform: `scale(${interpolate(p, [0, 1], [0.35, 1])})` };
+    case "lado":
+      return {
+        opacity: visible,
+        transform: `translateX(${(1 - p) * -base * 0.3}px) skewX(${(1 - p) * 12}deg)`,
+        filter: p < 0.99 ? `blur(${(1 - visible) * base * 0.008}px)` : undefined,
+      };
+    case "giro":
+      return { opacity: visible, transform: `perspective(${base * 2}px) rotateX(${(1 - p) * -75}deg)`, transformOrigin: "50% 100%" };
+  }
+};
+const useMover = () => {
+  const { entrada } = useVariante();
+  return (p: number, base: number) => moverEntrada(p, base, entrada);
+};
 
 // Título en mayúsculas: las palabras aparecen una tras otra.
 const Titulo: React.FC<{
@@ -213,6 +408,27 @@ const Titulo: React.FC<{
     (destacar ?? "").split(/\s+/).map(normalizar).filter(Boolean),
   );
   const tamano = tamanoQueCabe(palabras, ancho, alto, base, maximo);
+  const { entrada } = useVariante();
+  // Cada palabra llega según la entrada de la escena.
+  const palabraEntra = (p: number): React.CSSProperties => {
+    const visible = Math.min(1, Math.max(0, p));
+    switch (entrada) {
+      case "escala":
+        return { opacity: visible, scale: `${interpolate(p, [0, 1], [0.2, 1])}` };
+      case "lado":
+        return { opacity: visible, translate: `${interpolate(p, [0, 1], [-tamano * 0.6, 0])}px 0` };
+      case "giro":
+        return { opacity: visible, transform: `perspective(${tamano * 6}px) rotateX(${(1 - p) * 90}deg)`, transformOrigin: "50% 100%" };
+      case "abajo":
+        return { opacity: visible, translate: `0 ${interpolate(p, [0, 1], [tamano * 0.6, 0])}px` };
+      case "atras":
+        return {
+          opacity: visible,
+          translate: `0 ${interpolate(p, [0, 1], [tamano * 0.35, 0])}px`,
+          filter: p < 0.99 ? `blur(${(1 - visible) * tamano * 0.08}px)` : undefined,
+        };
+    }
+  };
   return (
     <div
       style={{
@@ -230,20 +446,21 @@ const Titulo: React.FC<{
     >
       <div style={{ textWrap: "balance" }}>
         {palabras.map((palabra, i) => {
-          const p = spring({
-            frame: frame - desde - i * 3,
-            fps,
-            config: { damping: 200 },
-            durationInFrames: 14,
-          });
+          const p = REBOTA.has(entrada)
+            ? spring({ frame: frame - desde - i * 3, fps, config: { damping: 11, mass: 0.6 } })
+            : spring({
+                frame: frame - desde - i * 3,
+                fps,
+                config: { damping: 200 },
+                durationInFrames: 14,
+              });
           return (
             <span key={i}>
               {i === 0 ? "" : " "}
               <span
                 style={{
                   display: "inline-block",
-                  opacity: p,
-                  translate: `0 ${interpolate(p, [0, 1], [tamano * 0.35, 0])}px`,
+                  ...palabraEntra(p),
                   color: destacadas.has(normalizar(palabra))
                     ? marca.colores.acento
                     : undefined,
@@ -270,16 +487,17 @@ const Insignia: React.FC<{ icono: string; tamano: number; desde: number }> = ({
   const { fps } = useVideoConfig();
   const Icono = buscarIcono(icono);
   const p = useEntrada(desde);
+  const mover = useMover();
   const flota = Math.sin(((frame - desde) / fps) * 1.6) * tamano * 0.03;
   return (
     <div
       style={{
+        ...mover(p, tamano * 2),
         position: "relative",
         width: tamano,
         height: tamano,
         translate: `0 ${flota}px`,
         scale: interpolate(p, [0, 1], [0.6, 1]),
-        opacity: p,
       }}
     >
       {[0, 1].map((i) => {
@@ -336,6 +554,7 @@ const Tarjeta: React.FC<{
   const { width, height } = useVideoConfig();
   const base = Math.min(width, height);
   const p = useEntrada(desde);
+  const mover = useMover();
   const Icono = icono ? buscarIcono(icono) : null;
   const chip = alto * 0.62;
   const tamanoTexto = tamanoQueCabe(
@@ -349,7 +568,7 @@ const Tarjeta: React.FC<{
   return (
     <div
       style={{
-        ...entradaDesdeAtras(p, base),
+        ...mover(p, base),
         width: ancho,
         height: alto,
         boxSizing: "border-box",
@@ -430,6 +649,7 @@ const Cifra: React.FC<{ cifra: string; tamano: number; desde: number }> = ({
   const { width, height } = useVideoConfig();
   const base = Math.min(width, height);
   const p = useEntrada(desde);
+  const mover = useMover();
   const partes = cifra.match(/^(\D*)(\d{1,6})(\D.*)?$/);
   const cuenta = interpolate(frame - desde, [0, 26], [0, 1], {
     ...LIMITE,
@@ -441,7 +661,7 @@ const Cifra: React.FC<{ cifra: string; tamano: number; desde: number }> = ({
   return (
     <div
       style={{
-        ...entradaDesdeAtras(p, base),
+        ...mover(p, base),
         fontFamily: marca.fuente,
         fontWeight: 900,
         fontSize: tamano,
@@ -468,10 +688,11 @@ const Subtexto: React.FC<{
   const { width, height } = useVideoConfig();
   const base = Math.min(width, height);
   const p = useEntrada(desde);
+  const mover = useMover();
   return (
     <div
       style={{
-        ...entradaDesdeAtras(p, base),
+        ...mover(p, base),
         fontFamily: marca.fuente,
         fontWeight: 700,
         fontSize: tamanoQueCabe(texto.split(/\s+/), ancho, alto, base, 0.055),
@@ -512,6 +733,7 @@ const Parada: React.FC<{
     durationInFrames: 16,
   });
   const p = useEntrada(desde + 4);
+  const mover = useMover();
   const onda = interpolate(frame - desde, [0, 20], [0, 1], LIMITE);
   return (
     <>
@@ -564,7 +786,7 @@ const Parada: React.FC<{
       </div>
       <div
         style={{
-          ...entradaDesdeAtras(p, base),
+          ...mover(p, base),
           position: "absolute",
           left: caja.x,
           top: caja.y,
@@ -779,6 +1001,7 @@ const Contenido: React.FC<{ item: ApoyoEnEditado; area: Area }> = ({
   };
   // Entrada de lo que aparece al empezar la escena (comillas e imagen).
   const alEmpezar = useEntrada(0);
+  const mover = useMover();
   const subtexto = (texto: string, alto: number, desde: number) => (
     <Subtexto
       texto={texto}
@@ -1019,7 +1242,7 @@ const Contenido: React.FC<{ item: ApoyoEnEditado; area: Area }> = ({
         <div style={columna}>
           <div
             style={{
-              ...entradaDesdeAtras(alEmpezar, base),
+              ...mover(alEmpezar, base),
               width: ancho,
               height: Math.min(alto, ancho * 1.25),
               borderRadius: base * 0.035,
@@ -1082,11 +1305,68 @@ const VideoDeApoyo: React.FC<{
 
 // Una escena de apoyo: el fondo en capas se abre en círculo sobre el video, el contenido llega
 // desde atrás, y al final todo avanza hacia la cámara y se desvanece.
+// Cómo se abre y se cierra la escena sobre el video, según su transición.
+// `abre` y `cierra` van de 0 a 1 (al empezar y al terminar).
+const estiloTransicion = (
+  transicion: Variante["transicion"],
+  abre: number,
+  cierra: number,
+  width: number,
+  height: number,
+  lado: 1 | -1,
+): React.CSSProperties => {
+  const base = Math.min(width, height);
+  switch (transicion) {
+    case "circulo":
+      return {
+        clipPath: abre < 1 ? `circle(${Math.hypot(width, height) * 0.5 * abre}px at 50% 45%)` : undefined,
+        opacity: 1 - cierra,
+        scale: 1 + cierra * 0.06,
+      };
+    case "barrido": {
+      // Entra barriendo de un lado y sale barriendo hacia el otro, con el borde inclinado.
+      const a = (1 - abre) * 120;
+      const c = cierra * 160;
+      const borde = (x: number) => `${x}%`;
+      return lado === 1
+        ? { clipPath: `polygon(${borde(-20 + c)} 0, ${borde(120 - a)} 0, ${borde(100 - a)} 100%, ${borde(-20 + c - 20)} 100%)` }
+        : { clipPath: `polygon(${borde(a - 20)} 0, ${borde(120 - c)} 0, ${borde(100 - c)} 100%, ${borde(a - 40)} 100%)` };
+    }
+    case "persiana": {
+      // Franjas horizontales que se llenan al entrar y se vacían al salir.
+      const lleno = Math.min(abre, 1 - cierra) * 100;
+      if (lleno >= 100) return {};
+      const mascara = `repeating-linear-gradient(${lado === 1 ? "180deg" : "90deg"}, black 0 ${lleno / 7}%, transparent ${lleno / 7}% ${100 / 7}%)`;
+      return { maskImage: mascara, WebkitMaskImage: mascara };
+    }
+    case "zoom":
+      // Llega desde cerca de la cámara, desenfocada, y al salir se aleja.
+      return {
+        opacity: Math.min(abre * 1.5, 1) * (1 - cierra),
+        scale: interpolate(abre, [0, 1], [1.35, 1]) * interpolate(cierra, [0, 1], [1, 0.82]),
+        filter: abre < 1 || cierra > 0 ? `blur(${((1 - abre) + cierra) * base * 0.02}px)` : undefined,
+      };
+    case "deslizar":
+      // Entra deslizándose de lado (o de abajo) y sale hacia el lado contrario.
+      return lado === 1
+        ? { translate: `${(1 - abre) * width - cierra * width}px 0`, borderRadius: (1 - abre + cierra) * base * 0.06, overflow: "hidden" }
+        : { translate: `0 ${(1 - abre) * height - cierra * height}px`, borderRadius: (1 - abre + cierra) * base * 0.06, overflow: "hidden" };
+    case "diamante": {
+      // Un rombo que crece desde el centro y, al salir, se cierra.
+      const t = Math.min(abre, 1 - cierra);
+      if (t >= 1) return {};
+      const r = t * 110;
+      return { clipPath: `polygon(50% ${45 - r}%, ${50 + r}% 45%, 50% ${45 + r}%, ${50 - r}% 45%)` };
+    }
+  }
+};
+
 const Escena: React.FC<{
   item: ApoyoEnEditado;
   limiteAbajo: number | null;
   dibujos: Record<string, string>;
-}> = ({ item, limiteAbajo, dibujos }) => {
+  variante: Variante;
+}> = ({ item, limiteAbajo, dibujos, variante }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const { duracionFrames } = item;
@@ -1112,7 +1392,7 @@ const Escena: React.FC<{
     [0, 1],
     { ...LIMITE, easing: Easing.in(Easing.cubic) },
   );
-  const radio = Math.hypot(width, height) * 0.5 * abre;
+  const lado = random(`lado-${item.elemento.inicio}`) < 0.5 ? 1 : -1;
   const ilustrada =
     item.elemento.modo === "escena" ? item.elemento.escena : null;
   const video =
@@ -1121,17 +1401,12 @@ const Escena: React.FC<{
       : null;
 
   return (
-    <AbsoluteFill
-      style={{
-        clipPath: abre < 1 ? `circle(${radio}px at 50% 45%)` : undefined,
-        opacity: 1 - cierra,
-        scale: 1 + cierra * 0.06,
-      }}
-    >
+    <VarianteEscena.Provider value={variante}>
+    <AbsoluteFill style={estiloTransicion(variante.transicion, abre, cierra, width, height, lado)}>
       {ilustrada || video ? (
         <>
           {ilustrada && ilustrada.fondo === "marca" ? (
-            <FondoEnCapas frame={frame} semilla={`${item.elemento.inicio}`} />
+            <FondoEnCapas frame={frame} semilla={`${item.elemento.inicio}`} tipo={variante.fondo} />
           ) : null}
           {ilustrada ? (
             <EscenaIlustrada
@@ -1179,13 +1454,14 @@ const Escena: React.FC<{
           ) : null}
         </>
       ) : (
-        <FondoEnCapas frame={frame} semilla={`${item.elemento.inicio}`}>
+        <FondoEnCapas frame={frame} semilla={`${item.elemento.inicio}`} tipo={variante.fondo}>
           <Capa z={0} perspectiva={perspectiva}>
             <Contenido item={item} area={area} />
           </Capa>
         </FondoEnCapas>
       )}
     </AbsoluteFill>
+    </VarianteEscena.Provider>
   );
 };
 
@@ -1193,20 +1469,23 @@ export const Apoyos: React.FC<{
   items: ApoyoEnEditado[];
   limiteAbajo: number | null;
   dibujos: Record<string, string>;
-}> = ({ items, limiteAbajo, dibujos }) => (
-  <AbsoluteFill>
-    {items.map((item, i) => (
-      <Sequence
-        key={i}
-        from={item.desdeFrame}
-        durationInFrames={item.duracionFrames}
-        name={`Apoyo: ${item.elemento.modo}`}
-      >
-        <Escena item={item} limiteAbajo={limiteAbajo} dibujos={dibujos} />
-      </Sequence>
-    ))}
-  </AbsoluteFill>
-);
+}> = ({ items, limiteAbajo, dibujos }) => {
+  const variantes = elegirVariantes(items.map((x) => x.elemento));
+  return (
+    <AbsoluteFill>
+      {items.map((item, i) => (
+        <Sequence
+          key={i}
+          from={item.desdeFrame}
+          durationInFrames={item.duracionFrames}
+          name={`Apoyo: ${item.elemento.modo} · ${variantes[i].transicion} · ${variantes[i].fondo}`}
+        >
+          <Escena item={item} limiteAbajo={limiteAbajo} dibujos={dibujos} variante={variantes[i]} />
+        </Sequence>
+      ))}
+    </AbsoluteFill>
+  );
+};
 
 // Fondo continuo de los proyectos de solo audio (debajo de las escenas de apoyo).
 export const FondoSoloAudio: React.FC = () => {

@@ -46,6 +46,16 @@ Respétala: es lo que quiere ver.
 Sin tipo, mezcla los modos con el criterio de abajo (`camino` en vez de `pasos` cuando lo que se
 cuenta es un recorrido o un proceso en orden).
 
+## Variedad (en todos los videos)
+- Nunca dos escenas seguidas del mismo modo. Con 4 o más escenas, usa al menos 3 modos distintos.
+- No pongas `camino` en cada lista: un recorrido en orden → `camino`; una lista sin orden → `pasos`;
+  una idea que se puede resumir en una frase que dice la persona → `frase`; un número → `dato`.
+- Cómo entra y sale cada escena, su fondo y cómo llegan sus textos cambian solos de una escena a
+  otra (`transicion`, `fondoEscena`, `entrada`: déjalos en null). Ponlos solo si la persona pide
+  algo concreto: `transicion` circulo | barrido | persiana | zoom | deslizar | diamante;
+  `fondoEscena` capas | rejilla | rayos | bokeh | franjas | formas; `entrada` atras | abajo |
+  escala | lado | giro.
+
 ## Escenas ilustradas (`modo: "escena"`): el nivel más alto
 Cuando la persona cuenta algo que se puede **ver** (una metáfora, una historia, un lugar, un
 objeto, una acción), recréalo con dibujos en vez de texto. Ejemplo: habla de la Fórmula 1 y los

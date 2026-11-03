@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ENTRADAS, FONDOS, TRANSICIONES } from "./variantes";
 import { buscarIcono } from "../componentes/iconos";
 
 export const FPS = 30;
@@ -239,6 +240,11 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
       // (0 = sin sonido: se escucha solo la voz).
       desde: z.number().min(0).default(0),
       volumen: z.number().min(0).max(1).default(0),
+      // Variedad (opcional; null = se reparten solas para que no se repitan): cómo entra y sale
+      // la escena, qué fondo lleva y cómo llegan sus textos y tarjetas. Ver src/edicion/variantes.ts.
+      transicion: z.enum(TRANSICIONES).nullable().default(null),
+      fondoEscena: z.enum(FONDOS).nullable().default(null),
+      entrada: z.enum(ENTRADAS).nullable().default(null),
     })
     .superRefine((e, ctx) => {
       const falta = (mensaje: string) =>
