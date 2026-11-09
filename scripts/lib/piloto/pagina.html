@@ -31,14 +31,19 @@
   <div class="virtudes"><span>✂️ Cortes y subtítulos</span><span>✨ Animaciones</span><span>📱 Listo para cada red</span></div>
   </div>
   <section class="tarjeta" id="entrar" hidden>
-      <h2>Entra a tu cuenta</h2>
-      <p class="ayuda">Sube tu video grabado con el celular y recíbelo editado y listo para publicar.</p>
+      <h2>Entra al editor</h2>
+      <p class="ayuda">Entra con tu cuenta de Kreo. Tus videos se pagan con tus tokens.</p>
       <div class="aviso mal" id="entrar-aviso" hidden></div>
-      <form id="form-entrar" class="tarjeta" style="border:0;padding:0">
-        <div class="campo"><label class="titulo" for="usuario">Usuario</label><input type="text" id="usuario" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
-        <div class="campo"><label class="titulo" for="clave">Contraseña</label><input type="password" id="clave" autocomplete="current-password" required></div>
-        <button class="boton ancho" type="submit">Entrar</button>
-      </form>
+      <a class="boton ancho boton-kreo" id="entrar-kreo" href="{{KREO_ABRIR}}"><span class="logo-k">K<i></i></span>Entrar con mi cuenta de Kreo</a>
+      <p class="ayuda nota-kreo" id="nota-kreo">¿No tienes cuenta? Créala gratis en <a href="https://somoskreo.com/registro">somoskreo.com</a>.</p>
+      <details class="otra-entrada" id="otra-entrada">
+        <summary>Entrar con usuario y contraseña</summary>
+        <form id="form-entrar" class="tarjeta" style="border:0;padding:0;margin-top:14px">
+          <div class="campo"><label class="titulo" for="usuario">Usuario</label><input type="text" id="usuario" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
+          <div class="campo"><label class="titulo" for="clave">Contraseña</label><input type="password" id="clave" autocomplete="current-password" required></div>
+          <button class="boton ancho suave" type="submit">Entrar</button>
+        </form>
+      </details>
     </section>
 </section>
 
@@ -213,7 +218,13 @@ function mostrarEntrar(mensaje) {
   clearInterval(refrescoKreo);
   for (const id of ["subir", "mis-videos", "personas", "quien", "kreo", "tokens"]) $(id).hidden = true;
   $("entrar").hidden = false;
-  avisar($("entrar-aviso"), mensaje && mensaje !== "Entra con tu usuario y contraseña." ? mensaje : "");
+  const sinKreo = !$("entrar-kreo").getAttribute("href").startsWith("http");
+  $("entrar-kreo").hidden = sinKreo;
+  $("nota-kreo").hidden = sinKreo;
+  if (sinKreo) $("otra-entrada").open = true;
+  const fallo = new URLSearchParams(location.search).get("entrar") === "fallo";
+  if (fallo) history.replaceState(null, "", "/");
+  avisar($("entrar-aviso"), fallo ? "No pudimos abrir tu sesión. Vuelve a tocar \"Entrar con mi cuenta de Kreo\"." : mensaje && mensaje !== "Entra con tu usuario y contraseña." ? mensaje : "");
 }
 
 // Kreo: si esta persona paga tokens, primero conecta su cuenta; después se ven sus tokens arriba.

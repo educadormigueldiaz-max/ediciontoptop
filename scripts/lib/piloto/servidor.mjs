@@ -10,9 +10,9 @@ import { archivoProgreso, posicionEnCola, siguiente } from "./cola.mjs";
 import {
   ESTADOS, REDES_PILOTO, TIPOS, abrirSesion, actualizarTrabajo, anotar, borrarPersona, carpetaTrabajo,
   cerrarSesion, comprobarClave, guardarPersona, leerSesion, leerTrabajo, nombreValido, nuevoTrabajo,
-  personas, registrar, trabajos, guardarLlaveKreo,
+  personas, personaDeKreo, registrar, trabajos, guardarLlaveKreo,
 } from "./datos.mjs";
-import { cobraKreo, kreoUrl, mensajeKreo, saldoKreo, validarLlave } from "./kreo.mjs";
+import { canjearEntrada, cobraKreo, kreoUrl, mensajeKreo, saldoKreo, validarLlave } from "./kreo.mjs";
 
 const PAGINA = path.join(path.dirname(new URL(import.meta.url).pathname), "pagina.html");
 const PANEL_CLIPS = path.join(path.dirname(PAGINA), "clips.html");
@@ -75,6 +75,12 @@ const tokenDe = (req) =>
 
 // Intentos fallidos de entrar, por dirección (10 cada 15 minutos).
 const intentos = new Map();
+// Dirección de quien entra. Detrás del servidor web (Caddy, en el mismo equipo) la real viene al final de x-forwarded-for.
+const ipDe = (req) => {
+  const directa = req.socket.remoteAddress;
+  if (directa !== "127.0.0.1" && directa !== "::1" && directa !== "::ffff:127.0.0.1") return directa;
+  return String(req.headers["x-forwarded-for"] ?? "").split(",").map((x) => x.trim()).filter(Boolean).at(-1) || directa;
+};
 const bloqueado = (ip) => {
   const ahora = Date.now();
   const lista = (intentos.get(ip) ?? []).filter((t) => ahora - t < 15 * 60 * 1000);
@@ -184,8 +190,27 @@ const manejar = async (req, res) => {
 
   if (metodo === "GET" && (ruta === "/" || ruta === "/index.html")) {
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
-    res.end(fs.readFileSync(PAGINA));
+    // El botón "Entrar con mi cuenta de Kreo" lleva a Kreo, que devuelve a /entrar con un código
+    const kreo = kreoUrl();
+    res.end(fs.readFileSync(PAGINA, "utf8").replaceAll("{{KREO_ABRIR}}", kreo ? `${kreo}/editor/abrir` : ""));
     return;
+  }
+  // Llega desde Kreo con un código de un solo uso: se cambia por la llave y se abre la sesión
+  if (metodo === "GET" && ruta === "/entrar") {
+    const ip = ipDe(req);
+    const codigo = String(url.searchParams.get("codigo") ?? "");
+    const volver = (destino) => { res.writeHead(303, { Location: destino, "Cache-Control": "no-store" }); res.end(); };
+    if (!kreoUrl() || bloqueado(ip) || !/^[\w-]{40,50}$/.test(codigo)) return volver("/?entrar=fallo");
+    const r = await canjearEntrada(codigo);
+    if (!r.ok || !r.llave || !r.usuario?.id) {
+      intentos.get(ip).push(Date.now());
+      return volver("/?entrar=fallo");
+    }
+    const usuario = personaDeKreo({ ...r.usuario, llave: r.llave });
+    const token = abrirSesion(usuario);
+    registrar(`Entró ${usuario} (${r.usuario.nombre}) desde Kreo, ${ip}`);
+    res.setHeader("Set-Cookie", `${COOKIE}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=2592000`);
+    return volver("/");
   }
   // El aspecto común de las dos páginas (colores, letras, botones).
   if (metodo === "GET" && ruta === "/estilo.css") {
@@ -204,7 +229,7 @@ const manejar = async (req, res) => {
   if (metodo !== "GET" && req.headers["x-bydzyne"] !== "1") return error(res, 403, "Petición no permitida.");
 
   if (metodo === "POST" && ruta === "/api/entrar") {
-    const ip = req.socket.remoteAddress;
+    const ip = ipDe(req);
     if (bloqueado(ip)) return error(res, 429, "Demasiados intentos. Espera 15 minutos y vuelve a intentar.");
     const { usuario, clave } = await leerCuerpo(req);
     const u = String(usuario ?? "").trim().toLowerCase();

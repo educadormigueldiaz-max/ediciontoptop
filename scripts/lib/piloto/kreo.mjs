@@ -63,3 +63,18 @@ export const confirmarTokens = async (llave, reserva) => {
   }
   return { ok: false, error: "sin_conexion" };
 };
+
+// "Abrir el editor" desde Kreo: cambia el código de un solo uso por la llave de la persona
+export const canjearEntrada = async (codigo) => {
+  try {
+    const r = await fetch(kreoUrl() + "/api/editor/auth/entrar", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ codigo }),
+      signal: AbortSignal.timeout(15000),
+    });
+    return { status: r.status, ...(await r.json().catch(() => ({}))) };
+  } catch {
+    return { status: 0, ok: false, error: "sin_conexion" };
+  }
+};

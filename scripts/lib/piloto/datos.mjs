@@ -103,7 +103,23 @@ export const guardarLlaveKreo = (usuario, llave) => {
 
 export const comprobarClave = (usuario, clave) => {
   const p = personas()[usuario];
-  return p && typeof clave === "string" && claveCorrecta(clave, p.clave) ? p : null;
+  return p?.clave && typeof clave === "string" && claveCorrecta(clave, p.clave) ? p : null;
+};
+
+// Quien entra desde Kreo ("Abrir el editor"): su persona es kreo-<id>, sin clave propia,
+// con la llave que Kreo acaba de darle. Se crea la primera vez y se actualiza en cada entrada.
+export const personaDeKreo = ({ id, nombre, admin, llave }) => {
+  const usuario = `kreo-${Number(id)}`;
+  const todas = personas();
+  todas[usuario] = {
+    ...(todas[usuario] ?? { creada: new Date().toISOString(), estilo: null }),
+    nombre: String(nombre || usuario).slice(0, 80),
+    admin: Boolean(admin),
+    kreoId: Number(id),
+    kreo: llave,
+  };
+  escribirJson(ARCHIVO_PERSONAS, todas);
+  return usuario;
 };
 
 // ---------- Sesiones: una sola abierta por persona ----------

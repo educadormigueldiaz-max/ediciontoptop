@@ -185,3 +185,11 @@ th { color: var(--tinta-suave); font-weight: 600; }
   .fondo-tec i:nth-child(2) { animation-duration: 22s; }
   @keyframes flotar { to { transform: translate(60px, 40px) scale(1.1); } }
 }
+
+/* Entrar con la cuenta de Kreo */
+.boton-kreo { gap: 12px; }
+.boton-kreo .logo-k { width: 28px; height: 28px; border-radius: 8px; background: #0b0d12; display: inline-flex; align-items: flex-end; justify-content: center; gap: 2px; padding-bottom: 7px; font-family: var(--f-titulo); font-weight: 800; font-size: 16px; line-height: 0.74; color: #f2f4f8; }
+.boton-kreo .logo-k i { width: 3px; height: 3px; border-radius: 50%; background: var(--violeta); }
+.nota-kreo { text-align: center; margin-top: -6px; }
+.otra-entrada { border-top: 1px solid var(--linea); padding-top: 14px; }
+.otra-entrada summary { cursor: pointer; color: var(--tinta-suave); font-size: 15px; font-weight: 600; }
