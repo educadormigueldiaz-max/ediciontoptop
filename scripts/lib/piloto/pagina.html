@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Edición de videos</title>
+<title>Editor · Kreo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Sans+3:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;600;700;800&display=swap">
 <link rel="stylesheet" href="/estilo.css">
 </head>
 <body>
 <div class="fondo-tec" aria-hidden="true"><i></i><i></i><i></i></div>
 <header class="barra">
   <div class="centro">
-    <span class="marca"><span class="logo"><svg viewBox="0 0 24 24" fill="white"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg></span>Edición de videos</span>
+    <a class="marca" href="/"><span class="logo-k">K<i></i></span><span>kreo<b>.</b></span><span class="chip">Editor</span></a>
     <div class="quien" id="quien" hidden>
       <span class="tokens" id="tokens" hidden></span>
       <a href="/clips">Panel de clips</a>
@@ -24,25 +24,26 @@
 </header>
 
 <section class="portada centro">
+  <div class="portada-texto">
   <span class="etiqueta">Edición automática</span>
   <h1>Sube tu video. <span class="brillo">Recíbelo editado.</span></h1>
   <p>Cortes, subtítulos, animaciones y el tamaño justo para cada red. Tú grabas; del resto nos encargamos.</p>
   <div class="virtudes"><span>✂️ Cortes y subtítulos</span><span>✨ Animaciones</span><span>📱 Listo para cada red</span></div>
+  </div>
+  <section class="tarjeta" id="entrar" hidden>
+      <h2>Entra a tu cuenta</h2>
+      <p class="ayuda">Sube tu video grabado con el celular y recíbelo editado y listo para publicar.</p>
+      <div class="aviso mal" id="entrar-aviso" hidden></div>
+      <form id="form-entrar" class="tarjeta" style="border:0;padding:0">
+        <div class="campo"><label class="titulo" for="usuario">Usuario</label><input type="text" id="usuario" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
+        <div class="campo"><label class="titulo" for="clave">Contraseña</label><input type="password" id="clave" autocomplete="current-password" required></div>
+        <button class="boton ancho" type="submit">Entrar</button>
+      </form>
+    </section>
 </section>
 
 <main class="centro">
 
-  <!-- Entrar -->
-  <section class="tarjeta" id="entrar" hidden>
-    <h2>Entra a tu cuenta</h2>
-    <p class="ayuda">Sube tu video grabado con el celular y recíbelo editado y listo para publicar.</p>
-    <div class="aviso mal" id="entrar-aviso" hidden></div>
-    <form id="form-entrar" class="tarjeta" style="border:0;padding:0">
-      <div class="campo"><label class="titulo" for="usuario">Usuario</label><input type="text" id="usuario" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
-      <div class="campo"><label class="titulo" for="clave">Contraseña</label><input type="password" id="clave" autocomplete="current-password" required></div>
-      <button class="boton ancho" type="submit">Entrar</button>
-    </form>
-  </section>
 
   <div class="tablero">
   <!-- Subir -->
