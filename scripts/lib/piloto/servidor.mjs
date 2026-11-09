@@ -10,9 +10,9 @@ import { archivoProgreso, posicionEnCola, siguiente } from "./cola.mjs";
 import {
   ESTADOS, REDES_PILOTO, TIPOS, abrirSesion, actualizarTrabajo, anotar, borrarPersona, carpetaTrabajo,
   cerrarSesion, comprobarClave, guardarPersona, leerSesion, leerTrabajo, nombreValido, nuevoTrabajo,
-  personas, personaDeKreo, registrar, trabajos, guardarLlaveKreo,
+  personas, personaDeKreo, registrar, trabajos,
 } from "./datos.mjs";
-import { canjearEntrada, cobraKreo, kreoUrl, mensajeKreo, saldoKreo, validarLlave } from "./kreo.mjs";
+import { canjearEntrada, cobraKreo, kreoUrl, mensajeKreo, saldoKreo } from "./kreo.mjs";
 
 const PAGINA = path.join(path.dirname(new URL(import.meta.url).pathname), "pagina.html");
 const PANEL_CLIPS = path.join(path.dirname(PAGINA), "clips.html");
@@ -272,23 +272,6 @@ const manejar = async (req, res) => {
       tipos: TIPOS,
       redes: REDES_PILOTO,
     });
-  }
-
-  // Conectar o quitar la cuenta de Kreo (la llave se crea en Kreo → Mi cuenta → Editor y tokens)
-  if (metodo === "POST" && ruta === "/api/kreo") {
-    if (!kreoUrl()) return error(res, 400, "Esta página no está conectada con Kreo.");
-    const { llave, quitar } = await leerCuerpo(req);
-    if (quitar) {
-      guardarLlaveKreo(usuario, null);
-      return enviarJson(res, 200, { ok: true });
-    }
-    const k = String(llave ?? "").trim();
-    if (!/^kreo_[\w-]{20,60}$/.test(k)) return error(res, 400, "Esa no parece una llave de Kreo. Empieza por kreo_");
-    const r = await validarLlave(k);
-    if (!r.ok) return error(res, 400, mensajeKreo(r));
-    guardarLlaveKreo(usuario, k);
-    registrar(`${usuario} conectó su cuenta de Kreo (${r.usuario?.nombre ?? ""})`);
-    return enviarJson(res, 200, { ok: true, kreo: await estadoKreo({ ...persona, kreo: k }) });
   }
 
   if (metodo === "GET" && ruta === "/api/trabajos") {

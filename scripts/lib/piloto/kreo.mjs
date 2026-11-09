@@ -42,7 +42,7 @@ const llamar = async (ruta, llave, cuerpo) => {
 
 export const MENSAJES = {
   sin_conexion: "No pudimos conectarnos con Kreo. Intenta de nuevo en un momento.",
-  llave_invalida: "Tu llave de Kreo no sirve. Crea una nueva en Kreo → Mi cuenta → Editor y tokens y pégala aquí.",
+  llave_invalida: "Tu sesión con Kreo venció. Toca Salir y vuelve a entrar con tu cuenta de Kreo.",
   editor_inactivo: "Tu plan del editor en Kreo no está al día. Paga tu mensualidad en Kreo y vuelve a intentarlo.",
   saldo_insuficiente: "No te alcanzan los tokens para este video. Compra un paquete en Kreo → Editor y tokens y vuelve a intentarlo.",
   operacion_desconocida: "Kreo todavía no tiene precio para este tipo de proceso. Avísale a quien administra Kreo.",

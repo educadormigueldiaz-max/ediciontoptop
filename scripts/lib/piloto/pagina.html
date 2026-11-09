@@ -55,12 +55,8 @@
   <!-- Kreo: cada video se paga con tokens del plan del editor -->
   <section class="tarjeta" id="kreo" hidden>
     <h2>Conecta tu cuenta de Kreo</h2>
-    <p class="ayuda">Cada video se paga con los tokens de tu plan del editor. En Kreo entra a <strong>Mi cuenta → Editor y tokens</strong>, toca <strong>Crear llave</strong>, cópiala y pégala aquí. Solo se hace una vez.</p>
-    <div class="aviso mal" id="kreo-aviso" hidden></div>
-    <form id="form-kreo" class="tarjeta" style="border:0;padding:0">
-      <div class="campo"><label class="titulo" for="kreo-llave">Llave de Kreo</label><input type="password" id="kreo-llave" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="kreo_…" required></div>
-      <button class="boton ancho" type="submit">Conectar</button>
-    </form>
+    <p class="ayuda">Cada video se paga con los tokens de tu plan del editor. Entra con tu cuenta de Kreo y listo.</p>
+    <a class="boton ancho boton-kreo" href="{{KREO_ABRIR}}"><span class="logo-k">K<i></i></span>Entrar con mi cuenta de Kreo</a>
   </section>
 
   <section class="tarjeta" id="subir" hidden>
@@ -277,16 +273,6 @@ $("form-entrar").addEventListener("submit", async (e) => {
     $("clave").value = "";
     iniciar();
   } catch (err) { avisar($("entrar-aviso"), err.message); }
-});
-$("form-kreo").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  try {
-    const r = await api("/api/kreo", { method: "POST", body: JSON.stringify({ llave: $("kreo-llave").value }) });
-    $("kreo-llave").value = "";
-    avisar($("kreo-aviso"), "");
-    yo.kreo = r.kreo;
-    pintarKreo(yo.kreo);
-  } catch (err) { avisar($("kreo-aviso"), err.message); }
 });
 $("salir").addEventListener("click", async () => { await api("/api/salir", { method: "POST" }).catch(() => {}); mostrarEntrar(); });
 
