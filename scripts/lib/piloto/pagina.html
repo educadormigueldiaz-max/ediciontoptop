@@ -258,8 +258,7 @@ async function iniciar() {
   $("estilo").innerHTML = yo.estilos.map((e) => `<option value="${esc(e)}">${esc(nombreEstilo(e))}</option>`).join("");
   ayudaEstilo();
   $("pestanas-admin").hidden = !yo.admin;
-  $("personas").hidden = !yo.admin;
-  if (yo.admin) cargarPersonas();
+  $("personas").hidden = true; // las cuentas salen de Kreo: ya no se crean aquí
   await cargarVideos();
   elegirClipDeLaDireccion();
   clearInterval(refresco);
