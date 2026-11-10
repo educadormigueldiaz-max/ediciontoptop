@@ -70,9 +70,9 @@ const delProyecto = fs.existsSync(archivoDelProyecto) ? leerJson(archivoDelProye
 const FUENTE_SWIFT = path.join(RAIZ, "scripts", "lib", "hojas.swift");
 const PROGRAMA = path.join(RAIZ, "node_modules", ".cache", "bydzyne", "hojas");
 const hojas = (video, prefijo, columnas, filas, segundos) => {
+  if (process.platform !== "darwin") return hojasConFfmpeg(video, prefijo, columnas, filas, segundos);
   const vigente = fs.existsSync(PROGRAMA) && fs.statSync(PROGRAMA).mtimeMs >= fs.statSync(FUENTE_SWIFT).mtimeMs;
   if (!vigente) {
-    if (process.platform !== "darwin") throw new Error("Mirar videos de apoyo solo está preparado para Mac.");
     fs.mkdirSync(path.dirname(PROGRAMA), { recursive: true });
     const c = spawnSync("swiftc", ["-O", FUENTE_SWIFT, "-o", PROGRAMA], { encoding: "utf8" });
     if (c.status !== 0) throw new Error(`No se pudo preparar el lector de cuadros:\n${c.stderr}`);
@@ -83,6 +83,45 @@ const hojas = (video, prefijo, columnas, filas, segundos) => {
   });
   if (r.status !== 0) throw new Error(`No se pudieron sacar cuadros de ${video}:\n${r.stderr}`);
   return r.stdout.trim().split("\n").filter(Boolean).map((l) => JSON.parse(l));
+};
+
+// En el servidor (Linux) no hay AVFoundation: las mismas hojas salen con el FFmpeg del sistema
+// (trae drawtext). Cada cuadro de 400 px de ancho con su segundo en amarillo, en cuadrícula.
+const LETRA = ["/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "/System/Library/Fonts/Supplemental/Arial Bold.ttf"].find((f) => fs.existsSync(f));
+const hojasConFfmpeg = (video, prefijo, columnas, filas, segundos) => {
+  const porHoja = columnas * filas;
+  const salida = [];
+  const temporal = fs.mkdtempSync(path.join(os.tmpdir(), "bydzyne-hojas-"));
+  try {
+    for (let inicio = 0, numero = 0; inicio < segundos.length; inicio += porHoja) {
+      const tiempos = [];
+      for (const t of segundos.slice(inicio, inicio + porHoja)) {
+        const minutos = Math.floor(t / 60);
+        const etiqueta = `${minutos}\\:${(t - minutos * 60).toFixed(1).padStart(4, "0")}`;
+        const cuadro = path.join(temporal, `${String(tiempos.length).padStart(3, "0")}.png`);
+        const r = spawnSync("ffmpeg", [
+          "-hide_banner", "-loglevel", "error", "-y", "-ss", t.toFixed(2), "-i", video, "-frames:v", "1",
+          "-vf", `scale=400:-2,drawtext=${LETRA ? `fontfile='${LETRA}':` : ""}text='${etiqueta}':fontsize=26:fontcolor=0xFFE600:x=8:y=h-th-12:box=1:boxcolor=black@0.75:boxborderw=4`,
+          cuadro,
+        ], { encoding: "utf8" });
+        if (r.status === 0 && fs.existsSync(cuadro)) tiempos.push(t);
+      }
+      if (!tiempos.length) continue;
+      numero += 1;
+      const archivo = `${prefijo}-${numero}.jpg`;
+      const filasUsadas = Math.ceil(tiempos.length / columnas);
+      const r = spawnSync("ffmpeg", [
+        "-hide_banner", "-loglevel", "error", "-y", "-framerate", "1", "-i", path.join(temporal, "%03d.png"),
+        "-vf", `tile=${columnas}x${filasUsadas}:padding=6:margin=6:color=0x1a1a1a`, "-frames:v", "1", "-q:v", "3", archivo,
+      ], { encoding: "utf8" });
+      if (r.status !== 0) throw new Error(`No se pudieron sacar cuadros de ${video}:\n${r.stderr}`);
+      for (const f of fs.readdirSync(temporal)) fs.rmSync(path.join(temporal, f));
+      salida.push({ archivo, tiempos });
+    }
+  } finally {
+    fs.rmSync(temporal, { recursive: true, force: true });
+  }
+  return salida;
 };
 
 // ---------- 1. Traer cada video de apoyo a la biblioteca ----------
