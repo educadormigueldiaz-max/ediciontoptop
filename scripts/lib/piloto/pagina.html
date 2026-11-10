@@ -122,8 +122,9 @@
             <label class="archivo" id="caja-fotos">
               <input type="file" id="fotos" accept="image/*,video/*" multiple>
               <strong id="texto-fotos">Toca para elegir fotos y videos</strong>
-              <span class="ayuda">Hasta 6 fotos (productos, capturas, logos) y 5 videos de apoyo</span>
+              <span class="ayuda">Hasta 6 fotos (productos, capturas, logos) y 5 videos de apoyo. Puedes elegir varias veces, de distintas carpetas: se van sumando.</span>
             </label>
+            <ul class="elegidos" id="lista-fotos" hidden></ul>
           </div>
           <div class="campo">
             <label class="titulo" for="cta">Llamada a la acción al final (opcional)</label>
@@ -340,13 +341,36 @@ cambioDeAnimaciones();
 // En la misma caja van fotos y videos de apoyo; se separan por tipo.
 const esVideoDeApoyo = (f) => f.type.startsWith("video/") || /\.(mp4|mov|m4v|webm|mkv|avi|3gp)$/i.test(f.name);
 const plural = (n, palabra) => `${n} ${palabra}${n > 1 ? "s" : ""}`;
-$("fotos").addEventListener("change", () => {
-  const archivos = [...$("fotos").files];
-  const videos = archivos.filter(esVideoDeApoyo).length;
-  const fotos = archivos.length - videos;
+// Cada vez que se eligen archivos se suman a los anteriores (pueden venir de carpetas distintas).
+let extras = [];
+const mostrarExtras = () => {
+  const videos = extras.filter(esVideoDeApoyo).length;
+  const fotos = extras.length - videos;
   const partes = [fotos && plural(fotos, "foto"), videos && plural(videos, "video")].filter(Boolean);
-  $("texto-fotos").textContent = partes.length ? `✓ ${partes.join(" y ")}` : "Toca para elegir fotos y videos";
+  $("texto-fotos").textContent = partes.length ? `✓ ${partes.join(" y ")} · toca para agregar más` : "Toca para elegir fotos y videos";
   $("caja-fotos").classList.toggle("lleno", partes.length > 0);
+  const lista = $("lista-fotos");
+  lista.hidden = !extras.length;
+  lista.innerHTML = extras.map((f, i) => `<li><span>${esVideoDeApoyo(f) ? "🎬" : "🖼️"} ${esc(f.name)}</span><button type="button" class="quitar" data-i="${i}" aria-label="Quitar ${esc(f.name)}">✕</button></li>`).join("");
+};
+$("fotos").addEventListener("change", () => {
+  for (const f of $("fotos").files) {
+    if (extras.some((e) => e.name === f.name && e.size === f.size)) continue; // el mismo archivo dos veces
+    let archivo = f;
+    // Dos archivos distintos con el mismo nombre (de carpetas distintas): al segundo se le cambia el nombre.
+    for (let n = 2; extras.some((e) => e.name === archivo.name); n++) {
+      archivo = new File([f], f.name.replace(/(\.[^.]*)?$/, (ext) => `-${n}${ext}`), { type: f.type, lastModified: f.lastModified });
+    }
+    extras.push(archivo);
+  }
+  $("fotos").value = "";
+  mostrarExtras();
+});
+$("lista-fotos").addEventListener("click", (e) => {
+  const b = e.target.closest(".quitar");
+  if (!b) return;
+  extras.splice(Number(b.dataset.i), 1);
+  mostrarExtras();
 });
 
 // Mientras se sube, cerrar o recargar la página pregunta antes (se perdería la subida).
@@ -374,7 +398,7 @@ $("form-subir").addEventListener("submit", async (e) => {
   const enlace = tipo === "clips" && !video ? $("enlace").value.trim() : "";
   const clip = !video && tipo !== "clips" ? clipElegido : null;
   if (!video && !enlace && !clip) return avisar($("subir-aviso"), tipo === "clips" ? "Elige el video o pega el enlace de YouTube." : "Elige el video primero.");
-  const elegidos = tipo === "clips" ? [] : [...$("fotos").files];
+  const elegidos = tipo === "clips" ? [] : [...extras];
   const fotos = elegidos.filter((f) => !esVideoDeApoyo(f));
   const apoyos = elegidos.filter(esVideoDeApoyo);
   if (fotos.length > 6) return avisar($("subir-aviso"), "Puedes subir hasta 6 fotos.");
@@ -430,7 +454,8 @@ $("form-subir").addEventListener("submit", async (e) => {
     $("form-subir").reset();
     clipElegido = null;
     $("video").dispatchEvent(new Event("change"));
-    $("fotos").dispatchEvent(new Event("change"));
+    extras = [];
+    mostrarExtras();
     cambioDeTipo();
     avisarRecibido(id);
     cargarVideos(true);
