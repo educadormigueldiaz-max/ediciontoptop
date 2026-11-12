@@ -8,9 +8,13 @@ import { RAIZ } from "./herramientas.mjs";
 const YTDLP = path.join(RAIZ, "node_modules", ".cache", "bydzyne", "yt-dlp");
 const asegurarYtdlp = async () => {
   if (fs.existsSync(YTDLP)) return;
-  if (process.platform !== "darwin") throw new Error("La descarga de YouTube solo está preparada para Mac.");
+  // La versión que toca según dónde corre: el Mac de Miguel o el servidor (Linux, editor.somoskreo.com).
+  const version = process.platform === "darwin" ? "yt-dlp_macos"
+    : process.platform === "linux" ? (process.arch === "arm64" ? "yt-dlp_linux_aarch64" : "yt-dlp_linux")
+    : null;
+  if (!version) throw new Error("La descarga de YouTube solo está preparada para Mac y Linux.");
   console.log("  Instalando el descargador de YouTube (solo la primera vez)…");
-  const r = await fetch("https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos");
+  const r = await fetch(`https://github.com/yt-dlp/yt-dlp/releases/latest/download/${version}`);
   if (!r.ok) throw new Error(`No se pudo bajar el descargador (${r.status}). Revisa el internet.`);
   fs.mkdirSync(path.dirname(YTDLP), { recursive: true });
   fs.writeFileSync(YTDLP, Buffer.from(await r.arrayBuffer()), { mode: 0o755 });
