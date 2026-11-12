@@ -263,6 +263,7 @@ const sacarClips = async (t) => {
   anotar(t.id, `Clips (código ${r.codigo}):\n${r.salida.slice(-3000)}`);
   const archivoResultado = path.join(CARPETA_SALIDA, "clips", t.proyecto, "resultado.json");
   if (r.codigo !== 0 || !fs.existsSync(archivoResultado)) {
+    if (/not a bot|Sign in to confirm/i.test(r.salida)) throw new ErrorClaro("YouTube no deja bajar videos desde nuestro servidor por ahora. Descarga el video y súbelo como archivo aquí mismo: así sí funciona.", r.salida);
     if (/privado|iniciar sesión/i.test(r.salida)) throw new ErrorClaro("Ese video de YouTube es privado o pide iniciar sesión: no se puede descargar.");
     if (/descargar/i.test(r.salida)) throw new ErrorClaro("No pudimos descargar el video de YouTube. Revisa el enlace.", r.salida);
     if (/no encontró momentos/i.test(r.salida)) throw new ErrorClaro("No encontramos momentos que funcionen solos en este video.");
@@ -505,6 +506,7 @@ const minutosDe = async (t) => {
   const archivo = t.video ? path.join(carpetaTrabajo(t.id), "subidos", t.video) : null;
   if (archivo && fs.existsSync(archivo)) segundos = parseFloat(ffprobe(archivo).format?.duration);
   else if (t.enlace) segundos = await duracionDeYoutube(t.enlace);
+  if (!(segundos > 0) && t.enlace) throw new ErrorClaro("YouTube no deja bajar videos desde nuestro servidor por ahora. Descarga el video y súbelo como archivo aquí mismo: así sí funciona.");
   if (!(segundos > 0)) throw new ErrorClaro("No pudimos medir cuánto dura tu video para calcular los tokens. Intenta de nuevo.");
   return Math.max(0.5, Math.ceil((segundos / 60) * 10) / 10);
 };

@@ -93,6 +93,8 @@ export const descargarDeYoutube = async (url, { carpeta, alAvanzar = () => {} })
   }
   const archivo = r.salida.trim().split("\n").filter(Boolean).at(-1);
   if (r.codigo !== 0 || !archivo || !fs.existsSync(archivo)) {
+    // YouTube a veces frena las descargas que salen de servidores ("not a bot"): no es culpa del video.
+    if (/not a bot|confirm you/i.test(r.errores)) throw new Error("YouTube bloqueó la descarga desde este equipo (not a bot).");
     if (/private|members|sign in|age/i.test(r.errores)) {
       throw new Error("Ese video es privado o pide iniciar sesión: no se puede descargar.");
     }
