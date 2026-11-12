@@ -35,6 +35,7 @@ pide en español lo que quiere ver ("corta las pausas y pon subtítulos") y tú 
 | `npm run resincronizar -- <id>…` | Vuelve a escuchar el video y corrige cuándo sale cada palabra de los subtítulos, sin cambiar sus textos |
 | `npm run caras -- <id>` | Vuelve a buscar la cara en un proyecto (no toca la edición) |
 | `npm run recortar -- <id>` | Separa a la persona del fondo para `detras`, `fondo` y `marco` (revisar y exportar lo hacen solos) |
+| `npm run unir -- parte1.mp4 parte2.mp4 … [--nombre x]` | Une un video grabado por partes en `entrada/<nombre>.mp4` y anota dónde empieza cada una (`.partes.json`). `preparar` separa la transcripción por partes y Claude ordena los tramos según la lógica y quita tomas repetidas (skill `bydzyne-piloto`, "Video en varias partes") |
 | `npm run lote [-- opciones de preparar]` | Prepara y revisa todos los videos nuevos de `entrada/` y deja un resumen en `salida/lote-<fecha>.md` |
 | `npm run dev` | Abre la vista previa (Remotion Studio) |
 | `npm run exportar -- <id> [--formato 9:16\|4:5\|1:1\|16:9] [--todos]` | Exporta a `salida/` |

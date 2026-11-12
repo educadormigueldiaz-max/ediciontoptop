@@ -65,9 +65,9 @@
       <div class="campo">
         <span class="titulo">1. Tu video</span>
         <label class="archivo" id="caja-video">
-          <input type="file" id="video" accept="video/*,audio/*">
+          <input type="file" id="video" accept="video/*,audio/*" multiple>
           <strong id="texto-video">Toca para elegir el video</strong>
-          <span class="ayuda" id="ayuda-video">De la galería del celular o del computador. También sirve un audio (nota de voz, podcast): lo volvemos un video animado.</span>
+          <span class="ayuda" id="ayuda-video">De la galería del celular o del computador. También sirve un audio (nota de voz, podcast): lo volvemos un video animado. ¿Lo grabaste por partes? Elige todas las partes juntas (hasta 15): la IA entiende de qué habla cada una, las ordena, quita las tomas repetidas y arma un solo video.</span>
         </label>
         <div class="clip-elegido" id="clip-elegido" hidden>
           <span>🎬 Vas a editar <strong id="clip-elegido-nombre"></strong>. Elige abajo cómo lo quieres (por ejemplo, con animaciones).</span>
@@ -289,9 +289,15 @@ function cambioDeTipo() {
   document.querySelector("#form-subir details")?.toggleAttribute("hidden", clips);
   $("boton-subir").textContent = clips ? "Sacar clips" : "Enviar a editar";
 }
+// Varias partes de un mismo video: van en el orden en que se grabaron (la IA decide el orden final)
+const partesElegidas = () => [...$("video").files].sort((a, b) => a.lastModified - b.lastModified);
 $("video").addEventListener("change", () => {
-  const f = $("video").files[0];
-  $("texto-video").textContent = f ? `✓ ${f.name} (${(f.size / 1e6).toFixed(0)} MB)` : "Toca para elegir el video";
+  const todos = partesElegidas();
+  const f = todos[0];
+  const mb = (n) => (n / 1e6).toFixed(0);
+  $("texto-video").textContent = todos.length > 1
+    ? `✓ ${todos.length} partes (${mb(todos.reduce((t, x) => t + x.size, 0))} MB): la IA las ordena y las une`
+    : f ? `✓ ${f.name} (${mb(f.size)} MB)` : "Toca para elegir el video";
   $("caja-video").classList.toggle("lleno", Boolean(f));
   if (f) { clipElegido = null; pintarClipElegido(); }
   cambioDeAnimaciones();
@@ -393,11 +399,18 @@ const subirArchivo = (id, archivo, clase, alAvanzar) => new Promise((resolve, re
 
 $("form-subir").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const video = $("video").files[0];
+  const partes = partesElegidas();
   const tipo = document.querySelector("input[name=tipo]:checked").value;
+  const video = partes.length > 1 ? null : partes[0];
+  if (partes.length > 1) {
+    if (tipo === "clips") return avisar($("subir-aviso"), "Para sacar clips elige un solo video largo.");
+    if (partes.length > 15) return avisar($("subir-aviso"), "Puedes subir hasta 15 partes de un mismo video.");
+    if (partes.some(esAudio)) return avisar($("subir-aviso"), "Las partes deben ser videos (no audios).");
+    if (partes.some((p) => p.size > 4 * 1024 ** 3)) return avisar($("subir-aviso"), "Una de las partes pesa más de 4 GB. Recórtala o expórtala más liviana.");
+  }
   const enlace = tipo === "clips" && !video ? $("enlace").value.trim() : "";
   const clip = !video && tipo !== "clips" ? clipElegido : null;
-  if (!video && !enlace && !clip) return avisar($("subir-aviso"), tipo === "clips" ? "Elige el video o pega el enlace de YouTube." : "Elige el video primero.");
+  if (!video && !enlace && !clip && partes.length < 2) return avisar($("subir-aviso"), tipo === "clips" ? "Elige el video o pega el enlace de YouTube." : "Elige el video primero.");
   const elegidos = tipo === "clips" ? [] : [...extras];
   const fotos = elegidos.filter((f) => !esVideoDeApoyo(f));
   const apoyos = elegidos.filter(esVideoDeApoyo);
@@ -421,7 +434,8 @@ $("form-subir").addEventListener("submit", async (e) => {
         estilo: $("estilo").value,
         cta: $("cta").value,
         notas: $("notas").value,
-        nombreVideo: video?.name ?? "",
+        nombreVideo: video?.name ?? partes[0]?.name ?? "",
+        partes: partes.length > 1 ? partes.map((p) => p.name) : null,
         desdeClip: clip ? { id: clip.id, n: clip.n } : null,
         animaciones: $("animaciones").checked,
         tipoAnimacion: $("campo-tipo-animacion").hidden ? null : document.querySelector("input[name=tipoAnimacion]:checked")?.value,
@@ -438,7 +452,8 @@ $("form-subir").addEventListener("submit", async (e) => {
       cargarVideos(true);
       return;
     }
-    const total = [...fotos, ...apoyos].reduce((t, f) => t + f.size, video?.size ?? 0) || 1;
+    const conPartes = partes.length > 1 ? partes : [];
+    const total = [...conPartes, ...fotos, ...apoyos].reduce((t, f) => t + f.size, video?.size ?? 0) || 1;
     let hecho = 0;
     const avanzar = (base, tamano) => (p) => {
       const pct = Math.round(((base + p * tamano) / total) * 100);
@@ -448,6 +463,7 @@ $("form-subir").addEventListener("submit", async (e) => {
     // Con un clip elegido el video ya está en el servidor: solo se suben fotos y videos de apoyo.
     if (video) await subirArchivo(id, video, "video", avanzar(0, video.size));
     hecho = video?.size ?? 0;
+    for (const f of conPartes) { await subirArchivo(id, f, "parte", avanzar(hecho, f.size)); hecho += f.size; }
     for (const f of fotos) { await subirArchivo(id, f, "foto", avanzar(hecho, f.size)); hecho += f.size; }
     for (const f of apoyos) { await subirArchivo(id, f, "apoyo", avanzar(hecho, f.size)); hecho += f.size; }
     await api(`/api/trabajos/${id}/enviar`, { method: "POST" });

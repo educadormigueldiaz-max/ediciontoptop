@@ -29,6 +29,7 @@ const enlacesDeApoyo = (lista) =>
     .slice(0, 5);
 const EXT_FOTO = ["jpg", "jpeg", "png", "webp", "heic", "heif"];
 const MAX_VIDEO = 4 * 1024 ** 3;
+const MAX_PARTES = 15;
 const MAX_FOTO = 30 * 1024 ** 2;
 const MAX_FOTOS = 6;
 // Videos de apoyo subidos como archivo (además de los enlaces).
@@ -322,6 +323,11 @@ const manejar = async (req, res) => {
       }
       origen = { crudo, grupo: grupo.id, n, titulo: archivo.red.replace(/^clip \d+:\s*/, "").replace(/ \([^)]+\)$/, "") };
     }
+    // Un video grabado en varias partes: se suben todas y la cola las une antes de editar.
+    const partes = !origen && d.tipo !== "clips" && Array.isArray(d.partes) ? d.partes.map(String) : [];
+    if (partes.length === 1 || partes.length > MAX_PARTES) return error(res, 400, `Elige de 2 a ${MAX_PARTES} partes.`);
+    if (partes.some((f) => !EXT_VIDEO.includes(extension(f)))) return error(res, 400, "Las partes deben ser videos MP4 o MOV.");
+    if (partes.length) d.nombreVideo = partes[0];
     const esAudio = !origen && EXT_AUDIO.includes(extension(d.nombreVideo));
     if (!origen && !EXT_VIDEO.includes(extension(d.nombreVideo)) && !(esAudio && d.tipo !== "clips")) {
       return error(res, 400, "Ese archivo no parece un video ni un audio. Usa MP4 o MOV (los del celular sirven) o un audio MP3 o M4A.");
@@ -348,6 +354,7 @@ const manejar = async (req, res) => {
       // Enlaces de YouTube de donde sacar trozos de apoyo (npm run videos-apoyo).
       videosApoyo: d.tipo === "clips" ? [] : enlacesDeApoyo(d.videosApoyo),
       apoyosEsperados: apoyos.length,
+      ...(partes.length ? { partesEsperadas: partes.length, nombresPartes: partes.map((p) => p.slice(0, 120)), partes: [] } : {}),
       ...(origen ? { desdeClip: { id: origen.grupo, n: origen.n }, video: "video.mp4" } : {}),
     });
     if (origen) {
@@ -357,7 +364,7 @@ const manejar = async (req, res) => {
     }
     anotar(
       t.id,
-      `${origen ? `Clip ${origen.n} de ${origen.grupo} mandado a editar` : "Subido"} por ${usuario}: ${TIPOS[t.tipo]}${esAudio ? " (solo audio)" : ""}, ${t.red}, estilo ${estilo}, ` +
+      `${origen ? `Clip ${origen.n} de ${origen.grupo} mandado a editar` : "Subido"} por ${usuario}: ${TIPOS[t.tipo]}${esAudio ? " (solo audio)" : ""}${partes.length ? ` (en ${partes.length} partes)` : ""}, ${t.red}, estilo ${estilo}, ` +
         `animaciones ${t.animaciones ? (t.tipoAnimacion ? `con ${t.tipoAnimacion}` : "sí") : "no"}, videos de apoyo ${t.videosApoyo.length + apoyos.length || "no"}. ` +
         `CTA: ${t.cta || "-"}. Notas: ${t.notas || "-"}`,
     );
@@ -377,25 +384,29 @@ const manejar = async (req, res) => {
     const ext = extension(url.searchParams.get("nombre"));
     const esVideo = clase === "video";
     const esApoyo = clase === "apoyo";
+    const esParte = clase === "parte";
     const apoyos = t.apoyos ?? [];
-    const permitidas = esVideo ? [...EXT_VIDEO, ...(t.tipo === "clips" ? [] : EXT_AUDIO)] : esApoyo ? EXT_VIDEO : EXT_FOTO;
+    const partesYa = t.partes ?? [];
+    if (esParte && (!t.partesEsperadas || partesYa.length >= t.partesEsperadas)) return error(res, 400, "Sobran partes.");
+    if (esVideo && t.partesEsperadas) return error(res, 400, "Este video va en partes.");
+    const permitidas = esVideo ? [...EXT_VIDEO, ...(t.tipo === "clips" ? [] : EXT_AUDIO)] : esApoyo || esParte ? EXT_VIDEO : EXT_FOTO;
     if (!permitidas.includes(ext)) return error(res, 400, "Tipo de archivo no permitido.");
     if (clase === "foto" && t.fotos.length >= MAX_FOTOS) return error(res, 400, `Puedes subir hasta ${MAX_FOTOS} fotos.`);
     if (esApoyo && (t.tipo === "clips" || apoyos.length >= MAX_APOYOS)) {
       return error(res, 400, `Puedes subir hasta ${MAX_APOYOS} videos de apoyo.`);
     }
-    const limite = esVideo ? MAX_VIDEO : esApoyo ? MAX_APOYO : MAX_FOTO;
+    const limite = esVideo || esParte ? MAX_VIDEO : esApoyo ? MAX_APOYO : MAX_FOTO;
     if (+(req.headers["content-length"] ?? 0) > limite) {
       return error(
         res,
         413,
-        esVideo ? "El video pesa más de 4 GB. Recórtalo o grábalo en menor calidad."
+        esVideo || esParte ? "El video pesa más de 4 GB. Recórtalo o grábalo en menor calidad."
           : esApoyo ? "Un video de apoyo pesa más de 2 GB. Recórtalo antes de subirlo."
           : "La foto pesa más de 30 MB.",
       );
     }
     // Los de apoyo llevan el id del trabajo: van a una biblioteca compartida y no deben chocar.
-    const nombre = esVideo ? `video.${ext}` : esApoyo ? `apoyo-${t.id}-${apoyos.length + 1}.${ext}` : `foto-${t.fotos.length + 1}.${ext}`;
+    const nombre = esVideo ? `video.${ext}` : esParte ? `parte-${String(partesYa.length + 1).padStart(2, "0")}.${ext}` : esApoyo ? `apoyo-${t.id}-${apoyos.length + 1}.${ext}` : `foto-${t.fotos.length + 1}.${ext}`;
     const destino = path.join(carpetaTrabajo(t.id), "subidos", nombre);
     let recibidos = 0;
     let excedido = false;
@@ -430,7 +441,7 @@ const manejar = async (req, res) => {
     const actual = leerTrabajo(t.id);
     actualizarTrabajo(
       t.id,
-      esVideo ? { video: final } : esApoyo ? { apoyos: [...(actual.apoyos ?? []), final] } : { fotos: [...actual.fotos, final] },
+      esVideo ? { video: final } : esParte ? { partes: [...(actual.partes ?? []), final] } : esApoyo ? { apoyos: [...(actual.apoyos ?? []), final] } : { fotos: [...actual.fotos, final] },
     );
     return enviarJson(res, 200, { ok: true });
   }
@@ -438,7 +449,9 @@ const manejar = async (req, res) => {
   // Todo subido: entra a la cola.
   if (metodo === "POST" && accion === "enviar") {
     if (t.estado !== "subiendo") return error(res, 409, "Este video ya se envió.");
-    if (!t.video) return error(res, 400, "Falta el video.");
+    if (t.partesEsperadas ? (t.partes ?? []).length < t.partesEsperadas : !t.video) {
+      return error(res, 400, t.partesEsperadas ? "Faltan partes del video." : "Falta el video.");
+    }
     actualizarTrabajo(t.id, { estado: "en-cola", paso: "Esperando turno", enColaDesde: new Date().toISOString() });
     anotar(t.id, "En cola.");
     siguiente();

@@ -21,6 +21,21 @@ El proyecto ya viene preparado: cortes de pausas con ritmo calmado, subtítulos,
 estilo elegido. Tú decides el resto, en este orden:
 
 1. **Lee** `transcripcion.txt` y `edicion.json`. Entiende de qué habla y para qué es el video.
+1b. **Video en varias partes** (si existe `partes.json` en el proyecto): la persona grabó por pedazos
+   y el programa los pegó en el orden en que llegaron, que casi nunca es el correcto. En
+   `transcripcion.txt` cada parte sale con su encabezado `=== Parte N ===`, y cada tramo de
+   `segmentos` cae dentro de una sola parte.
+   - Entiende la lógica de lo que dice y **reordena `segmentos`** para que la historia tenga
+     sentido: saludo o gancho primero, luego el desarrollo en orden (primero, después, por último),
+     y la despedida o llamada a la acción al final. Guíate por lo que dice, no por el nombre del
+     archivo ni por el orden de llegada.
+   - Si una parte repite lo mismo que otra (otra toma de la misma frase), deja solo la mejor
+     (completa, sin trabarse; en empate, la última grabada) y borra los tramos de las demás.
+   - Una parte que no aporta (pruebas de cámara, "¿ya está grabando?", silencio) se quita entera.
+   - No mezcles frases de partes distintas dentro de un mismo tramo y nunca cortes a mitad de palabra.
+   - Si el orden no se puede saber (partes sin relación entre sí), deja el orden de llegada.
+   - En el RESUMEN di en una frase cómo quedó el orden (ej. "Puse primero el saludo, luego los
+     pasos y al final la despedida; quité una toma repetida").
 2. **Tomas repetidas y errores** (skill `bydzyne-crudo-a-editado`): si dice dos veces la misma frase,
    deja la última buena. Si la persona lo pidió en las notas ("quita la parte donde me equivoco"),
    búscalo en la transcripción. Nunca cortes a mitad de palabra (usa `inicio`/`fin` de `palabras`).

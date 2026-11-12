@@ -17,6 +17,7 @@ import { detectarCaras } from "./lib/caras.mjs";
 import { detectarSubtitulosPropios } from "./lib/subtitulos-propios.mjs";
 import { estilosDisponibles } from "./lib/produccion.mjs";
 import { transcribir } from "./lib/transcribir.mjs";
+import { archivoPartes, cortarEnPartes, parteDe } from "./lib/unir.mjs";
 
 const AYUDA = `
 Uso: npm run preparar -- <video o audio> [opciones]
@@ -188,7 +189,10 @@ const margen = parseFloat(op.margen);
 const umbralDb = op.umbral ? parseFloat(op.umbral) : medirUmbral(wav).umbralDb;
 const silencios = op["sin-cortes"] ? [] : detectarSilencios({ wav, umbralDb, minDuracion: pausa, duracion });
 const muletillas = op["sin-cortes"] || op["conservar-muletillas"] ? [] : buscarMuletillas(palabras);
-const segmentos = calcularSegmentos({ duracion, silencios, cortesExtra: muletillas, margen, palabras });
+// Video armado con varias partes (npm run unir o el piloto): cada tramo queda dentro de una sola parte
+const partes = fs.existsSync(archivoPartes(original)) ? leerJson(archivoPartes(original)) : null;
+let segmentos = calcularSegmentos({ duracion, silencios, cortesExtra: muletillas, margen, palabras });
+if (partes?.length > 1) segmentos = cortarEnPartes(segmentos, partes);
 fs.rmSync(path.dirname(wav), { recursive: true, force: true });
 
 // 5. Dónde está la cara en cada momento, para que ningún texto o gráfico la tape.
@@ -246,12 +250,21 @@ const reloj = (s) => {
   const m = Math.floor(s / 60);
   return `${String(m).padStart(2, "0")}:${(s - m * 60).toFixed(1).padStart(4, "0")}`;
 };
+// Con varias partes, la transcripción va separada por parte para que se entienda el orden de grabación
+const lineaFrase = (f) => `[${reloj(f.inicio)} → ${reloj(f.fin)}] ${f.texto}`;
 fs.writeFileSync(
   path.join(carpeta, "transcripcion.txt"),
-  frases.length
-    ? frases.map((f) => `[${reloj(f.inicio)} → ${reloj(f.fin)}] ${f.texto}`).join("\n") + "\n"
-    : "(sin transcripción)\n",
+  !frases.length
+    ? "(sin transcripción)\n"
+    : partes?.length > 1
+      ? partes.map((p) => {
+          const deEsta = frases.filter((f) => parteDe((f.inicio + f.fin) / 2, partes) === p.n);
+          return `=== Parte ${p.n} de ${partes.length} (${p.nombre}) · ${reloj(p.inicio)} → ${reloj(p.fin)} ===\n` +
+            (deEsta.length ? deEsta.map(lineaFrase).join("\n") : "(no se oye nada)");
+        }).join("\n\n") + "\n"
+      : frases.map(lineaFrase).join("\n") + "\n",
 );
+if (partes?.length > 1) escribirJson(path.join(carpeta, "partes.json"), partes);
 actualizarListaDeProyectos();
 
 const editado = segmentos.reduce((t, s) => t + (s.fin - s.inicio), 0);

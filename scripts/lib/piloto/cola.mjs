@@ -418,7 +418,12 @@ const procesar = async (id) => {
     const e = await pedirAClaude(
       t,
       `Edita el video del proyecto "${t.proyecto}" (public/proyectos/${t.proyecto}/edicion.json) siguiendo ` +
-        `la skill bydzyne-piloto, paso "Primera edición". El estilo ya es "${t.estilo}".\n\n${datosDeLaPersona(t)}`,
+        `la skill bydzyne-piloto, paso "Primera edición". El estilo ya es "${t.estilo}".` +
+        (t.partes?.length >= 2
+          ? ` Este video viene en ${t.partes.length} partes grabadas por separado: lee public/proyectos/${t.proyecto}/partes.json ` +
+            `y la transcripción por partes, y ordénalas según la lógica (skill bydzyne-piloto, paso 1b).`
+          : "") +
+        `\n\n${datosDeLaPersona(t)}`,
     );
     costo += e.costo;
     resumen = e.resumen;
@@ -465,6 +470,29 @@ const procesar = async (id) => {
   });
   anotar(id, `Listo: versión ${version} (${archivos.map((a) => a.archivo).join(", ")}) · Claude ≈ ${costo.toFixed(2)} USD`);
   registrar(`Listo ${id} v${version}`);
+};
+
+// ---------- Video en varias partes ----------
+// Si la persona subió el video por pedazos, se unen en subidos/video.mp4 (y video.partes.json, que
+// preparar copia al proyecto) antes de cobrar: así los tokens se calculan sobre el video completo.
+const unirSiHace = async (id) => {
+  const t = leerTrabajo(id);
+  if (t.video || !(t.partes?.length >= 2)) return;
+  actualizarTrabajo(id, { estado: "editando", paso: `Uniendo las ${t.partes.length} partes` });
+  const subidos = path.join(carpetaTrabajo(id), "subidos");
+  const r = await node("unir.mjs", [
+    ...t.partes.map((p) => path.join(subidos, p)),
+    "--salida", path.join(subidos, "video.mp4"),
+    "--nombres", JSON.stringify(t.nombresPartes ?? t.partes),
+  ], { limiteMin: 90 });
+  if (r.codigo !== 0) {
+    if (/no tiene imagen/i.test(r.salida)) throw new ErrorClaro("Una de las partes no tiene imagen (¿es un audio?). Sube solo videos.", r.salida);
+    throw new ErrorClaro("No pudimos unir las partes del video. Revisa que todas se abran bien y súbelas de nuevo.", r.salida);
+  }
+  // Las partes sueltas ya no hacen falta (el unido las tiene todas): se borran para no llenar el disco
+  for (const p of t.partes) fs.rmSync(path.join(subidos, p), { force: true });
+  actualizarTrabajo(id, { video: "video.mp4" });
+  anotar(id, `Se unieron ${t.partes.length} partes en video.mp4.`);
 };
 
 // ---------- Tokens de Kreo ----------
@@ -525,6 +553,7 @@ export const siguiente = async () => {
   despierta.on("error", () => {});
   let cobro = null;
   try {
+    await unirSiHace(id);
     cobro = await apartarTokens(id);
     await procesar(id);
     if (cobro) await cerrarCobro(id, cobro, true);
