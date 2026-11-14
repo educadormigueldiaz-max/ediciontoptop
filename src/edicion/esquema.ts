@@ -131,7 +131,35 @@ export const esquemaEscenario = z.object({
 // título grande al final. cuarto: un cuarto de noche con una tarjeta de ideas. calle: un negocio
 // que se enciende al atardecer. celular: un perfil que se llena de videos, con pasos. cohete: un
 // cohete que despega con una frase. confeti: confeti, personajes y una invitación final.
-export const ESCENAS_3D = ["plataformas", "cuarto", "calle", "celular", "cohete", "confeti"] as const;
+// objetos: objetos de cubitos dibujados a la medida de lo que se dice en ese video (cada video
+// tiene los suyos), sobre un ambiente (calle, noche, día, oficina, espacio, naturaleza, estudio).
+export const ESCENAS_3D = ["plataformas", "cuarto", "calle", "celular", "cohete", "confeti", "objetos"] as const;
+export const AMBIENTES_3D = ["calle", "noche", "dia", "oficina", "espacio", "naturaleza", "estudio"] as const;
+export const ENTRADAS_3D = ["cae", "crece", "izquierda", "derecha", "sube"] as const;
+export const MOVIMIENTOS_3D = ["quieto", "flota", "gira", "rebota", "avanza", "tiembla", "late", "balancea"] as const;
+// Un objeto de cubitos: cada fila del mapa es una fila de cubitos (de arriba abajo) y cada letra un
+// color de `colores` ("." = vacío). Las letras de `brilla` dan luz; las de `relieve` sobresalen.
+export const esquemaCubitos = z.object({
+  mapa: z.array(z.string().max(40)).min(1).max(40),
+  colores: z.record(z.string(), z.string().regex(/^#[0-9a-fA-F]{6}$/)),
+  brilla: z.string().max(20).default(""),
+  relieve: z.string().max(20).default(""),
+});
+export const esquemaObjeto3D = z.object({
+  nombre: z.string().max(40),
+  cubitos: esquemaCubitos,
+  // Centro horizontal (-1 izquierda, 0 centro, 1 derecha) y dónde queda la base (0 arriba, 1 abajo)
+  // dentro del espacio de la animación; `alto` = qué parte del alto ocupa (0.1–0.7).
+  x: z.number().min(-1).max(1).default(0),
+  y: z.number().min(0).max(1).default(0.8),
+  alto: z.number().min(0.08).max(0.7).default(0.3),
+  // Con qué punto aparece (su índice en `puntos`; null = al empezar la escena).
+  punto: z.number().int().min(0).max(3).nullable().default(null),
+  entrada: z.enum(ENTRADAS_3D).default("crece"),
+  movimiento: z.enum(MOVIMIENTOS_3D).default("flota"),
+  // Hacia dónde mira (grados; 0 = de frente).
+  giro: z.number().min(-60).max(60).default(0),
+});
 export const VISTAS_3D = ["tienda", "reservas", "panel", "crm"] as const;
 export const esquemaEscenario3D = z.object({
   escena: z.enum(ESCENAS_3D).default("plataformas"),
@@ -154,6 +182,9 @@ export const esquemaEscenario3D = z.object({
   nombre: z.string().max(24).nullable().default(null),
   // Calle: lo que se busca. confeti: el botón final. cohete: la línea de abajo.
   sub: z.string().max(60).nullable().default(null),
+  // objetos: el ambiente y los objetos (hasta 6) de esa escena.
+  ambiente: z.enum(AMBIENTES_3D).nullable().default(null),
+  objetos: z.array(esquemaObjeto3D).max(6).nullable().default(null),
 });
 // Dónde va la escena de apoyo: completa (tapa el video y se oye la voz), encima (una tarjeta
 // sobre el video, sin tapar la cara) o dividida (la animación arriba y la persona abajo; en
@@ -350,6 +381,7 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
         else if (q === "plataformas" && !e.titulo) falta('la escena 3D "plataformas" necesita "titulo" (el título grande del final)');
         else if ((q === "cuarto" || q === "celular") && e.puntos.length < 1) falta(`la escena 3D "${q}" necesita "puntos"`);
         else if ((q === "cohete" || q === "confeti") && !e.titulo) falta(`la escena 3D "${q}" necesita "titulo"`);
+        else if (q === "objetos" && !e.escenario3d?.objetos?.length) falta('la escena 3D "objetos" necesita "objetos"');
       }
       if (e.modo === "video" && !e.archivo)
         falta('necesita "archivo" (por ejemplo "videos-apoyo/f1/video.mp4")');

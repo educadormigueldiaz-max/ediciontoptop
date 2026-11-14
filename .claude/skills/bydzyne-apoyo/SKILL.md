@@ -193,6 +193,35 @@ que ilustra lo que se dice y **varíala** de una escena a otra (no repitas la mi
 | `celular` | Un celular en 3D con un perfil (`nombre` = la cuenta) que se llena de videos, corazones que suben y una tarjeta con pasos que se marcan | `titulo`, `puntos` (1–4) con `cue` |
 | `cohete` | Un cohete de cubitos que despega con una frase grande | `titulo` (la frase), `sub` opcional (línea de abajo), un punto con el `cue` del despegue |
 | `confeti` | Confeti, personajes que saltan y una invitación final | `titulo`, `sub` opcional (el botón, p. ej. "Escríbeme hoy"), un punto con el `cue` del botón |
+| `objetos` | **Objetos hechos a la medida de lo que se dice** (una cámara de seguridad en un poste, un ladrón, una patrulla, una vaca, una taza de café…), dibujados en cubitos solo para este video, sobre un `ambiente`. Entran cuando se dice su punto y se mueven | `objetos` (1–4 por escena), `ambiente`, `puntos` (0–3, con `cue`), `titulo` opcional |
+
+**Usa `objetos` casi siempre.** Cada video tiene que verse distinto y mostrar exactamente lo que
+se dice: si habla de robos y cámaras, se ven cámaras y ladrones; si habla de café, una taza y
+granos. Las escenas fijas (`plataformas`, `cuarto`, `calle`, `celular`, `cohete`, `confeti`) son
+siempre iguales: úsalas solo cuando lo que se dice es literalmente eso (una tienda en línea, un
+perfil de redes, un lanzamiento) y nunca más de una por video.
+
+`objetos` (solo en la escena `objetos`), en el orden en que aparecen:
+`{ "dibujo": "camara-seguridad", "x": -0.5, "y": 1, "alto": 0.45, "punto": 0, "entrada": "cae", "movimiento": "gira", "giro": 20 }`
+- `dibujo`: nombre en minúsculas con guiones; cada dibujo nuevo va en la lista `cubitos` de la
+  respuesta (ver abajo). Un mismo dibujo se puede usar en varias escenas.
+- `x`: -1 (izquierda) a 1 (derecha). `y`: dónde queda su base, 0 (arriba) a 1 (el piso). Lo que
+  está en el suelo va en `y: 1`; lo que vuela o cuelga, más arriba.
+- `alto`: qué parte del alto de la zona ocupa (0.15 algo chico, 0.4 normal, 0.6 protagonista).
+  Que no se tapen entre sí: con 2 objetos, `x` -0.6 y 0.6; con 3, -0.75, 0 y 0.75.
+- `punto`: con qué punto entra (índice en `puntos`) o null para que esté desde el principio.
+- `entrada`: cae | crece | izquierda | derecha | sube. `movimiento`: quieto | flota | gira |
+  rebota | avanza (camina hacia el centro) | tiembla (miedo, alarma) | late (algo importante) |
+  balancea. Elige lo que actúa lo que se dice (el ladrón `avanza`, la sirena `late`).
+- `giro`: hacia dónde mira, -60 a 60 grados (que los personajes se miren entre sí).
+- `ambiente`: calle | noche | dia | oficina | espacio | naturaleza | estudio (fondo de color del
+  estilo). Elige el lugar donde pasa lo que se cuenta.
+- Textos: `titulo` corto arriba (opcional) y `puntos` como etiquetas que salen con su `cue`.
+
+Cada dibujo nuevo va en `cubitos` (al nivel de `escenas`), con una descripción precisa para el
+dibujante: `"cubitos": [ { "nombre": "camara-seguridad", "descripcion": "cámara de seguridad
+gris montada en un brazo de un poste, lente negro grande con luz roja encendida, vista de lado" } ]`.
+Describe forma, colores y lo que la distingue. Personas: ropa, pelo, qué hacen o llevan.
 
 `pantallas` (solo `plataformas`), una por punto y en el mismo orden:
 `{ "vista": "tienda"|"reservas"|"panel"|"crm", "filas": [...], "nota": "…" o null }`. Cada pantalla con una vista distinta.
@@ -212,6 +241,14 @@ genéricas. `nombre` y `sub`: solo si encajan con lo que se dice. Termina la esc
                    { "vista": "crm", "filas": ["Ana: Pidió el catálogo", "Luis: Agendó una cita"], "nota": null } ] },
   "puntos": [ { "texto": "Tienda", "icono": null, "cue": "tanta gente" },
               { "texto": "Clientes", "icono": null, "cue": "desconocimiento" } ] }
+```
+
+```json
+{ "modo": "escenario3d", "inicio": 5.6, "fin": 10.4, "titulo": "Roban bajo las cámaras",
+  "escenario3d": { "escena": "objetos", "ambiente": "calle", "nombre": null, "sub": null, "pantallas": null,
+    "objetos": [ { "dibujo": "camara-seguridad", "x": -0.6, "y": 0.35, "alto": 0.3, "punto": null, "entrada": "cae", "movimiento": "balancea", "giro": 25 },
+                 { "dibujo": "ladron", "x": 0.6, "y": 1, "alto": 0.5, "punto": 0, "entrada": "derecha", "movimiento": "avanza", "giro": -25 } ] },
+  "puntos": [ { "texto": "Roban debajo", "icono": null, "cue": "lo roban debajo" } ] }
 ```
 
 ## Cuándo y cuánto
@@ -252,6 +289,7 @@ Solo JSON, sin texto antes ni después:
   "dibujos": [ { "nombre": "formula1", "ancho": 1000, "alto": 400,
                  "descripcion": "Fórmula 1 rojo de perfil mirando a la derecha, piloto con casco blanco…",
                  "partes": ["rueda-delantera", "rueda-trasera"] } ],
+  "cubitos": [ { "nombre": "camara-seguridad", "descripcion": "cámara de seguridad gris en un brazo de poste, lente negro con luz roja" } ],
   "escenas": [ { "modo": "…", "inicio": …, "fin": …, … } ] }
 ```
 - `escenas`: con los campos de arriba (sin `tipo`). `inicio`/`fin` en segundos del original,
@@ -261,3 +299,4 @@ Solo JSON, sin texto antes ni después:
   una persona 400×800, un fondo 2000×1000); `descripcion` detallada de cómo se ve, de qué lado
   mira y sus colores; `partes` = ids de los grupos que se moverán.
 - `estiloDibujo`: una frase con el estilo común de todos los dibujos (para que combinen).
+- `cubitos`: cada objeto 3D que usan las escenas `objetos` (por su `dibujo`), con su descripción.

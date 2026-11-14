@@ -3,6 +3,7 @@ import { ThreeCanvas } from "@remotion/three";
 import { useMemo } from "react";
 import { AbsoluteFill, Easing, interpolate, random, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { VISTAS_3D, type ElementoApoyo } from "../edicion/esquema";
 import { useMarca } from "../edicion/estilos";
 import type { Marca } from "../marca";
@@ -950,7 +951,225 @@ const Confeti: React.FC<Props> = ({ e, ed, m, local, area, P }) => {
   );
 };
 
-const ESCENAS: Record<Escena3D["escena"], React.FC<Props>> = { plataformas: Plataformas, cuarto: Cuarto, calle: Calle, celular: Celular, cohete: Cohete, confeti: Confeti };
+// ---------------- objetos: objetos de cubitos hechos a la medida de cada video ----------------
+type Objeto3D = NonNullable<Escena3D["objetos"]>[number];
+type Ambiente = NonNullable<Escena3D["ambiente"]>;
+
+// Junta los cubitos de cada color en una sola figura (así un objeto de 500 cubitos pesa como 5).
+// La base del objeto queda en y = 0 y su centro en x = 0.
+const useFigura = (c: Objeto3D["cubitos"]) =>
+  useMemo(() => {
+    const filas = c.mapa.length;
+    const columnas = Math.max(...c.mapa.map((f) => f.length));
+    const porColor = new Map<string, THREE.BufferGeometry[]>();
+    c.mapa.forEach((fila, y) =>
+      [...fila].forEach((letra, x) => {
+        if (letra === "." || letra === " " || !c.colores[letra]) return;
+        const hondo = c.relieve.includes(letra) ? 2.2 : 1.4;
+        const g = new THREE.BoxGeometry(0.97, 0.97, hondo);
+        g.translate(x - (columnas - 1) / 2, filas - 1 - y + 0.5, (hondo - 1.4) / 2);
+        if (!porColor.has(letra)) porColor.set(letra, []);
+        porColor.get(letra)!.push(g);
+      }),
+    );
+    const partes = [...porColor.entries()].map(([letra, gs]) => {
+      const g = mergeGeometries(gs);
+      gs.forEach((x) => x.dispose());
+      return { letra, color: c.colores[letra], brilla: c.brilla.includes(letra), g };
+    });
+    return { partes, filas, columnas };
+  }, [c]);
+
+const Figura: React.FC<{ o: Objeto3D }> = ({ o }) => {
+  const f = useFigura(o.cubitos);
+  return (
+    <>
+      {f.partes.map((p) => (
+        <mesh key={p.letra} geometry={p.g}>
+          <meshStandardMaterial color={p.color} roughness={0.55} metalness={0.05} emissive={p.color} emissiveIntensity={p.brilla ? 1.1 : 0.04} />
+        </mesh>
+      ))}
+    </>
+  );
+};
+
+const AMBIENTE: Record<Ambiente, { fondo: string; piso: string | null; cielo: string; suelo: string; luz: string; fuerza: number; estrellas: boolean; nubes: boolean }> = {
+  calle: { fondo: "linear-gradient(180deg, #2a1d4a 0%, #5a2d63 38%, #c4506a 66%, #ff9a5a 88%)", piso: "#3a2f3d", cielo: "#ffb38a", suelo: "#2a1d3a", luz: "#ffb070", fuerza: 1, estrellas: false, nubes: false },
+  noche: { fondo: "linear-gradient(180deg, #050816 0%, #0d1638 55%, #1e2a5c 100%)", piso: "#171a2e", cielo: "#8fa6ff", suelo: "#0a0c18", luz: "#9fb4ff", fuerza: 0.8, estrellas: true, nubes: false },
+  dia: { fondo: "linear-gradient(180deg, #4aa3ff 0%, #8fd0ff 60%, #d8f0ff 100%)", piso: "#9a97a3", cielo: "#ffffff", suelo: "#6d6a78", luz: "#fff4d6", fuerza: 1.25, estrellas: false, nubes: true },
+  oficina: { fondo: "linear-gradient(180deg, #2b2840 0%, #3d3858 70%, #4a4466 100%)", piso: "#6b4f3a", cielo: "#e8e2ff", suelo: "#3a2c22", luz: "#ffe2b8", fuerza: 1.1, estrellas: false, nubes: false },
+  espacio: { fondo: "radial-gradient(ellipse at 50% 40%, #1b1240 0%, #050410 70%)", piso: null, cielo: "#b9a8ff", suelo: "#050410", luz: "#c9b8ff", fuerza: 0.9, estrellas: true, nubes: false },
+  naturaleza: { fondo: "linear-gradient(180deg, #5fb6ff 0%, #a8dcff 55%, #fff1c9 100%)", piso: "#4f9a4a", cielo: "#ffffff", suelo: "#2f5e2c", luz: "#fff1c9", fuerza: 1.2, estrellas: false, nubes: true },
+  estudio: { fondo: "", piso: "#15141f", cielo: "#c9c2ff", suelo: "#1a1030", luz: "#ffffff", fuerza: 1, estrellas: false, nubes: false },
+};
+
+const Objetos: React.FC<Props> = ({ e, ed, m, local, dur, area, P }) => {
+  const { width: W, height: H, fps } = useVideoConfig();
+  const D = 30;
+  const k = pxPorUnidad(D, H);
+  const u = unidad(area);
+  const amb = AMBIENTE[ed.ambiente ?? "estudio"];
+  const fondo = amb.fondo || `radial-gradient(ellipse at 50% 35%, ${mezclar(P.acento, "#07070c", 0.55)}, #07070c 78%)`;
+  const objetos = ed.objetos ?? [];
+  const horizontal = area.ancho > area.alto * 1.25;
+  // Arriba los textos; abajo, la zona de los objetos (su base en y = 1 es el piso).
+  const n = Math.min(4, e.puntos.length);
+  const altoTextos = (e.titulo ? 150 * u : 0) + (n ? 90 * u : 0) + 30 * u;
+  const zonaArriba = area.y + Math.max(altoTextos, area.alto * (horizontal ? 0.3 : 0.26));
+  const zonaAbajo = area.y + area.alto;
+  const zonaAlto = zonaAbajo - zonaArriba;
+  const [, pisoY] = aMundo(W / 2, zonaAbajo, D, W, H);
+  const cam: V3 = [Math.sin(local / 45) * 1.6, Math.sin(local / 70) * 0.4, D];
+  // Acomodo: los objetos del piso (y ≥ 0.7) van en fila, en el orden de su x, sin taparse; si no
+  // caben, todos se achican igual. Los que flotan quedan donde los puso la IA.
+  const lugares = objetos.map((o) => {
+    const filas = o.cubitos.mapa.length;
+    const columnas = Math.max(...o.cubitos.mapa.map((f) => f.length));
+    const altoPx = Math.min(Math.max(o.alto, 0.3) * 1.25, 0.95) * zonaAlto;
+    return { filas, columnas, altoPx, anchoPx: (altoPx * columnas) / filas, cx: 0 };
+  });
+  const enFila = objetos.map((o, i) => i).filter((i) => objetos[i].y >= 0.7).sort((a, b) => objetos[a].x - objetos[b].x);
+  const hueco = 24 * u;
+  const disponible = area.ancho * 0.94;
+  const total = enFila.reduce((t, i) => t + lugares[i].anchoPx, 0) + hueco * Math.max(0, enFila.length - 1);
+  const achica = total > disponible ? disponible / total : 1;
+  let cursor = area.x + area.ancho / 2 - (Math.min(total, disponible)) / 2;
+  for (const i of enFila) {
+    const l = lugares[i];
+    l.altoPx *= achica;
+    l.anchoPx *= achica;
+    l.cx = enFila.length === 1 ? area.x + area.ancho / 2 + objetos[i].x * Math.max(0, area.ancho / 2 - l.anchoPx / 2 - 20 * u) : cursor + l.anchoPx / 2;
+    cursor += l.anchoPx + hueco * achica;
+  }
+  objetos.forEach((o, i) => {
+    if (o.y >= 0.7) return;
+    const l = lugares[i];
+    const cabe = Math.min(1, (area.ancho * 0.45) / l.anchoPx);
+    l.altoPx *= cabe;
+    l.anchoPx *= cabe;
+    l.cx = area.x + area.ancho / 2 + o.x * Math.max(0, area.ancho / 2 - l.anchoPx / 2 - 20 * u);
+  });
+  return (
+    <AbsoluteFill>
+      <AbsoluteFill style={{ background: fondo }} />
+      <Lienzo w={W} h={H} cam={cam} mira={[0, 0, 0]}>
+        <ambientLight intensity={0.55 * amb.fuerza} />
+        <hemisphereLight args={[amb.cielo, amb.suelo, 0.75 * amb.fuerza]} />
+        <directionalLight position={[8, 12, 10]} intensity={1.7 * amb.fuerza} color={amb.luz} />
+        <pointLight position={[-9, 4, 8]} intensity={110} color={P.rosa} />
+        {amb.piso ? (
+          <>
+            <Caja p={[0, pisoY - 0.25, -20]} t={[200, 0.5, 120]} color={amb.piso} />
+            {ed.ambiente === "calle" || ed.ambiente === "dia"
+              ? Array.from({ length: 9 }, (_, i) => <Caja key={i} p={[-32 + i * 8, pisoY + 0.02, 6]} t={[3, 0.05, 0.35]} color="#e8d9a8" />)
+              : null}
+          </>
+        ) : null}
+        {ed.ambiente === "calle" || ed.ambiente === "noche"
+          ? Array.from({ length: 7 }, (_, i) => {
+              const alto = 8 + random(`ed${i}`) * 14;
+              return (
+                <group key={i}>
+                  <Caja p={[-36 + i * 12, pisoY + alto / 2, -26]} t={[9, alto, 6]} color={ed.ambiente === "noche" ? "#1c2144" : "#3b2547"} />
+                  {Array.from({ length: 6 }, (_, j) => (
+                    <Caja key={j} p={[-38.5 + i * 12 + (j % 2) * 5, pisoY + 2.5 + Math.floor(j / 2) * 3, -22.9]} t={[1.4, 1.6, 0.1]} color="#ffd99a" brillo={random(`vn${i}${j}`) > 0.45 ? 0.9 : 0} />
+                  ))}
+                </group>
+              );
+            })
+          : null}
+        {ed.ambiente === "naturaleza"
+          ? [[-26, 9, "#3f8a45"], [-6, 12, "#4f9a4a"], [20, 10, "#3f8a45"]].map(([x, r, c], i) => (
+              <mesh key={i} position={[x as number, pisoY - (r as number) * 0.45, -40]}>
+                <sphereGeometry args={[(r as number) * 1.6, 24, 16]} />
+                <meshStandardMaterial color={c as string} roughness={0.9} />
+              </mesh>
+            ))
+          : null}
+        {ed.ambiente === "oficina" ? (
+          <>
+            <Caja p={[0, pisoY + 12, -24]} t={[120, 30, 1]} color="#4a4466" />
+            <Caja p={[-12, pisoY + 13, -23.3]} t={[12, 8, 0.2]} color="#9fc8ff" brillo={0.35} />
+            <Caja p={[-12, pisoY + 13, -23.1]} t={[0.3, 8, 0.2]} color="#2b2840" />
+          </>
+        ) : null}
+        {amb.estrellas
+          ? Array.from({ length: 60 }, (_, i) => (
+              <Caja key={i} p={[(random(`sx${i}`) - 0.5) * 120, pisoY + 6 + random(`sy${i}`) * 50, -45]} t={[0.25, 0.25, 0.25]} color="#ffffff" brillo={0.6 + 0.6 * Math.abs(Math.sin(local / 9 + i))} />
+            ))
+          : null}
+        {amb.nubes
+          ? Array.from({ length: 5 }, (_, i) => (
+              <group key={i} position={[((-50 + i * 24 + local * 0.03 * (1 + (i % 2))) % 120) - 10, pisoY + 22 + random(`ny${i}`) * 10, -35]}>
+                <Caja p={[0, 0, 0]} t={[8, 2.4, 3]} color="#ffffff" brillo={0.15} />
+                <Caja p={[1, 1.6, 0]} t={[4.5, 2.2, 3]} color="#ffffff" brillo={0.15} />
+              </group>
+            ))
+          : null}
+        {objetos.map((o, i) => {
+          const { filas, columnas, altoPx, cx } = lugares[i];
+          const s = altoPx / k / filas;
+          const base = zonaArriba + o.y * zonaAlto;
+          const [wx, wy] = aMundo(cx, base, D, W, H);
+          const a = o.punto !== null && m[o.punto] !== undefined ? m[o.punto] : 3 + i * 6;
+          if (local < a) return null;
+          const t = local - a;
+          const v = resorte(local, a, fps, 11, 150);
+          const alto = filas * s;
+          let dx = 0;
+          let dy = 0;
+          let escala = 1;
+          let rz = 0;
+          const giro = (Math.max(-35, Math.min(35, o.giro)) * Math.PI) / 180;
+          let ry = giro + Math.sin(local / 32 + i * 1.7) * 0.22;
+          if (o.entrada === "cae") dy += (1 - v) * (H / k) * 0.8;
+          else if (o.entrada === "sube") { dy -= (1 - v) * alto * 1.4; escala *= 0.4 + 0.6 * v; }
+          else if (o.entrada === "izquierda") dx -= (1 - v) * (W / k) * 0.8;
+          else if (o.entrada === "derecha") dx += (1 - v) * (W / k) * 0.8;
+          else escala *= v;
+          if (o.movimiento === "flota") dy += Math.sin(t / 13 + i) * alto * 0.05;
+          else if (o.movimiento === "gira") ry = giro + interpolate(t, [0, 36], [0, Math.PI * 2], { ...LIMITE, easing: suave }) + Math.sin(local / 32) * 0.22;
+          else if (o.movimiento === "rebota") dy += Math.abs(Math.sin(t / 7)) * alto * 0.14;
+          else if (o.movimiento === "avanza") dx += Math.min(t * 0.012, 1) * alto * 0.6 * (o.x > 0 ? -1 : 1);
+          else if (o.movimiento === "tiembla") dx += (random(`t${i}-${local}`) - 0.5) * alto * 0.04;
+          else if (o.movimiento === "late") escala *= 1 + 0.06 * Math.sin(t / 4.5);
+          else if (o.movimiento === "balancea") rz = Math.sin(t / 10) * 0.12;
+          const enPiso = o.y > 0.9;
+          return (
+            <group key={i}>
+              {enPiso && amb.piso ? (
+                <mesh position={[wx + dx, pisoY + 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[1, 0.45, 1]}>
+                  <circleGeometry args={[(columnas * s) / 2 * Math.max(0.3, 1 - dy / (alto * 2)), 32]} />
+                  <meshBasicMaterial color="#000000" transparent opacity={0.28 * Math.min(1, v)} />
+                </mesh>
+              ) : null}
+              <group position={[wx + dx, wy + dy, 0]} rotation={[0, ry, rz]} scale={s * escala}>
+                <Figura o={o} />
+              </group>
+            </group>
+          );
+        })}
+      </Lienzo>
+      <div style={{ position: "absolute", left: area.x, width: area.ancho, top: area.y + 26 * u, display: "flex", flexDirection: "column", alignItems: "center", gap: 22 * u }}>
+        {e.titulo ? <TituloGrande texto={e.titulo} P={P} ancho={area.ancho * 0.9} maximo={92 * u} v={entra(local, 0, 12)} /> : null}
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 14 * u, maxWidth: area.ancho * 0.94 }}>
+          {e.puntos.slice(0, 4).map((p, i) => {
+            const v = resorte(local, m[i] ?? 10 + i * 14, fps, 11, 170);
+            if (v <= 0) return null;
+            return (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12 * u, padding: `${14 * u}px ${26 * u}px`, borderRadius: 999, background: "rgba(14,13,22,.82)", border: `${2 * u}px solid ${P.acento}`, boxShadow: `0 10px 30px rgba(0,0,0,.35), 0 0 30px ${P.acento}55`, fontFamily: P.fuente, fontWeight: 800, fontSize: tamQueCabe(p.texto, area.ancho * 0.8, 40 * u, 0.6), color: P.texto, whiteSpace: "nowrap", opacity: Math.min(1, v * 1.4), transform: `translateY(${(1 - v) * 30 * u}px) scale(${0.85 + 0.15 * v})` }}>
+                {p.icono ? <Icono nombre={p.icono} defecto="sparkles" tam={38 * u} color={P.amarillo} /> : null}
+                {p.texto}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+const ESCENAS: Record<Escena3D["escena"], React.FC<Props>> = { plataformas: Plataformas, cuarto: Cuarto, calle: Calle, celular: Celular, cohete: Cohete, confeti: Confeti, objetos: Objetos };
 
 export const Escenario3D: React.FC<{ item: ItemEscenario; area: Area }> = ({ item, area }) => {
   const local = useCurrentFrame();
@@ -958,7 +1177,7 @@ export const Escenario3D: React.FC<{ item: ItemEscenario; area: Area }> = ({ ite
   const marca = useMarca();
   const P = useMemo(() => paletaDe(marca), [marca]);
   const { elemento: e, duracionFrames: dur } = item;
-  const ed: Escena3D = e.escenario3d ?? { escena: "plataformas", pantallas: null, nombre: null, sub: null };
+  const ed: Escena3D = e.escenario3d ?? { escena: "plataformas", pantallas: null, nombre: null, sub: null, ambiente: null, objetos: null };
   // Lo último que aparece necesita ~1.8 s para leerse.
   const m = momentosLegibles(item.momentos, Math.max(item.momentos.length, e.puntos.length), dur, fps);
   const Escena = ESCENAS[ed.escena];
@@ -973,6 +1192,7 @@ export const golpesEscenario3D = (e: ElementoApoyo, dur: number, momentos: numbe
     : q === "calle" ? [{ frame: m[0] ?? Math.round(dur * 0.3), sonido: "brillo" as const }]
     : q === "celular" ? m.slice(0, e.puntos.length).map((f) => ({ frame: f, sonido: "ding" as const }))
     : q === "cohete" ? [{ frame: Math.max(20, Math.min(Math.max(m[0] ?? 0, Math.round(dur * 0.55)), dur - 30)), sonido: "whoosh" as const }]
+    : q === "objetos" ? m.slice(0, e.puntos.length).map((f) => ({ frame: f, sonido: "ding" as const }))
     : q === "confeti" && e.escenario3d?.sub ? [{ frame: m[0] ?? 14, sonido: "ding" as const }]
     : [];
 };

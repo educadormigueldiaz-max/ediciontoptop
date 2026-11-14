@@ -98,8 +98,10 @@ TIPOS["3d"] = {
   modos: ["escenario3d"],
   criterio:
     "La persona eligió ESCENARIOS 3D: todas las escenas son modo escenario3d (sección \"Escenarios 3D\" " +
-    "de la skill). Elige la escena 3D que mejor ilustra cada momento (plataformas, cuarto, calle, celular, " +
-    "cohete o confeti) y varíala de una escena a otra. Cada punto lleva su cue: las palabras EXACTAS que " +
+    "de la skill). Cada video tiene que tener SUS PROPIOS objetos: usa la escena objetos en casi todas " +
+    "las escenas, con objetos dibujados a la medida de lo que se dice en ese momento (lista cubitos). " +
+    "Las escenas fijas (plataformas, cuarto, calle, celular, cohete, confeti) solo si lo que se dice es " +
+    "literalmente eso, y máximo una por video. Cada punto lleva su cue: las palabras EXACTAS que " +
     "dice la persona (copiadas de la transcripción) para que aparezca justo ahí.",
 };
 const UBICACIONES = ["completa", "encima", "dividida"];
@@ -108,7 +110,10 @@ const UBICACIONES = ["completa", "encima", "dividida"];
 const PROHIBIDAS = /\b(invertir|inversi[oó]n(es)?|inviert\w*|rentabilidad|rentable|retornos?)\b/i;
 const MUNDOS = ["cuarto", "calle"];
 const PANTALLAS = ["mundo", "lista", "chips", "tarjetas", "aviso", "guion", "cierre", "web", "panel", "crm", "golpe", "mosaico", "perfil", "proceso"];
-const ESCENAS_3D = ["plataformas", "cuarto", "calle", "celular", "cohete", "confeti"];
+const ESCENAS_3D = ["plataformas", "cuarto", "calle", "celular", "cohete", "confeti", "objetos"];
+const AMBIENTES_3D = ["calle", "noche", "dia", "oficina", "espacio", "naturaleza", "estudio"];
+const ENTRADAS_3D = ["cae", "crece", "izquierda", "derecha", "sube"];
+const MOVIMIENTOS_3D = ["quieto", "flota", "gira", "rebota", "avanza", "tiembla", "late", "balancea"];
 const VISTAS_3D = ["tienda", "reservas", "panel", "crm"];
 // Dinero en una pantalla: el panel solo muestra cantidades (visitas, pedidos), nunca plata.
 const DINERO = /\$|\b(pesos|cop|usd|d[oó]lares?|euros?|ventas?|ganancias?|ingresos?)\b/i;
@@ -269,7 +274,7 @@ if (op.revisar) {
   process.exit(0);
 }
 
-console.log(`Claude está diseñando las escenas de apoyo de "${id}"…`);
+console.log(`Kreo IA está diseñando las escenas de apoyo de "${id}"…`);
 let costo = 0;
 const plan = await preguntar(tarea, {
   tope: op.tope,
@@ -284,12 +289,14 @@ if (plan.error) {
 }
 let propuestas;
 let listaDibujos = [];
+let listaCubitos = [];
 let estiloDibujo = "";
 try {
   const datos = JSON.parse(plan.texto.slice(plan.texto.indexOf("{"), plan.texto.lastIndexOf("}") + 1));
   propuestas = datos.escenas;
   if (!Array.isArray(propuestas)) throw new Error();
   listaDibujos = Array.isArray(datos.dibujos) ? datos.dibujos : [];
+  listaCubitos = Array.isArray(datos.cubitos) ? datos.cubitos : [];
   estiloDibujo = typeof datos.estiloDibujo === "string" ? datos.estiloDibujo.slice(0, 300) : "";
 } catch {
   console.error(`La respuesta de Kreo IA no vino en el formato esperado:\n${plan.texto.slice(0, 1000)}`);
@@ -354,8 +361,26 @@ const escenario3dDe = (x) => {
             nota: texto(p.nota)?.slice(0, 40) ?? null,
           }))
       : null;
+  const objetos =
+    x.escena === "objetos" && Array.isArray(x.objetos)
+      ? x.objetos
+          .filter((o) => nombreDibujo(o?.dibujo))
+          .slice(0, 4)
+          .map((o) => ({
+            nombre: nombreDibujo(o.dibujo),
+            x: entre(numero(o.x, 0), -1, 1),
+            y: entre(numero(o.y, 1), 0, 1),
+            alto: entre(numero(o.alto, 0.4), 0.08, 0.7),
+            punto: Number.isInteger(o.punto) && o.punto >= 0 && o.punto <= 3 ? o.punto : null,
+            entrada: ENTRADAS_3D.includes(o.entrada) ? o.entrada : "crece",
+            movimiento: MOVIMIENTOS_3D.includes(o.movimiento) ? o.movimiento : "flota",
+            giro: entre(numero(o.giro, 0), -60, 60),
+          }))
+      : null;
   return {
     escena: x.escena,
+    ambiente: x.escena === "objetos" ? (AMBIENTES_3D.includes(x.ambiente) ? x.ambiente : "estudio") : null,
+    objetos: objetos?.length ? objetos : null,
     pantallas: pantallas?.length ? pantallas : null,
     nombre: texto(x.nombre)?.slice(0, 24) ?? null,
     sub: texto(x.sub)?.slice(0, 60) ?? null,
@@ -442,6 +467,7 @@ for (const [k, e] of ordenadas.entries()) {
     : q3 === "plataformas" && !escena.titulo ? "plataformas sin título final"
     : (q3 === "cuarto" || q3 === "celular") && puntos.length < 1 ? `${q3} sin puntos`
     : (q3 === "cohete" || q3 === "confeti") && !escena.titulo ? `${q3} sin título`
+    : q3 === "objetos" && !escena.escenario3d.objetos ? "objetos sin objetos"
     : esEscenario && ["lista", "chips", "web", "panel", "crm", "golpe", "perfil"].includes(pantalla) && puntos.length < 1 ? "pantalla sin puntos"
     : esEscenario && ["mosaico", "proceso"].includes(pantalla) && puntos.length < 2 ? `${pantalla} sin dos puntos`
     : esEscenario && pantalla === "mosaico" && !escena.titulo ? "mosaico sin título final"
@@ -505,6 +531,75 @@ if (usados.length) {
     while (cola.length) await dibujar(cola.shift());
   }));
 }
+// Objetos 3D a la medida: Claude dibuja cada uno en cubitos (4 a la vez) y se guarda dentro de la
+// escena. Lo que no salga bien se quita; una escena sin objetos se descarta.
+const describeCubitos = new Map(
+  listaCubitos.filter((d) => nombreDibujo(d?.nombre) && texto(d?.descripcion)).map((d) => [nombreDibujo(d.nombre), texto(d.descripcion).slice(0, 800)]),
+);
+const carpetaCubitos = path.join(CARPETA_PROYECTOS, id, "cubitos");
+const hechos = new Map();
+if (op.agregar && fs.existsSync(carpetaCubitos))
+  for (const f of fs.readdirSync(carpetaCubitos).filter((f) => f.endsWith(".json")))
+    hechos.set(f.replace(/\.json$/, ""), leerJson(path.join(carpetaCubitos, f)));
+const porDibujar = [...new Set(escenas.flatMap((e) => e.escenario3d?.objetos?.map((o) => o.nombre) ?? []))].filter((n) => !hechos.has(n));
+const cubitosValidos = (x) => {
+  if (!x || !Array.isArray(x.mapa) || typeof x.colores !== "object" || !x.colores) return null;
+  const colores = Object.fromEntries(
+    Object.entries(x.colores).filter(([k, v]) => /^[a-zA-Z0-9]$/.test(k) && /^#[0-9a-fA-F]{6}$/.test(String(v))),
+  );
+  const mapa = x.mapa.map((f) => String(f).slice(0, 32)).slice(0, 32);
+  const ancho = Math.max(...mapa.map((f) => f.length));
+  const llenos = mapa.join("").split("").filter((c) => colores[c]).length;
+  if (mapa.length < 6 || ancho < 5 || llenos < 20 || Object.keys(colores).length < 2) return null;
+  const letras = (t) => [...new Set(String(t ?? "").split(""))].filter((c) => colores[c]).join("").slice(0, 20);
+  return { mapa: mapa.map((f) => f.padEnd(ancho, ".")), colores, brilla: letras(x.brilla), relieve: letras(x.relieve) };
+};
+if (porDibujar.length) {
+  fs.mkdirSync(carpetaCubitos, { recursive: true });
+  const guia = fs.readFileSync(path.join(RAIZ, ".claude", "skills", "bydzyne-apoyo", "cubitos.md"), "utf8");
+  const colores = coloresDelEstilo(edicion.estilo);
+  console.log(`Kreo IA está dibujando ${porDibujar.length} objetos 3D…`);
+  const dibujarCubitos = async (nombre) => {
+    const pedido = [
+      guia,
+      "---",
+      `Dibuja: ${describeCubitos.get(nombre) ?? nombre.replace(/-/g, " ")}`,
+      `Colores del estilo del video (úsalos para acentos si encajan): ${Object.entries(colores).map(([k, v]) => `${k} ${v}`).join(", ")}.`,
+      "Responde solo con el JSON.",
+    ].join("\n\n");
+    for (let intento = 1; intento <= 2; intento++) {
+      const r = await preguntar(pedido, {
+        tope: 0.4,
+        sistema: "Eres artista de pixel art y voxel art. Dibujas objetos claros y reconocibles. Responde solo con el JSON.",
+      });
+      costo += r.costo ?? 0;
+      let c = null;
+      try {
+        c = cubitosValidos(JSON.parse(r.texto.slice(r.texto.indexOf("{"), r.texto.lastIndexOf("}") + 1)));
+      } catch {}
+      if (!c) continue;
+      escribirJson(path.join(carpetaCubitos, `${nombre}.json`), c);
+      hechos.set(nombre, c);
+      console.log(`  ✓ ${nombre} (${c.mapa[0].length}×${c.mapa.length})`);
+      return;
+    }
+    console.log(`  ✗ ${nombre}: no salió bien; ese objeto se quita.`);
+  };
+  const cola = [...porDibujar];
+  await Promise.all(Array.from({ length: Math.min(4, cola.length) }, async () => {
+    while (cola.length) await dibujarCubitos(cola.shift());
+  }));
+}
+for (const [i, e] of [...escenas.entries()].reverse()) {
+  if (e.escenario3d?.escena !== "objetos") continue;
+  const objetos = e.escenario3d.objetos.filter((o) => hechos.has(o.nombre)).map((o) => ({ ...o, cubitos: hechos.get(o.nombre) }));
+  if (objetos.length) e.escenario3d.objetos = objetos;
+  else {
+    descartadas.push(`objetos 3D ${e.inicio}–${e.fin} s (no salió ningún dibujo)`);
+    escenas.splice(i, 1);
+  }
+}
+
 // Capas cuyo dibujo no salió: se quitan; una escena sin capas se descarta.
 const finales = escenas.flatMap((e) => {
   if (e.modo !== "escena") return [e];
@@ -533,7 +628,7 @@ for (const e of finales) {
     e.modo === "escenario"
       ? `${e.escenario.mundo} · ${e.escenario.pantalla}: ${e.titulo ?? e.puntos.map((p) => p.texto).join(" / ")}`
       : e.modo === "escenario3d"
-      ? `3D · ${e.escenario3d.escena}: ${e.titulo ?? e.puntos.map((p) => p.texto).join(" / ")}`
+      ? `3D · ${e.escenario3d.escena}${e.escenario3d.objetos ? ` (${e.escenario3d.objetos.map((o) => o.nombre).join(", ")})` : ""}: ${e.titulo ?? e.puntos.map((p) => p.texto).join(" / ")}`
       : e.modo === "escena"
       ? `${e.titulo ? `${e.titulo}: ` : ""}${e.escena.capas.map((c) => path.basename(c.dibujo, ".svg")).join(", ")}`
       : e.titulo ?? e.cifra ?? e.texto ?? e.puntos.map((p) => p.texto).join(" / ");
