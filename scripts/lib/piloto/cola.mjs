@@ -134,6 +134,18 @@ const pedirAClaude = async (t, tarea) => {
   return { texto, resumen, costo: datos.total_cost_usd ?? 0 };
 };
 
+// Llamada a la acción de varias líneas: va completa, tal cual la escribió la persona (la IA no la acorta),
+// con el tiempo que necesita para leerse. Una frase corta la sigue decidiendo la IA.
+const cierreCompleto = (t) => {
+  const lineas = String(t.cta ?? "").split("\n").filter((l) => l.trim());
+  if (lineas.length < 2) return;
+  const archivo = path.join(CARPETA_PROYECTOS, t.proyecto, "edicion.json");
+  const edicion = leerJson(archivo);
+  const palabras = t.cta.split(/\s+/).filter(Boolean).length;
+  edicion.opciones.cierre = { texto: t.cta, duracion: Math.min(14, Math.max(5, Math.round(2 + palabras * 0.22))) };
+  fs.writeFileSync(archivo, JSON.stringify(edicion, null, 2));
+};
+
 const datosDeLaPersona = (t, pedido) =>
   [
     "<datos_de_la_persona>",
@@ -428,6 +440,7 @@ const procesar = async (id) => {
     );
     costo += e.costo;
     resumen = e.resumen;
+    cierreCompleto(t);
   } else {
     paso("editando", "Aplicando los cambios que pediste");
     const e = await pedirAClaude(
@@ -448,6 +461,7 @@ const procesar = async (id) => {
       `edicion.json lo que esté mal, siguiendo la skill bydzyne-piloto, paso "Revisión".`,
   );
   costo += v.costo;
+  if (clase === "nuevo") cierreCompleto(t);
   await revisarYCorregir(t);
 
   paso("exportando", "Creando el archivo final");

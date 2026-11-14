@@ -344,7 +344,7 @@ const manejar = async (req, res) => {
       tipo: d.tipo,
       red: d.red,
       estilo,
-      cta: String(d.cta ?? "").trim().slice(0, 200),
+      cta: String(d.cta ?? "").replace(/\r\n?/g, "\n").replace(/\n{3,}/g, "\n\n").trim().slice(0, 600),
       notas: String(d.notas ?? "").trim().slice(0, 1000),
       fotosEsperadas: fotos.length,
       // Escenas de apoyo animadas en medio del video (con un audio solo, siempre).

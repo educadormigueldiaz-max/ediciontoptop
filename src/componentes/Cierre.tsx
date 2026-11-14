@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, Easing, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import {
-  Bookmark, Calendar, Globe, Heart, Link, MessageCircle, MessageSquareText, Phone, Pointer, Share2,
+  Bookmark, Calendar, Check, Globe, Heart, Link, MessageCircle, MessageSquareText, Phone, Pointer, Share2,
   ShoppingCart, Sparkles, UserPlus, type LucideIcon,
 } from "lucide-react";
 import { useMarca } from "../edicion/estilos";
@@ -52,7 +52,7 @@ const partir = (texto: string, clave: RegExp | null) => {
   return partes.map((x) => ({ p: x.p, resaltar: marco ? x.propia : Boolean(clave && clave.test(x.limpia)) }));
 };
 
-export const Cierre: React.FC<{ texto: string }> = ({ texto }) => {
+const CierreCorto: React.FC<{ texto: string }> = ({ texto }) => {
   const marca = useMarca();
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
@@ -196,3 +196,130 @@ export const Cierre: React.FC<{ texto: string }> = ({ texto }) => {
     </AbsoluteFill>
   );
 };
+
+// Texto largo con varias líneas (por ejemplo una lista con ✅): se muestra COMPLETO como tarjeta de lista.
+// Arriba el título (lo que va antes de la lista), luego cada punto con su chulo, apareciendo uno por uno,
+// y abajo las notas y la firma. La letra se achica sola para que todo quepa.
+const MARCA_PUNTO = /^\s*(?:[✅✔☑✓•·▪►➤➡*-]|\d+[.)])\uFE0F?\s*/u;
+export const esCierreLargo = (texto: string) => texto.split("\n").filter((l) => l.trim()).length >= 2;
+
+export const partirLargo = (texto: string) => {
+  const lineas = texto.split("\n").map((l) => l.trim()).filter(Boolean);
+  const primero = lineas.findIndex((l) => MARCA_PUNTO.test(l));
+  let ultimo = -1;
+  lineas.forEach((l, i) => { if (MARCA_PUNTO.test(l)) ultimo = i; });
+  if (primero === -1) return { titulo: lineas[0], puntos: [] as string[], notas: lineas.slice(1) };
+  return {
+    titulo: lineas.slice(0, primero).join(" "),
+    puntos: lineas.slice(primero, ultimo + 1).map((l) => l.replace(MARCA_PUNTO, "")).filter(Boolean),
+    notas: lineas.slice(ultimo + 1),
+  };
+};
+
+const CierreLargo: React.FC<{ texto: string }> = ({ texto }) => {
+  const marca = useMarca();
+  const frame = useCurrentFrame();
+  const { fps, width, height, durationInFrames } = useVideoConfig();
+  const base = Math.min(width, height);
+  const { titulo, puntos, notas } = partirLargo(texto);
+  const acento = marca.colores.acento;
+  const sobre = marca.colores.textoSobreAcento;
+
+  // Tamaño de letra: el más grande con el que todo cabe en el alto disponible.
+  const util = width * 0.8;
+  const altoDe = (t: number) => {
+    const filas = (txt: string, tam: number, ancho: number) => Math.max(1, Math.ceil((txt.length * tam * 0.56) / ancho));
+    const tTitulo = t * 1.25;
+    return (
+      (titulo ? filas(titulo, tTitulo, util) * tTitulo * 1.2 + t * 0.9 : 0) +
+      puntos.reduce((n, p) => n + filas(p, t, util - t * 1.9) * t * 1.28 + t * 0.55, 0) +
+      notas.reduce((n, p) => n + filas(p, t * 0.85, util) * t * 0.85 * 1.3 + t * 0.4, 0)
+    );
+  };
+  let tam = base * 0.06;
+  while (tam > base * 0.022 && altoDe(tam) > height * 0.8) tam *= 0.95;
+
+  const total = Math.max(1, puntos.length + notas.length);
+  const finEntrada = Math.max(20, durationInFrames * 0.5);
+  const paso = (finEntrada - 12) / total;
+  const entra = (i: number) => spring({ frame: frame - 12 - i * paso, fps, config: { damping: 14 } });
+  const tituloV = spring({ frame, fps, config: { damping: 13 } });
+
+  return (
+    <AbsoluteFill
+      style={{
+        justifyContent: "center",
+        alignItems: "center",
+        background: `radial-gradient(circle at 50% 30%, ${marca.colores.primario}, ${marca.colores.fondo} 75%)`,
+        fontFamily: marca.fuente,
+        color: marca.colores.texto,
+        overflow: "hidden",
+      }}
+    >
+      <div style={{ width: util, display: "flex", flexDirection: "column", gap: tam * 0.55 }}>
+        {titulo && (
+          <div
+            style={{
+              fontSize: tam * 1.25,
+              fontWeight: 900,
+              lineHeight: 1.2,
+              marginBottom: tam * 0.35,
+              opacity: tituloV,
+              translate: `0 ${(1 - tituloV) * tam}px`,
+            }}
+          >
+            {titulo}
+          </div>
+        )}
+        {puntos.map((p, i) => {
+          const v = entra(i);
+          return (
+            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: tam * 0.5, opacity: v, translate: `${(1 - v) * -tam * 1.5}px 0` }}>
+              <div
+                style={{
+                  flex: "none",
+                  width: tam * 1.25,
+                  height: tam * 1.25,
+                  borderRadius: "50%",
+                  background: acento,
+                  display: "grid",
+                  placeItems: "center",
+                  scale: String(0.6 + 0.4 * v),
+                  marginTop: tam * 0.02,
+                }}
+              >
+                <Check size={tam * 0.85} color={sobre} strokeWidth={3.2} />
+              </div>
+              <div style={{ fontSize: tam, fontWeight: 700, lineHeight: 1.28 }}>{p}</div>
+            </div>
+          );
+        })}
+        {notas.map((n, j) => {
+          const v = entra(puntos.length + j);
+          const firma = j === notas.length - 1 && notas.length > 1;
+          return (
+            <div
+              key={j}
+              style={{
+                fontSize: tam * 0.85,
+                lineHeight: 1.3,
+                fontWeight: firma ? 800 : 600,
+                marginTop: j === 0 ? tam * 0.4 : 0,
+                opacity: v,
+                ...(firma
+                  ? { color: acento }
+                  : { padding: `${tam * 0.35}px ${tam * 0.5}px`, borderRadius: tam * 0.35, background: "rgba(255,255,255,0.08)", borderLeft: `${tam * 0.12}px solid ${acento}` }),
+              }}
+            >
+              {n}
+            </div>
+          );
+        })}
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+export const Cierre: React.FC<{ texto: string }> = ({ texto }) =>
+  esCierreLargo(texto) ? <CierreLargo texto={texto} /> : <CierreCorto texto={texto} />;
+

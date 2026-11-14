@@ -46,8 +46,11 @@ estilo elegido. Tú decides el resto, en este orden:
 4. **Gancho** (skill `bydzyne-estilo`): propone uno corto tomado de lo que la persona DICE (una
    frase suya, resumida). Nada de cifras, precios ni promesas que no estén en la transcripción. Si
    el video ya empieza con una frase fuerte, `gancho: null`.
-5. **Cierre**: solo si la persona escribió una llamada a la acción. Usa su texto (puedes acortarlo,
-   no cambiar lo que promete). Sin llamada a la acción: `cierre: null`.
+5. **Cierre**: solo si la persona escribió una llamada a la acción. Si es una frase de una línea, usa
+   su texto (puedes acortarlo, no cambiar lo que promete). Si tiene **varias líneas** (una lista, avisos,
+   firma), cópiala **completa y tal cual** en `cierre.texto`, con sus saltos de línea (`\n`) y emojis: no
+   la resumas ni quites puntos (sale como tarjeta de lista; el sistema le pone la duración).
+   Sin llamada a la acción: `cierre: null`.
 6. **Elementos** (skill `bydzyne-elementos`): pocos y solo cuando la transcripción lo justifique.
    - Reel o anuncio de 30–60 s: 1 a 3 elementos. Tutorial: una `lista` si enumera pasos. Testimonio:
      casi nada (máximo un `lettering` con su frase más fuerte); que se vea la persona.
