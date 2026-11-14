@@ -106,7 +106,10 @@ export const esquemaEscenaIlustrada = z.object({
 // abierta a la de cerca y una ventana de app o navegador con lo que se dice; un cursor toca cada
 // punto cuando la persona dice su `cue`. Las escenas seguidas del mismo mundo se sienten un solo lugar.
 export const MUNDOS = ["cuarto", "calle"] as const;
-export const PANTALLAS = ["mundo", "lista", "chips", "tarjetas", "aviso", "guion", "cierre", "web", "panel", "crm"] as const;
+export const PANTALLAS = ["mundo", "lista", "chips", "tarjetas", "aviso", "guion", "cierre", "web", "panel", "crm", "golpe", "mosaico", "perfil", "proceso"] as const;
+// Qué muestra cada ventanita de `mosaico` (tienda, reservas, panel, crm) y de `proceso` (guion,
+// voz, dibujo, musica), en el orden de los puntos. null = el orden de siempre.
+export const VISTAS = ["tienda", "reservas", "panel", "crm", "guion", "voz", "dibujo", "musica"] as const;
 export const esquemaEscenario = z.object({
   mundo: z.enum(MUNDOS).default("cuarto"),
   // mundo: solo el lugar y el personaje con un globo (el título). guion: lo que se dice, escrito
@@ -120,6 +123,7 @@ export const esquemaEscenario = z.object({
   abierto: z.enum(["abrir", "cerrar"]).nullable().default(null),
   // Calle: una búsqueda que se escribe y no encuentra nada (por ejemplo "tu negocio cerca de mí").
   busqueda: z.string().max(40).nullable().default(null),
+  vistas: z.array(z.enum(VISTAS)).max(4).nullable().default(null),
 });
 
 export const esquemaElemento = z.discriminatedUnion("tipo", [
@@ -295,9 +299,11 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
       if (e.modo === "escenario") {
         const p = e.escenario?.pantalla;
         if (!p) falta('necesita "escenario" con su "mundo" y su "pantalla"');
-        else if (["lista", "chips", "web", "panel", "crm"].includes(p) && e.puntos.length < 1)
+        else if (["lista", "chips", "web", "panel", "crm", "golpe", "perfil"].includes(p) && e.puntos.length < 1)
           falta(`la pantalla "${p}" necesita "puntos"`);
         else if (p === "tarjetas" && e.puntos.length < 2) falta('la pantalla "tarjetas" necesita de 2 a 4 "puntos"');
+        else if ((p === "mosaico" || p === "proceso") && e.puntos.length < 2) falta(`la pantalla "${p}" necesita de 2 a 4 "puntos"`);
+        else if (p === "mosaico" && !e.titulo) falta('la pantalla "mosaico" necesita "titulo" (el título grande del final)');
         else if (p === "mundo" && !e.titulo) falta('la pantalla "mundo" necesita "titulo" (lo que dice el globo)');
       }
       if (e.modo === "video" && !e.archivo)

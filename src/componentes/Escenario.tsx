@@ -60,9 +60,16 @@ type Tema = ReturnType<typeof temaDe>;
 const ContextoTema = createContext<Tema>(temaDe("cuarto", "#8f7cff", "sans-serif"));
 const useTema = () => useContext(ContextoTema);
 
+// Los íconos se buscan una sola vez (buscar en la lista enorme de lucide en cada cuadro hacía caer
+// el render de Chrome en algunos cuadros de 16:9).
+const ICONOS_YA = new Map<string, ReturnType<typeof buscarIcono>>();
+const iconoDe = (n: string) => {
+  if (!ICONOS_YA.has(n)) ICONOS_YA.set(n, buscarIcono(n));
+  return ICONOS_YA.get(n) ?? null;
+};
 const Icono: React.FC<{ nombre: string | null; defecto: string; tam: number; color?: string }> = ({ nombre, defecto, tam, color }) => {
   const K = useTema();
-  const C = (nombre && buscarIcono(nombre)) || buscarIcono(defecto);
+  const C = (nombre && iconoDe(nombre)) || iconoDe(defecto);
   return C ? <C size={tam} color={color ?? K.texto} strokeWidth={2.2} style={{ flexShrink: 0 }} /> : null;
 };
 
@@ -336,7 +343,7 @@ const BARRA = 84;
 const PAD = { arriba: 30, abajo: 36, lados: 36 };
 const UTIL = ANCHO - PAD.lados * 2;
 const NOMBRE: Record<Escenario["pantalla"], string> = {
-  mundo: "", lista: "Pasos", chips: "Ideas", tarjetas: "Opciones", aviso: "Ojo", guion: "Guion", cierre: "Contacto", web: "inicio", panel: "resumen", crm: "clientes",
+  mundo: "", lista: "Pasos", chips: "Ideas", tarjetas: "Opciones", aviso: "Ojo", guion: "Guion", cierre: "Contacto", web: "inicio", panel: "resumen", crm: "clientes", golpe: "", mosaico: "", perfil: "", proceso: "",
 };
 const COLUMNAS_CRM = ["Nuevo", "Conversando", "Cliente"];
 
@@ -729,13 +736,13 @@ const Crm: React.FC<ContenidoProps> = ({ e, m, local }) => {
 };
 
 // Etiqueta inclinada que salta encima de la ventana (como un sticker).
-const Sticker: React.FC<{ texto: string; desde: number; local: number; x: number; y: number }> = ({ texto, desde, local, x, y }) => {
+const Sticker: React.FC<{ texto: string; desde: number; local: number; y: number }> = ({ texto, desde, local, y }) => {
   const K = useTema();
   const { fps } = useVideoConfig();
   const s = spring({ frame: local - desde, fps, config: { damping: 9, stiffness: 160 } });
   if (local < desde) return null;
   return (
-    <div style={{ position: "absolute", left: x, top: y, padding: "14px 34px", borderRadius: 18, background: K.acento, color: "#fff", fontFamily: K.fuente, fontWeight: 900, fontSize: 56, letterSpacing: "0.02em", whiteSpace: "nowrap", transform: `rotate(-6deg) scale(${s})`, boxShadow: "0 16px 40px rgba(0,0,0,.5)", border: "4px solid #fff" }}>{texto}</div>
+    <div style={{ position: "absolute", right: 24, top: y, maxWidth: ANCHO - 120, overflow: "hidden", textOverflow: "ellipsis", padding: "14px 34px", borderRadius: 18, background: K.acento, color: "#fff", fontFamily: K.fuente, fontWeight: 900, fontSize: texto.length > 10 ? 44 : 56, letterSpacing: "0.02em", whiteSpace: "nowrap", transform: `rotate(-6deg) scale(${s})`, boxShadow: "0 16px 40px rgba(0,0,0,.5)", border: "4px solid #fff" }}>{texto}</div>
   );
 };
 
@@ -768,8 +775,9 @@ const Globo: React.FC<{ texto: string; local: number; x: number; y: number; esca
   const { fps } = useVideoConfig();
   const s = spring({ frame: local - 4, fps, config: { damping: 12 } });
   const n = Math.floor(interpolate(local, [6, 6 + texto.length * 0.9], [0, texto.length], LIMITE));
-  const w = 640 * escala;
-  const izq = Math.min(ancho - 40 * escala - w, Math.max(40 * escala, x - w / 2));
+  const lado = Math.max(70 * (ancho / 1080), 40 * escala);
+  const w = Math.min(640 * escala, ancho - lado * 2);
+  const izq = Math.min(ancho - lado - w, Math.max(lado, x - w / 2));
   return (
     <div style={{ position: "absolute", left: izq, top: y, width: w, transform: `translateY(-100%) scale(${s})`, transformOrigin: `${x - izq}px 100%` }}>
       <div style={{ padding: `${24 * escala}px ${30 * escala}px`, borderRadius: 30 * escala, background: "#fffaf3", color: "#1d1517", fontFamily: K.fuente, fontWeight: 800, fontSize: 42 * escala, lineHeight: 1.2, boxShadow: "0 20px 50px rgba(0,0,0,.45)", border: `${4 * escala}px solid #1d1517` }}>
@@ -780,8 +788,362 @@ const Globo: React.FC<{ texto: string; local: number; x: number; y: number; esca
   );
 };
 
+// ---------------- Lienzos: pantallas que no son una sola ventana ----------------
+// golpe (texto que golpea), mosaico (2×2 ventanitas y un título final), perfil (un celular con un
+// perfil de redes y una tarjeta de pasos) y proceso (2×2 tarjetas: guion, voz, dibujo, música).
+// Se diseñan en su propio lienzo y se escalan a la zona libre dejando margen a los lados.
+const LIENZOS = ["golpe", "mosaico", "perfil", "proceso"] as const;
+type Lienzo = (typeof LIENZOS)[number];
+const esLienzo = (p: Escenario["pantalla"]): p is Lienzo => (LIENZOS as readonly string[]).includes(p);
+// Medidas del lienzo (vertical y horizontal).
+const MEDIDA: Record<Lienzo, { v: [number, number]; h: [number, number] }> = {
+  golpe: { v: [940, 900], h: [1500, 640] },
+  mosaico: { v: [940, 1080], h: [1840, 540] },
+  perfil: { v: [940, 960], h: [1240, 820] },
+  proceso: { v: [940, 1080], h: [1840, 540] },
+};
+const VISTAS_DE: Record<"mosaico" | "proceso", NonNullable<Escenario["vistas"]>> = {
+  mosaico: ["tienda", "reservas", "panel", "crm"],
+  proceso: ["guion", "voz", "dibujo", "musica"],
+};
+// Redondea escalas y giros: valores diminutos (1e-7) dentro de un lienzo escalado hacían caer
+// el render de Chrome con íconos SVG en 16:9.
+const rd = (x: number) => Math.round(x * 1000) / 1000;
+// Letras de un texto que caben en un ancho (para bajar el tamaño antes de tocar el borde).
+const tamQueCabe = (texto: string, ancho: number, maximo: number, factor = 0.66) =>
+  Math.max(28, Math.min(maximo, ancho / Math.max(1, texto.length * factor)));
+// Momentos de los puntos, sin pasar del punto en que todavía queda tiempo para leer lo último.
+export const momentosLegibles = (m: number[], n: number, dur: number, fps: number) => {
+  const tope = Math.max(8, dur - Math.round(fps * 1.8));
+  return Array.from({ length: n }, (_, i) => Math.min(m[i] ?? 10 + i * 14, tope - (n - 1 - i) * 4));
+};
+// Cuándo sale el título del final del mosaico: un poco después de la última ventana y con al
+// menos 1.8 s para leerlo.
+const finalMosaico = (m: number[], dur: number, fps: number) =>
+  Math.max(10, Math.min(dur - Math.round(fps * 1.8), Math.max((m.at(-1) ?? 0) + Math.round(fps * 0.9), Math.round(dur * 0.55))));
+
+const Mini: React.FC<{ titulo: string; icono: string; x: number; y: number; w: number; h: number; v: number; rot?: number; children: React.ReactNode }> = ({ titulo, icono, x, y, w, h, v, rot = 0, children }) => {
+  const K = useTema();
+  return (
+    <div style={{ position: "absolute", left: x, top: y, width: w, height: h, borderRadius: 26, background: K.ventana, border: `2px solid ${K.linea}`, overflow: "hidden", boxShadow: `0 30px 80px rgba(0,0,0,.6), 0 0 50px ${K.acento}22`, opacity: Math.min(1, v), transform: `translateY(${rd((1 - v) * 80)}px) scale(${rd(0.85 + 0.15 * v)}) rotate(${rd((1 - v) * rot)}deg)` }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 9, height: 56, boxSizing: "border-box", padding: "0 18px", background: K.barra, borderBottom: `2px solid ${K.linea}` }}>
+        {["#ff5f57", "#febc2e", "#28c840"].map((c) => <span key={c} style={{ width: 13, height: 13, borderRadius: "50%", background: c, flexShrink: 0 }} />)}
+        <Icono nombre={icono} defecto="sparkles" tam={22} color={K.acento2} />
+        <span style={{ fontSize: 24, fontWeight: 800, color: K.suave, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{titulo}</span>
+      </div>
+      <div style={{ position: "relative", height: h - 56 }}>{children}</div>
+    </div>
+  );
+};
+
+// ----- golpe: cada renglón golpea la pantalla cuando se dice -----
+const Golpe: React.FC<{ e: ElementoApoyo; m: number[]; local: number; W: number }> = ({ e, m, local, W }) => {
+  const K = useTema();
+  const { fps } = useVideoConfig();
+  const destacadas = (e.destacar ?? "").toLowerCase().split(/\s+/).filter(Boolean);
+  const ultimo = m.reduce((k, d, i) => (local >= d ? i : k), -1);
+  const temblor = ultimo >= 0 && local - m[ultimo] < 6 ? (6 - (local - m[ultimo])) * 3 : 0;
+  const glitch = local % 9 < 2 ? 7 : 0;
+  return (
+    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: 6, transform: `translate(${(random(`gx${local}`) - 0.5) * temblor}px, ${(random(`gy${local}`) - 0.5) * temblor}px)` }}>
+      {e.puntos.map((p, i) => {
+        if (local < (m[i] ?? 0)) return <div key={i} style={{ height: 0 }} />;
+        const fuerte = destacadas.some((d) => p.texto.toLowerCase().includes(d)) || (!destacadas.length && i === e.puntos.length - 1);
+        const tam = tamQueCabe(p.texto, W * 0.94, fuerte ? 160 : 112, 0.8);
+        const s = spring({ frame: local - (m[i] ?? 0), fps, config: { damping: 9, stiffness: 260 } });
+        const color = fuerte ? K.acento2 : K.texto;
+        return (
+          <div key={i} style={{ maxWidth: W, fontSize: tam, fontWeight: 900, lineHeight: 1.1, letterSpacing: "-0.02em", textAlign: "center", textTransform: "uppercase", color, whiteSpace: "nowrap", transform: `scale(${interpolate(s, [0, 1], [2.4, 1])})`, opacity: Math.min(1, s * 1.4), textShadow: `${glitch}px 0 #ff4f8b, ${-glitch}px 0 #4fd8ff, 0 0 50px ${color}55` }}>{p.texto}</div>
+        );
+      })}
+    </div>
+  );
+};
+
+// ----- mosaico: tienda, reservas, panel y CRM; al final, el título grande -----
+const VTienda: React.FC<{ local: number; d: number; w: number }> = ({ local, d, w }) => {
+  const K = useTema();
+  const { fps } = useVideoConfig();
+  const vuela = interpolate(local, [d + 14, d + 30], [0, 1], LIMITE);
+  const carrito = local > d + 30 ? 1 + Math.floor((local - d - 30) / 25) : 0;
+  const lado = (w - 54) / 2;
+  return (
+    <>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, padding: 18 }}>
+        {["shopping-bag", "headphones", "watch", "shirt"].map((ic, i) => (
+          <div key={ic} style={{ height: Math.min(lado, 190), borderRadius: 16, background: K.caja, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
+            <span style={{ transform: i === 0 ? `translate(${vuela * lado * 0.9}px, ${-vuela * 130}px) scale(${1 - vuela * 0.7})` : undefined, opacity: i === 0 && vuela >= 1 ? 0 : 1 }}><Icono nombre={ic} defecto="package" tam={60} color={K.acento2} /></span>
+            <span style={{ padding: "6px 16px", borderRadius: 10, background: K.acento, color: "#fff", fontWeight: 800, fontSize: 20 }}>Agregar</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ position: "absolute", right: 18, top: -46 }}>
+        <Icono nombre="shopping-cart" defecto="shopping-cart" tam={30} color={K.texto} />
+        {carrito ? <span style={{ position: "absolute", right: -12, top: -8, minWidth: 26, height: 26, borderRadius: 13, background: K.acento, color: "#fff", fontSize: 17, fontWeight: 900, display: "grid", placeItems: "center", transform: `scale(${spring({ frame: local - d - 30, fps, config: { damping: 8, stiffness: 260 } })})` }}>{carrito}</span> : null}
+      </div>
+    </>
+  );
+};
+const VReservas: React.FC<{ local: number; d: number }> = ({ local, d }) => {
+  const K = useTema();
+  return (
+    <div style={{ padding: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
+        {Array.from({ length: 15 }, (_, i) => {
+          const k = [2, 6, 9, 13].indexOf(i);
+          const on = k >= 0 && local > d + 8 + k * 6;
+          return <div key={i} style={{ height: 50, borderRadius: 10, display: "grid", placeItems: "center", fontWeight: 800, fontSize: 22, background: on ? K.acento : K.caja, color: on ? "#fff" : K.suave }}>{i + 10}</div>;
+        })}
+      </div>
+      <div style={{ display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
+        {["9:00", "10:30", "15:00"].map((h, i) => {
+          const on = i === 1 && local > d + 30;
+          return <span key={h} style={{ padding: "8px 14px", borderRadius: 12, border: `2px solid ${K.acento}`, fontWeight: 800, fontSize: 22, background: on ? K.acento : "transparent", color: on ? "#fff" : K.texto }}>{h}</span>;
+        })}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 18, fontSize: 24, fontWeight: 800, color: K.verde, opacity: entra(local, d + 34) }}>
+        <Icono nombre="circle-check" defecto="check" tam={26} color={K.verde} />Cita confirmada
+      </div>
+    </div>
+  );
+};
+const VPanel: React.FC<{ local: number; d: number }> = ({ local, d }) => {
+  const K = useTema();
+  return (
+    <div style={{ padding: 18 }}>
+      <div style={{ display: "flex", gap: 10 }}>
+        {["Visitas", "Pedidos", "Citas"].map((n, i) => (
+          <div key={n} style={{ flex: 1, padding: "12px 12px", borderRadius: 14, background: K.caja }}>
+            <div style={{ fontSize: 19, color: K.suave, fontWeight: 700 }}>{n}</div>
+            <div style={{ marginTop: 10, height: 10, borderRadius: 5, background: K.linea, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${(45 + 40 * random(`pn${i}`)) * entra(local, d + i * 5, 24)}%`, background: K.acento2 }} />
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Barras que suben y bajan (decorado: no sugiere ganancias) */}
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 10, height: 250, marginTop: 22 }}>
+        {[55, 80, 50, 75, 60, 85, 65].map((h, i) => <span key={i} style={{ flex: 1, borderRadius: "8px 8px 0 0", background: i % 2 ? K.acento : K.acento2, height: `${h * entra(local, d + i * 3, 12)}%` }} />)}
+      </div>
+    </div>
+  );
+};
+const VCrm: React.FC<{ local: number; d: number; w: number }> = ({ local, d, w }) => {
+  const K = useTema();
+  const col = (w - 32 - 16) / 3;
+  const nombres = ["Ana", "Luis", "Sara", "Juan"];
+  return (
+    <div style={{ position: "relative", height: "100%" }}>
+      {["Nuevo", "Contacto", "Cliente"].map((c, j) => (
+        <div key={c} style={{ position: "absolute", left: 16 + j * (col + 8), top: 14, width: col, bottom: 14, borderRadius: 14, background: K.caja }}>
+          <div style={{ padding: "10px 0", textAlign: "center", fontSize: 19, fontWeight: 900, color: j === 2 ? K.verde : K.suave }}>{c}</div>
+        </div>
+      ))}
+      {nombres.map((n, i) => {
+        const paso = Math.min(2, Math.max(0, Math.floor((local - d - 10 - i * 6) / 22)));
+        const x = interpolate(local, [d + 10 + i * 6 + paso * 22 - 8, d + 10 + i * 6 + paso * 22], [Math.max(0, paso - 1), paso], LIMITE);
+        return (
+          <div key={n} style={{ position: "absolute", left: 16 + 6 + x * (col + 8), top: 66 + i * 86, width: col - 12, padding: "12px 0", borderRadius: 12, textAlign: "center", fontSize: 22, fontWeight: 900, background: paso === 2 ? K.verde : K.linea, color: paso === 2 ? K.tinta : K.texto, opacity: entra(local, d + i * 3) }}>{n}</div>
+        );
+      })}
+    </div>
+  );
+};
+const Mosaico: React.FC<{ e: ElementoApoyo; m: number[]; local: number; dur: number; horizontal: boolean; W: number; H: number }> = ({ e, m, local, dur, horizontal, W, H }) => {
+  const K = useTema();
+  const { fps } = useVideoConfig();
+  const vistas = e.escenario?.vistas?.length ? e.escenario.vistas : VISTAS_DE.mosaico;
+  const n = e.puntos.length;
+  const fin = finalMosaico(m, dur, fps);
+  const v = spring({ frame: local - fin, fps, config: { damping: 12, stiffness: 140 } });
+  const gap = horizontal ? 24 : 30;
+  const w = horizontal ? (W - gap * (n - 1)) / n : (W - gap) / 2;
+  const h = horizontal ? H : (H - gap) / 2;
+  const icono: Record<string, string> = { tienda: "shopping-cart", reservas: "calendar", panel: "chart-column", crm: "users", guion: "file-text", voz: "mic", dibujo: "brush", musica: "eighth-notes" };
+  const titulo = e.titulo ?? "";
+  const palabras = titulo.split(/\s+/);
+  const corte = Math.ceil(palabras.length / 2);
+  const lineas = titulo.length > 14 && palabras.length > 1 ? [palabras.slice(0, corte).join(" "), palabras.slice(corte).join(" ")] : [titulo];
+  const tam = Math.min(...lineas.map((l) => tamQueCabe(l, W * 0.92, horizontal ? 120 : 104)));
+  return (
+    <>
+      <div style={{ position: "absolute", inset: 0, opacity: 1 - 0.68 * Math.min(1, v), filter: local >= fin ? `blur(${Math.min(1, v) * 3}px)` : undefined, transform: `scale(${1 - 0.06 * Math.min(1, v)})` }}>
+        {e.puntos.map((p, i) => {
+          const d = m[i] ?? 0;
+          const x = horizontal ? i * (w + gap) : (i % 2) * (w + gap);
+          const y = horizontal ? 0 : Math.floor(i / 2) * (h + gap);
+          const vista = vistas[i % vistas.length];
+          const vi = spring({ frame: local - d, fps, config: { damping: 12, stiffness: 150 } });
+          return (
+            <Mini key={i} titulo={p.texto} icono={p.icono ?? icono[vista] ?? "sparkles"} x={x} y={y} w={w} h={h} v={vi} rot={i % 2 ? 7 : -7}>
+              {vista === "tienda" ? <VTienda local={local} d={d} w={w} /> : vista === "reservas" ? <VReservas local={local} d={d} /> : vista === "panel" ? <VPanel local={local} d={d} /> : <VCrm local={local} d={d} w={w} />}
+            </Mini>
+          );
+        })}
+      </div>
+      {local >= fin ? (
+        <div style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center", transform: `scale(${interpolate(Math.min(1, v), [0, 1], [1.3, 1])})`, opacity: Math.min(1, v * 1.5) }}>
+          {lineas.map((l, i) => (
+            <div key={i} style={{ fontSize: tam, fontWeight: 900, lineHeight: 1.1, letterSpacing: "-0.02em", textTransform: "uppercase", whiteSpace: "nowrap", color: i === lineas.length - 1 ? K.acento2 : K.texto, textShadow: `0 0 50px ${K.acento}` }}>{l}</div>
+          ))}
+          <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 14, marginTop: 30, maxWidth: W }}>
+            {e.puntos.map((p, i) => (
+              <span key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 24px", borderRadius: 999, background: K.ventana, border: `3px solid ${i % 2 ? K.acento2 : K.acento}`, fontSize: 32, fontWeight: 800, color: K.texto, transform: `scale(${spring({ frame: local - fin - 6 - i * 4, fps, config: { damping: 10, stiffness: 220 } })})` }}>
+                <Icono nombre={p.icono ?? icono[vistas[i % vistas.length]]} defecto="sparkles" tam={30} color={K.acento2} />{p.texto}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+};
+
+// ----- perfil: celular con un perfil de redes que se llena de videos y una tarjeta de pasos -----
+const Perfil: React.FC<{ e: ElementoApoyo; m: number[]; local: number; horizontal: boolean; W: number; H: number }> = ({ e, m, local, horizontal, W, H }) => {
+  const K = useTema();
+  const { fps } = useVideoConfig();
+  const tel = spring({ frame: local, fps, config: { damping: 13 } });
+  const telW = 430, telH = horizontal ? H : 900;
+  const cardX = horizontal ? telW + 70 : 390;
+  const cardW = W - cardX;
+  const handle = `@${(e.escenario?.nombre ?? "tu.cuenta").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9._]/g, "")}`;
+  const colores = [K.acento, K.acento2, K.acentoOscuro, K.verde, mezclar(K.acento, "#ff7a59", 0.5), mezclar(K.acento2, "#4fd8ff", 0.5)];
+  const iconos = ["clapperboard", "mic", "sparkles", "book-open", "palette", "lightbulb"];
+  const desde = (m[0] ?? 10) - 6;
+  const titulo = e.titulo ?? "";
+  const tamT = Math.min(46, tamQueCabe(titulo, (cardW - 56) * 2, 46, 0.6));
+  const vc = entra(local, Math.max(4, desde), 14);
+  return (
+    <>
+      <div style={{ position: "absolute", left: 0, top: horizontal ? 0 : 20, width: telW, height: telH, boxSizing: "border-box", borderRadius: 56, background: "#111018", border: "10px solid #2a2836", boxShadow: "0 40px 100px rgba(0,0,0,.7)", overflow: "hidden", transform: `translateX(${rd((1 - tel) * -500)}px) rotate(${rd((1 - tel) * -10 - 3)}deg)` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "42px 22px 16px" }}>
+          <div style={{ width: 90, height: 90, flexShrink: 0, borderRadius: "50%", padding: 5, background: `linear-gradient(45deg, ${K.acento2}, ${K.acento})` }}>
+            <div style={{ width: "100%", height: "100%", borderRadius: "50%", background: "#111018", display: "grid", placeItems: "center" }}><Icono nombre={e.icono} defecto="user" tam={42} color={K.acento2} /></div>
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontWeight: 900, fontSize: 28, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{handle}</div>
+            <div style={{ fontSize: 20, color: K.suave }}>creando contenido</div>
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 5, padding: "8px 5px" }}>
+          {Array.from({ length: 12 }, (_, i) => {
+            const v = spring({ frame: local - desde - i * 3, fps, config: { damping: 12, stiffness: 200 } });
+            return (
+              <div key={i} style={{ position: "relative", height: 180, borderRadius: 8, background: `linear-gradient(160deg, ${colores[i % 6]}, #1a1626)`, transform: `scale(${rd(v)})`, display: "grid", placeItems: "center" }}>
+                <Icono nombre={iconos[i % 6]} defecto="play" tam={48} color="#fff" />
+                <span style={{ position: "absolute", left: 8, bottom: 6 }}><Icono nombre="play" defecto="play" tam={18} color="#fff" /></span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div style={{ position: "absolute", left: cardX, top: horizontal ? 120 : 380, width: cardW, boxSizing: "border-box", padding: "26px 28px 12px", borderRadius: 28, background: K.ventana, border: `2px solid ${K.acento}`, boxShadow: `0 30px 80px rgba(0,0,0,.6), 0 0 50px ${K.acento}33`, opacity: vc, transform: `translateX(${(1 - vc) * 260}px)` }}>
+        <div style={{ fontSize: 22, fontWeight: 800, color: K.acento2, letterSpacing: "0.06em", textTransform: "uppercase" }}>{e.escenario?.sub ?? "Paso a paso"}</div>
+        {titulo ? <div style={{ fontSize: tamT, fontWeight: 900, lineHeight: 1.15, margin: "8px 0 18px" }}>{titulo}</div> : null}
+        {e.puntos.map((p, i) => {
+          const v = spring({ frame: local - (m[i] ?? 0), fps, config: { damping: 11, stiffness: 180 } });
+          return (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16, opacity: Math.min(1, v * 1.5), transform: `translateX(${(1 - Math.min(1, v)) * 50}px)` }}>
+              <span style={{ width: 44, height: 44, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", background: K.verde, transform: `scale(${v})` }}><Icono nombre="check" defecto="check" tam={28} color={K.tinta} /></span>
+              <span style={{ fontSize: p.texto.length > 24 ? 26 : 30, fontWeight: 700, lineHeight: 1.2 }}>{p.texto}</span>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+};
+
+// ----- proceso: guion que se escribe, voz, dibujo que se pinta y música -----
+const PIXELES = 14;
+const Proceso: React.FC<{ e: ElementoApoyo; m: number[]; local: number; horizontal: boolean; W: number; H: number; dichas: NonNullable<ElementoEnEditado["dichas"]> }> = ({ e, m, local, horizontal, W, H, dichas }) => {
+  const K = useTema();
+  const { fps } = useVideoConfig();
+  const vistas = e.escenario?.vistas?.length ? e.escenario.vistas : VISTAS_DE.proceso;
+  const n = e.puntos.length;
+  const gap = horizontal ? 24 : 30;
+  const w = horizontal ? (W - gap * (n - 1)) / n : (W - gap) / 2;
+  const h = horizontal ? H : (H - gap) / 2;
+  const icono: Record<string, string> = { guion: "file-text", voz: "mic", dibujo: "brush", musica: "eighth-notes", tienda: "shopping-cart", reservas: "calendar", panel: "chart-column", crm: "users" };
+  return (
+    <>
+      {e.puntos.map((p, i) => {
+        const d = m[i] ?? 0;
+        const x = horizontal ? i * (w + gap) : (i % 2) * (w + gap);
+        const y = horizontal ? 0 : Math.floor(i / 2) * (h + gap);
+        const vista = vistas[i % vistas.length];
+        const v = spring({ frame: local - d, fps, config: { damping: 13 } });
+        let dentro: React.ReactNode = null;
+        if (vista === "guion") {
+          let texto = dichas.filter((x) => x.frame <= local).map((x) => x.texto).join(" ");
+          if (texto.length > 120) texto = `…${texto.slice(texto.indexOf(" ", texto.length - 120))}`;
+          dentro = <div style={{ padding: 22, fontFamily: MONO, fontSize: 26, lineHeight: 1.45, color: K.texto }}>{texto || "…"}<span style={{ color: K.acento2, opacity: Math.floor(local / 8) % 2 }}>▍</span></div>;
+        } else if (vista === "voz") {
+          dentro = (
+            <div style={{ position: "absolute", inset: 26, display: "flex", alignItems: "center", gap: 6 }}>
+              {Array.from({ length: 28 }, (_, k) => <span key={k} style={{ flex: 1, borderRadius: 6, background: `linear-gradient(180deg, ${K.acento2}, ${K.acento})`, height: `${(12 + 80 * Math.abs(Math.sin(local / 3 + k * 0.6) * random(`w${k}`))) * entra(local, d, 10)}%` }} />)}
+            </div>
+          );
+        } else if (vista === "dibujo") {
+          const tam = Math.floor(Math.min(w - 50, h - 110) / PIXELES);
+          const pintados = interpolate(local, [d, d + 40], [0, 1], LIMITE);
+          dentro = (
+            <div style={{ position: "absolute", left: (w - tam * PIXELES) / 2, top: 24, display: "grid", gridTemplateColumns: `repeat(${PIXELES}, ${tam}px)` }}>
+              {Array.from({ length: PIXELES * PIXELES }, (_, k) => {
+                const cx = k % PIXELES, cy = Math.floor(k / PIXELES);
+                let c = mezclar(K.acentoOscuro, "#000000", 0.4 - cy * 0.03);
+                if (cy > 9) c = mezclar(K.acentoOscuro, "#000000", 0.55);
+                if (cy >= 6 && cy <= 9 && cx >= 3 && cx <= 9) c = cy === 6 ? K.acento : K.caja;
+                if (cy >= 7 && cy <= 8 && cx >= 4 && cx <= 5) c = "#ffd99a";
+                if ((cx - 11) ** 2 + (cy - 3) ** 2 < 3) c = "#ffd25a";
+                const on = random(`px${k}`) < pintados;
+                return <span key={k} style={{ width: tam, height: tam, background: c, opacity: on ? 1 : 0.07 }} />;
+              })}
+            </div>
+          );
+        } else {
+          dentro = (
+            <>
+              <div style={{ position: "absolute", left: 26, right: 26, bottom: 30, height: "62%", display: "flex", alignItems: "flex-end", gap: 9 }}>
+                {Array.from({ length: 11 }, (_, k) => <span key={k} style={{ flex: 1, borderRadius: "8px 8px 0 0", background: k % 3 ? K.acento : K.acento2, height: `${(20 + 80 * Math.abs(Math.sin(local / 4 + k))) * entra(local, d, 8)}%` }} />)}
+              </div>
+              {[0, 1, 2].map((k) => {
+                const c = ((local - d + k * 12) % 36) / 36;
+                return local > d ? <span key={k} style={{ position: "absolute", left: 50 + k * (w - 140) / 2, top: 110 - c * 90, opacity: 1 - c }}><Icono nombre="eighth-note" defecto="eighth-notes" tam={44} color={K.acento2} /></span> : null;
+              })}
+            </>
+          );
+        }
+        return <Mini key={i} titulo={p.texto} icono={p.icono ?? icono[vista]} x={x} y={y} w={w} h={h} v={v} rot={i % 2 ? 8 : -8}>{dentro}</Mini>;
+      })}
+    </>
+  );
+};
+
+// Pone el lienzo en la zona libre, escalado y centrado, con margen a los lados.
+const LienzoEscena: React.FC<{ e: ElementoApoyo; pantalla: Lienzo; momentos: number[]; local: number; dur: number; area: { x: number; y: number; ancho: number; alto: number }; dichas: NonNullable<ElementoEnEditado["dichas"]> }> = ({ e, pantalla, momentos, local, dur, area, dichas }) => {
+  const { width, fps } = useVideoConfig();
+  const K = useTema();
+  const horizontal = area.ancho > area.alto * 1.25;
+  const [W, H] = MEDIDA[pantalla][horizontal ? "h" : "v"];
+  const margen = Math.max(70 * (width / 1080), area.x);
+  const escala = Math.min((width - margen * 2) / W, (area.alto * 0.96) / H);
+  const x = (width - W * escala) / 2;
+  const y = area.y + Math.max(0, area.alto - H * escala) * 0.4;
+  const m = momentosLegibles(momentos, e.puntos.length, dur, fps);
+  return (
+    <div style={{ position: "absolute", left: x, top: y, width: W, height: H, transformOrigin: "0 0", transform: `scale(${escala})`, fontFamily: K.fuente, color: K.texto }}>
+      {pantalla === "golpe" ? <Golpe e={e} m={m} local={local} W={W} />
+        : pantalla === "mosaico" ? <Mosaico e={e} m={m} local={local} dur={dur} horizontal={horizontal} W={W} H={H} />
+        : pantalla === "perfil" ? <Perfil e={e} m={m} local={local} horizontal={horizontal} W={W} H={H} />
+        : <Proceso e={e} m={m} local={local} horizontal={horizontal} W={W} H={H} dichas={dichas} />}
+    </div>
+  );
+};
+
 // Toma de la cámara: 0 = abierta (todo el mundo), 1 = de cerca (la ventana encima).
-const tomaDe = (p: Escenario["pantalla"]) => (p === "mundo" ? 0 : p === "cierre" ? 0.6 : 1);
+const tomaDe = (p: Escenario["pantalla"]) => (p === "mundo" || esLienzo(p) ? 0 : p === "cierre" ? 0.6 : 1);
 
 // ---------------- El escenario completo de una escena ----------------
 export const EscenarioAnimado: React.FC<{
@@ -790,10 +1152,14 @@ export const EscenarioAnimado: React.FC<{
   continuidad: Continuidad;
 }> = ({ item, area, continuidad }) => {
   const local = useCurrentFrame();
-  const { width, height } = useVideoConfig();
+  const { width, height, fps } = useVideoConfig();
   const marca = useMarca();
-  const { elemento: e, momentos, duracionFrames: dur } = item;
-  const ed = e.escenario ?? { mundo: "cuarto", pantalla: "lista", sub: null, nombre: null, abierto: null, busqueda: null };
+  const { elemento: e, duracionFrames: dur } = item;
+  // Lo último que aparece necesita ~1.8 s para leerse: si se dice muy al final, sale un poco antes.
+  const momentos = momentosLegibles(item.momentos, Math.max(item.momentos.length, e.puntos.length), dur, fps);
+  // Margen a los lados: ~70 px por cada 1080 de ancho, nunca menos que la zona segura.
+  const margen = Math.max(70 * (width / 1080), area.x);
+  const ed = e.escenario ?? { mundo: "cuarto", pantalla: "lista", sub: null, nombre: null, abierto: null, busqueda: null, vistas: null };
   const K = temaDe(ed.mundo, marca.colores.primario, marca.fuente);
   const mundo = MUNDOS[ed.mundo];
   const sp = spriteDe(ed.mundo, K);
@@ -828,13 +1194,14 @@ export const EscenarioAnimado: React.FC<{
 
   // La ventana: cabe en la zona libre (arriba de los subtítulos), con lugar encima para el
   // personaje, que de cerca se para sobre la ventana.
-  const conVentana = ed.pantalla !== "mundo";
+  const lienzo = esLienzo(ed.pantalla) ? ed.pantalla : null;
+  const conVentana = ed.pantalla !== "mundo" && !lienzo;
   const titulo = ed.pantalla === "web" ? { alto: 0 } : tituloDe(e.titulo);
   const arribaContenido = BARRA + PAD.arriba + titulo.alto;
   const alto = arribaContenido + altoContenido(ed.pantalla, e.puntos.length, ed.sub) + PAD.abajo;
   const TAM = 8;
   const reserva = 21 * TAM + 10;
-  const escala = Math.min((width * 0.91) / ANCHO, (area.alto * 0.97) / (alto + reserva));
+  const escala = Math.min((width - margen * 2) / ANCHO, (area.alto * 0.97) / (alto + reserva));
   const izqV = (width - ANCHO * escala) / 2;
   const arribaV = area.y + reserva * escala + Math.max(0, area.alto - (alto + reserva) * escala) * 0.3;
   const desdeVentana = continuidad.entra ? 4 : 14;
@@ -858,8 +1225,8 @@ export const EscenarioAnimado: React.FC<{
 
   const destacada = (e.destacar ?? "").split(/\s+/)[0];
   const sticker =
-    ed.pantalla === "aviso" ? { texto: (destacada || "ojo").toUpperCase(), desde: 14, x: 610, y: arribaContenido + 70 }
-    : ed.pantalla === "cierre" && ed.nombre ? { texto: ed.nombre.toUpperCase(), desde: 6, x: ANCHO - 320, y: -60 }
+    ed.pantalla === "aviso" ? { texto: (destacada || "ojo").toUpperCase(), desde: 14, y: arribaContenido + 70 }
+    : ed.pantalla === "cierre" && ed.nombre ? { texto: ed.nombre.toUpperCase(), desde: 6, y: -60 }
     : null;
 
   let contenido: React.ReactNode = null;
@@ -887,6 +1254,13 @@ export const EscenarioAnimado: React.FC<{
         </div>
         <AbsoluteFill style={{ background: mundo.vela, opacity: k * (1 - 0.6 * luz) }} />
         <Personaje sp={sp} x={px} y={py} tam={pt} saluda={saluda} salto={salto + habla} />
+        {lienzo ? (
+          <>
+            <AbsoluteFill style={{ background: lienzo === "golpe" ? "rgba(6,6,10,.82)" : "rgba(6,6,10,.62)", opacity: entra(local, 0, 8) }} />
+            <LienzoEscena e={e} pantalla={lienzo} momentos={momentos} local={local} dur={dur} area={area} dichas={dichas} />
+            {lienzo === "golpe" ? <AbsoluteFill style={{ background: "#fff", opacity: momentos.reduce((o, d) => Math.max(o, interpolate(local - d, [0, 5], [0.32, 0], LIMITE) * (local >= d ? 1 : 0)), 0) }} /> : null}
+          </>
+        ) : null}
         {ed.pantalla === "mundo" && e.titulo ? (
           <Globo texto={e.titulo} local={local} x={px + 8 * pt} y={Math.max(area.y + 160 * Math.min(1, sw), py - 16 * sw)} escala={Math.min(1.2, Math.max(0.6, Math.min(width / 1080, area.alto / 1000)))} ancho={width} />
         ) : null}
@@ -939,9 +1313,12 @@ export const continuidadEscenarios = (items: ElementoEnEditado[]): Continuidad[]
 };
 
 // Frames (relativos a la escena) del clic del botón de cierre y del sticker del aviso.
-export const golpesEscenario = (e: ElementoApoyo, duracionFrames: number) => {
+export const golpesEscenario = (e: ElementoApoyo, duracionFrames: number, momentos: number[] = [], fps = 30) => {
   const p = e.escenario?.pantalla;
+  const m = momentosLegibles(momentos, Math.max(momentos.length, e.puntos.length), duracionFrames, fps);
   return p === "cierre" ? [{ frame: Math.round(duracionFrames * 0.55), sonido: "ding" as const }]
+    : p === "mosaico" ? [{ frame: finalMosaico(m, duracionFrames, fps), sonido: "brillo" as const }]
+    : p === "perfil" ? m.slice(0, e.puntos.length).map((f) => ({ frame: f, sonido: "ding" as const }))
     : p === "aviso" ? [{ frame: 28, sonido: "brillo" as const }]
     : [];
 };

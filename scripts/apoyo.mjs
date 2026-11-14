@@ -84,7 +84,7 @@ const TIPOS = {
     criterio:
       "La persona eligió ESCENARIOS ANIMADOS: todas las escenas son modo escenario (sección \"Escenarios\" " +
       "de la skill). Elige UN mundo para todo el video según el tema (cuarto o calle) y úsalo en todas las " +
-      "escenas. Varía la pantalla de una escena a otra. Cada punto lleva su cue: las palabras EXACTAS que " +
+      "escenas. Varía la pantalla de una escena a otra (usa también golpe, mosaico, perfil y proceso cuando encajen). Cada punto lleva su cue: las palabras EXACTAS que " +
       "dice la persona (copiadas de la transcripción) para que aparezca y el cursor lo toque justo ahí.",
   },
 };
@@ -92,7 +92,8 @@ const TIPOS = {
 // afiliados: nada que suene a promesa de dinero).
 const PROHIBIDAS = /\b(invertir|inversi[oó]n(es)?|inviert\w*|rentabilidad|rentable|retornos?)\b/i;
 const MUNDOS = ["cuarto", "calle"];
-const PANTALLAS = ["mundo", "lista", "chips", "tarjetas", "aviso", "guion", "cierre", "web", "panel", "crm"];
+const PANTALLAS = ["mundo", "lista", "chips", "tarjetas", "aviso", "guion", "cierre", "web", "panel", "crm", "golpe", "mosaico", "perfil", "proceso"];
+const VISTAS = { mosaico: ["tienda", "reservas", "panel", "crm"], proceso: ["guion", "voz", "dibujo", "musica"] };
 if (op.tipo && !TIPOS[op.tipo]) {
   console.error(`Tipo desconocido "${op.tipo}". Usa: ${Object.keys(TIPOS).join(", ")}.`);
   process.exit(1);
@@ -301,6 +302,9 @@ const escenarioDe = (x) => {
     nombre: texto(x.nombre)?.slice(0, 24) ?? null,
     abierto: ["abrir", "cerrar"].includes(x.abierto) && x.mundo === "calle" ? x.abierto : null,
     busqueda: x.mundo === "calle" ? (texto(x.busqueda)?.slice(0, 40) ?? null) : null,
+    vistas: VISTAS[x.pantalla] && Array.isArray(x.vistas)
+      ? x.vistas.filter((v) => VISTAS[x.pantalla].includes(v)).slice(0, 4)
+      : null,
   };
 };
 const fin = frases.at(-1).fin;
@@ -324,16 +328,20 @@ for (const [k, e] of ordenadas.entries()) {
       if (cue && en === null) avisos.push(`"${cue}" no se encontró en lo que se dice (${e.inicio}–${e.fin} s): ese punto sale solo`);
       return { ...punto, en, cue, valor: texto(p.valor)?.slice(0, 16) ?? null };
     });
-  // El último punto necesita 1.5 s en pantalla: si sale muy al final, la escena se alarga hasta
-  // donde se pueda (sin pisar la siguiente escena, otro elemento ni el final del video).
+  // El último punto necesita 2 s en pantalla para leerse (en "mosaico", 3 s: después sale el título
+  // grande): si sale muy al final, la escena se alarga hasta donde se pueda (sin pisar la
+  // siguiente escena, otro elemento ni el final del video). Si no alcanza, el editor lo adelanta.
   const ultimoEn = Math.max(...puntos.map((p) => p.en ?? -Infinity));
-  if (Number.isFinite(ultimoEn) && final < ultimoEn + 1.5) {
+  const aire = esEscenario && e.escenario?.pantalla === "mosaico" ? 3 : 2;
+  if (Number.isFinite(ultimoEn) && final < ultimoEn + aire) {
     const tope = Math.min(
       fin + (soloAudio ? 1 : 0),
       Number(ordenadas[k + 1]?.inicio ?? Infinity) - 0.3,
       ...ocupados.filter(([a]) => a >= final).map(([a]) => a - 0.3),
     );
-    final = redondear(Math.max(final, Math.min(ultimoEn + 1.5, tope)));
+    final = redondear(Math.max(final, Math.min(ultimoEn + aire, tope)));
+    if (esEscenario && final < ultimoEn + aire - 0.3)
+      avisos.push(`la escena ${inicio}–${final} s termina muy pronto después de "${puntos.at(-1)?.texto}": ese punto sale un poco antes de que se diga para que se alcance a leer`);
   }
   const escena = {
     tipo: "apoyo",
@@ -367,7 +375,9 @@ for (const [k, e] of ordenadas.entries()) {
     : e.modo === "imagen" && !escena.archivo ? "sin foto"
     : e.modo === "escena" && !escena.escena ? "sin dibujos"
     : esEscenario && !escena.escenario ? "sin mundo o pantalla"
-    : esEscenario && ["lista", "chips", "web", "panel", "crm"].includes(pantalla) && puntos.length < 1 ? "pantalla sin puntos"
+    : esEscenario && ["lista", "chips", "web", "panel", "crm", "golpe", "perfil"].includes(pantalla) && puntos.length < 1 ? "pantalla sin puntos"
+    : esEscenario && ["mosaico", "proceso"].includes(pantalla) && puntos.length < 2 ? `${pantalla} sin dos puntos`
+    : esEscenario && pantalla === "mosaico" && !escena.titulo ? "mosaico sin título final"
     : esEscenario && pantalla === "tarjetas" && puntos.length < 2 ? "tarjetas sin dos puntos"
     : esEscenario && pantalla === "mundo" && !escena.titulo ? "sin lo que dice el globo"
     : esEscenario && PROHIBIDAS.test(enPantalla) ? "texto con palabras que suenan a promesa de dinero"

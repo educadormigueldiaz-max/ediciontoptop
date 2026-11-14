@@ -1352,6 +1352,14 @@ const estiloTransicion = (
       return lado === 1
         ? { translate: `${(1 - abre) * width - cierra * width}px 0`, borderRadius: (1 - abre + cierra) * base * 0.06, overflow: "hidden" }
         : { translate: `0 ${(1 - abre) * height - cierra * height}px`, borderRadius: (1 - abre + cierra) * base * 0.06, overflow: "hidden" };
+    case "giro":
+      // Llega girando un poco y desenfocada; al salir se desenfoca y se apaga.
+      return {
+        opacity: Math.min(abre * 1.4, 1) * (1 - cierra),
+        rotate: `${(1 - abre) * -6 * lado}deg`,
+        scale: (1.1 - 0.1 * abre) * (1 + cierra * 0.04),
+        filter: abre < 1 || cierra > 0 ? `blur(${((1 - abre) * 1.2 + cierra) * base * 0.009}px)` : undefined,
+      };
     case "diamante": {
       // Un rombo que crece desde el centro y, al salir, se cierra.
       const t = Math.min(abre, 1 - cierra);

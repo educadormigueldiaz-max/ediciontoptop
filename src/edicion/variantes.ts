@@ -4,7 +4,7 @@ import { random } from "remotion";
 // sus textos y tarjetas. Si el elemento no dice cuál, se reparten solas: cada escena usa una
 // combinación distinta de la anterior y cambia de un video a otro.
 
-export const TRANSICIONES = ["circulo", "barrido", "persiana", "zoom", "deslizar", "diamante"] as const;
+export const TRANSICIONES = ["circulo", "barrido", "persiana", "zoom", "deslizar", "diamante", "giro"] as const;
 export const FONDOS = ["capas", "rejilla", "rayos", "bokeh", "franjas", "formas"] as const;
 export const ENTRADAS = ["atras", "abajo", "escala", "lado", "giro"] as const;
 

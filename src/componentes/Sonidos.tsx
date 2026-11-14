@@ -1,7 +1,7 @@
 import { Audio } from "@remotion/media";
 import { Sequence, staticFile } from "remotion";
 import type { ElementoEnEditado } from "../edicion/linea-de-tiempo";
-import { continuidadEscenarios, golpesEscenario } from "./Escenario";
+import { continuidadEscenarios, golpesEscenario, momentosLegibles } from "./Escenario";
 
 // Efectos de sonido cortos de public/sonidos/ (hechos desde cero, licencia CC0).
 const SONIDOS = {
@@ -52,8 +52,8 @@ export const golpesDe = (items: ConMomentos[]): Golpe[] => {
           const dur = items[i].duracionFrames ?? 0;
           return [
             ...(continuidad[i].entra ? [] : [entrada]),
-            ...momentos.map((m) => ({ frame: desdeFrame + m, sonido: "pop" as const })),
-            ...golpesEscenario(elemento, dur).map((g) => ({ ...g, frame: desdeFrame + g.frame })),
+            ...momentosLegibles(momentos, momentos.length, dur || Infinity, 30).map((m) => ({ frame: desdeFrame + m, sonido: "pop" as const })),
+            ...golpesEscenario(elemento, dur, momentos).map((g) => ({ ...g, frame: desdeFrame + g.frame })),
           ];
         }
         return [entrada, ...cada("pop")];

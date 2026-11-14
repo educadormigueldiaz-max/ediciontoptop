@@ -54,7 +54,7 @@ cuenta es un recorrido o un proceso en orden).
   una idea que se puede resumir en una frase que dice la persona → `frase`; un número → `dato`.
 - Cómo entra y sale cada escena, su fondo y cómo llegan sus textos cambian solos de una escena a
   otra (`transicion`, `fondoEscena`, `entrada`: déjalos en null). Ponlos solo si la persona pide
-  algo concreto: `transicion` circulo | barrido | persiana | zoom | deslizar | diamante;
+  algo concreto: `transicion` circulo | barrido | persiana | zoom | deslizar | diamante | giro;
   `fondoEscena` capas | rejilla | rayos | bokeh | franjas | formas; `entrada` atras | abajo |
   escala | lado | giro.
 
@@ -115,7 +115,7 @@ Un solo lugar que se queda todo el video, como un mini dibujo animado. La voz y 
 son los de la persona (no hay voz nueva).
 ```json
 { "modo": "escenario", "inicio": 24.0, "fin": 30.0, "titulo": "Hay que saberlo trabajar", "destacar": "trabajar",
-  "escenario": { "mundo": "calle", "pantalla": "lista", "sub": null, "nombre": null, "abierto": null, "busqueda": null },
+  "escenario": { "mundo": "calle", "pantalla": "lista", "sub": null, "nombre": null, "abierto": null, "busqueda": null, "vistas": null },
   "puntos": [ { "texto": "Letras muy pequeñas", "icono": "type", "cue": "letras muy pequeñas" },
               { "texto": "Siluetas delgadas", "icono": "scissors", "cue": "siluetas muy delgadas" } ] }
 ```
@@ -130,9 +130,28 @@ son los de la persona (no hay voz nueva).
   que el cursor toca; solo al final), `web` (una página que se arma: `titulo` arriba, cada punto
   es una sección), `panel` (tablero: cada punto con `valor`, solo números que la persona dice),
   `crm` (contactos que avanzan de Nuevo a Cliente).
+  Cuatro pantallas a pantalla completa (el mundo queda oscuro detrás):
+  - `golpe`: el gancho o una frase fuerte. Cada punto es un renglón (1–4 palabras) que golpea la
+    pantalla con temblor y destello justo en su `cue`. `destacar` = la palabra del renglón que va en
+    color (si no, el último). Ideal en la primera escena o en el momento más fuerte. Sin `titulo`.
+  - `mosaico`: cuando nombra varias cosas que se construyen o se ofrecen (tienda en línea,
+    reservas, panel, CRM…). 2–4 puntos = 2–4 ventanitas que llegan en su `cue`; `vistas` dice qué
+    muestra cada una, en orden: `tienda` (productos y carrito), `reservas` (calendario y "cita
+    confirmada"), `panel` (barras, sin cifras), `crm` (contactos de Nuevo a Cliente). Al final se
+    oscurecen y sale el `titulo` grande (2–4 palabras, obligatorio) con los puntos como etiquetas:
+    deja **3 s** después del último cue.
+  - `perfil`: cuando habla de redes, contenido o crecer una cuenta. Un celular con un perfil que se
+    llena de videos y una tarjeta con `titulo` y 2–4 pasos que se marcan ✓ en su `cue`. `sub` =
+    etiqueta pequeña de la tarjeta ("Paso a paso", "Formación"); `nombre` = la cuenta solo si la dice.
+  - `proceso`: cuando cuenta cómo se hizo algo por partes (escribir, grabar la voz, dibujar,
+    musicalizar). 2–4 puntos = tarjetas que llegan en su `cue`; `vistas` en orden: `guion` (lo que
+    se dice, escribiéndose), `voz` (onda), `dibujo` (pixeles que se pintan), `musica` (ecualizador).
+  Úsalas como mucho una vez cada una por video, y nunca dos de estas cuatro seguidas.
 - `cue` de cada punto: 2–5 palabras **copiadas tal cual** de la transcripción, dichas dentro de
   la escena. Ahí aparece el punto, el cursor lo toca y suena. Sin `cue` exacto, el punto sale solo.
-- La escena empieza 0.5–1 s antes del primer cue y termina 1.5 s después del último.
+- La escena empieza 0.5–1 s antes del primer cue y termina **2 s después del último** (3 s en
+  `mosaico`): lo último que aparece tiene que alcanzar a leerse. Si el último cue cae al final de
+  lo que dice, elige un cue un poco más temprano.
 - Textos cortos: `titulo` de 2–6 palabras, puntos de 1–4 palabras (máx. 4 puntos).
 - `calle`: `abierto: "abrir"` cuando dice que abre, empieza o consigue clientes (CERRADO →
   ABIERTO, se prenden las luces); `"cerrar"` cuando cuenta que cierra o se retira. `busqueda`
