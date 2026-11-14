@@ -250,7 +250,7 @@ const plan = await preguntar(tarea, {
 });
 costo += plan.costo ?? 0;
 if (plan.error) {
-  console.error(`Claude no pudo crear las escenas. ¿Está instalado y con la sesión abierta?\n${plan.error}`);
+  console.error(`Kreo IA no pudo crear las escenas. ¿Está instalado y con la sesión abierta?\n${plan.error}`);
   process.exit(1);
 }
 let propuestas;
@@ -263,7 +263,7 @@ try {
   listaDibujos = Array.isArray(datos.dibujos) ? datos.dibujos : [];
   estiloDibujo = typeof datos.estiloDibujo === "string" ? datos.estiloDibujo.slice(0, 300) : "";
 } catch {
-  console.error(`La respuesta de Claude no vino en el formato esperado:\n${plan.texto.slice(0, 1000)}`);
+  console.error(`La respuesta de Kreo IA no vino en el formato esperado:\n${plan.texto.slice(0, 1000)}`);
   process.exit(1);
 }
 

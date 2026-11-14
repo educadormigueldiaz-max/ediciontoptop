@@ -181,7 +181,7 @@ if (fs.existsSync(archivoClips) && !op["elegir-de-nuevo"]) {
   paso(3, "Usando los momentos ya elegidos (--elegir-de-nuevo para pedir otros)");
   elegidos = leerJson(archivoClips).clips;
 } else {
-  paso(3, "Claude está eligiendo los mejores momentos…");
+  paso(3, "Kreo IA está eligiendo los mejores momentos…");
   const skill = fs.readFileSync(path.join(RAIZ, ".claude", "skills", "bydzyne-clips", "SKILL.md"), "utf8");
   const tarea =
     `${skill}\n\n---\n\nElige los clips de este video de ${Math.round(duracion / 60)} minutos ` +
@@ -209,14 +209,14 @@ if (fs.existsSync(archivoClips) && !op["elegir-de-nuevo"]) {
     // Sin respuesta en JSON: abajo se explica.
   }
   if (!datos || datos.is_error) {
-    console.error(`Claude no pudo elegir los clips. ¿Está instalado y con la sesión abierta?\n${(datos?.result ?? r.stderr ?? "").slice(-1000)}`);
+    console.error(`Kreo IA no pudo elegir los clips. ¿Está instalado y con la sesión abierta?\n${(datos?.result ?? r.stderr ?? "").slice(-1000)}`);
     process.exit(1);
   }
   const texto = String(datos.result ?? "");
   try {
     elegidos = JSON.parse(texto.slice(texto.indexOf("{"), texto.lastIndexOf("}") + 1)).clips;
   } catch {
-    console.error(`La respuesta de Claude no vino en el formato esperado:\n${texto.slice(0, 1000)}`);
+    console.error(`La respuesta de Kreo IA no vino en el formato esperado:\n${texto.slice(0, 1000)}`);
     process.exit(1);
   }
   console.log(`  Costo aprox.: ${(datos.total_cost_usd ?? 0).toFixed(2)} USD`);
@@ -238,7 +238,7 @@ let clips = (Array.isArray(elegidos) ? elegidos : [])
   .filter((c, i, todos) => i === 0 || c.inicio >= todos[i - 1].fin);
 if (cuantos) clips = clips.slice(0, cuantos);
 if (!clips.length) {
-  console.error("Claude no encontró momentos que sirvan solos en este video.");
+  console.error("Kreo IA no encontró momentos que sirvan solos en este video.");
   process.exit(1);
 }
 escribirJson(archivoClips, { clips });

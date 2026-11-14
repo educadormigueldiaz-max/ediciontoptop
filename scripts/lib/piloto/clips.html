@@ -104,7 +104,7 @@ input[type=url] { font-size: 18px; }
   <section class="tarjeta" id="nuevo" hidden>
     <div>
       <h2>Clips de un video largo</h2>
-      <p class="ayuda">Claude elige los mejores momentos y cada uno sale vertical, con subtítulos y gancho.</p>
+      <p class="ayuda">Kreo IA elige los mejores momentos y cada uno sale vertical, con subtítulos y gancho.</p>
     </div>
     <form id="form-clips" class="formulario">
       <div class="campo">
@@ -298,7 +298,7 @@ function etapasHtml(t) {
     let barra = "";
     if (i === actual) {
       if (e.clave === "eligiendo") {
-        dato = "Claude está leyendo todo lo que se dijo";
+        dato = "Kreo IA está leyendo todo lo que se dijo";
         barra = `<div class="barra-progreso sin-fin"><div></div></div>`;
       } else if (e.clave === "creando") {
         const listos = p.clips.filter((c) => c.estado === "listo").length;

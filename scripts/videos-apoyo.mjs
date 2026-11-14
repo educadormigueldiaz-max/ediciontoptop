@@ -213,13 +213,13 @@ const catalogar = async (nombre) => {
     },
   );
   costo += r.costo ?? 0;
-  if (r.error) throw new Error(`Claude no pudo mirar "${catalogo.titulo}":\n${r.error}`);
+  if (r.error) throw new Error(`Kreo IA no pudo mirar "${catalogo.titulo}":\n${r.error}`);
   let momentos;
   try {
     momentos = JSON.parse(r.texto.slice(r.texto.indexOf("{"), r.texto.lastIndexOf("}") + 1)).momentos;
     if (!Array.isArray(momentos)) throw new Error();
   } catch {
-    throw new Error(`La respuesta de Claude sobre "${catalogo.titulo}" no vino en el formato esperado.`);
+    throw new Error(`La respuesta de Kreo IA sobre "${catalogo.titulo}" no vino en el formato esperado.`);
   }
   catalogo.momentos = momentos
     .map((m) => ({
@@ -285,7 +285,7 @@ const eleccion = await preguntar(
 );
 costo += eleccion.costo ?? 0;
 if (eleccion.error) {
-  console.error(`Claude no pudo elegir los trozos:\n${eleccion.error}`);
+  console.error(`Kreo IA no pudo elegir los trozos:\n${eleccion.error}`);
   process.exit(1);
 }
 let propuestos;
@@ -293,7 +293,7 @@ try {
   propuestos = JSON.parse(eleccion.texto.slice(eleccion.texto.indexOf("{"), eleccion.texto.lastIndexOf("}") + 1)).trozos;
   if (!Array.isArray(propuestos)) throw new Error();
 } catch {
-  console.error(`La respuesta de Claude no vino en el formato esperado:\n${eleccion.texto.slice(0, 800)}`);
+  console.error(`La respuesta de Kreo IA no vino en el formato esperado:\n${eleccion.texto.slice(0, 800)}`);
   process.exit(1);
 }
 
