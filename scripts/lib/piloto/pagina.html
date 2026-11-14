@@ -100,6 +100,7 @@
             <label><input type="radio" name="tipoAnimacion" value="personajes" checked><span>Con personajes</span></label>
             <label><input type="radio" name="tipoAnimacion" value="textos"><span>Con textos</span></label>
             <label><input type="radio" name="tipoAnimacion" value="figuras"><span>Textos y figuras</span></label>
+            <label><input type="radio" name="tipoAnimacion" value="escenarios"><span>Escenarios</span></label>
           </div>
           <span class="ayuda" id="ayuda-tipo-animacion"></span>
         </div>
@@ -335,6 +336,7 @@ const AYUDA_TIPO_ANIMACION = {
   personajes: "Dibujos de personajes que actúan lo que dices.",
   textos: "Tus frases, cifras e ideas en letras grandes que se mueven.",
   figuras: "Texto con figuras: por ejemplo, si dices paso 1, paso 2 y paso 3, salen sobre un camino de líneas punteadas.",
+  escenarios: "Un cuarto o una calle con un personaje y ventanas de una app: un cursor toca cada cosa justo cuando la dices.",
 };
 const esAudio = (f) => Boolean(f) && (f.type.startsWith("audio/") || /\.(mp3|m4a|wav|aac|ogg|opus|flac)$/i.test(f.name));
 function cambioDeAnimaciones() {

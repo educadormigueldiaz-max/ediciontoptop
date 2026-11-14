@@ -32,9 +32,10 @@ corregido (hasta 3 veces). `npm run apoyo -- <id> --revisar` hace solo esa revis
 | `imagen` | Una foto que flota y gira en 3D con un título | `archivo` (de `public/`), `titulo` opcional |
 | `video` | Un trozo de un video de apoyo a pantalla completa, sin su sonido (lo pone `npm run videos-apoyo`; criterio en `videos.md`) | `archivo` (`videos-apoyo/<nombre>/video.mp4`), `desde` (segundo del video de apoyo), `volumen` (0) |
 | `escena` | **Ilustración animada**: dibujos hechos para este momento (un Fórmula 1 en la pista, una casa que se construye, dinero que crece), por capas y con cámara | `escena`, `titulo` opcional |
+| `escenario` | **Escenario animado**: un mundo dibujado (cuarto de noche o calle con un negocio), un personaje en pixeles, la cámara que se acerca y una ventana de app con los puntos; un cursor toca cada punto cuando la persona lo dice. Solo con `--tipo escenarios` | `escenario`, `titulo`, `destacar`, `puntos` con `cue` |
 
 ## Tipo de animaciones que eligió la persona (`--tipo`)
-En la página (o con `npm run apoyo -- <id> --tipo <tipo>`) la persona elige una de tres clases.
+En la página (o con `npm run apoyo -- <id> --tipo <tipo>`) la persona elige una de cuatro clases.
 Respétala: es lo que quiere ver.
 - `personajes` — **animación con personajes**: todas las escenas son ilustradas (`escena`) y en
   cada una hay un personaje (persona, animal u objeto con cara) que actúa lo que se dice.
@@ -43,7 +44,8 @@ Respétala: es lo que quiere ver.
 - `figuras` — **textos y figuras**: el texto va con figuras que se mueven. Pasos, etapas o un
   proceso en orden → `camino` (paso 1, paso 2, paso 3 sobre una línea punteada); antes y
   después → `comparar`; un número → `dato`; una idea → `concepto` con ícono.
-Sin tipo, mezcla los modos con el criterio de abajo (`camino` en vez de `pasos` cuando lo que se
+- `escenarios` — **escenarios animados**: todas las escenas son `escenario` (ver "Escenarios" abajo).
+Sin tipo, mezcla los modos con el criterio de abajo (sin `escenario`) (`camino` en vez de `pasos` cuando lo que se
 cuenta es un recorrido o un proceso en orden).
 
 ## Variedad (en todos los videos)
@@ -107,6 +109,40 @@ ruedas giran, la cámara se acerca; después otros carros que lo pasan.
 - 2 a 6 capas por escena, 4–8 s de duración. Cuenta la idea con lo que pasa, no con texto.
 - En un video donde sale la persona: hasta la mitad de las escenas pueden ser ilustradas, en los
   momentos más visuales. En solo audio: todas las que se puedan imaginar.
+
+## Escenarios (`modo: "escenario"`)
+Un solo lugar que se queda todo el video, como un mini dibujo animado. La voz y los subtítulos
+son los de la persona (no hay voz nueva).
+```json
+{ "modo": "escenario", "inicio": 24.0, "fin": 30.0, "titulo": "Hay que saberlo trabajar", "destacar": "trabajar",
+  "escenario": { "mundo": "calle", "pantalla": "lista", "sub": null, "nombre": null, "abierto": null, "busqueda": null },
+  "puntos": [ { "texto": "Letras muy pequeñas", "icono": "type", "cue": "letras muy pequeñas" },
+              { "texto": "Siluetas delgadas", "icono": "scissors", "cue": "siluetas muy delgadas" } ] }
+```
+- `mundo`: **uno solo para todo el video**. `cuarto` = de noche con el portátil y el celular
+  (crear contenido, trabajo digital, ideas, estudiar). `calle` = un negocio de barrio al atardecer
+  (tienda, clientes, vender, atender).
+- `pantalla` (varía de una escena a otra, nunca dos seguidas iguales salvo `lista`):
+  `mundo` (toma abierta: el personaje dice el `titulo` en un globo), `lista` (pasos que se
+  llenan), `chips` (ideas en tarjetas), `tarjetas` (2–3 opciones; con 2 = antes y después),
+  `aviso` (un ícono grande, `titulo` y `sub` abajo; `destacar` sale en una etiqueta), `guion`
+  (lo que se dice, escrito al ritmo de la voz), `cierre` (puntos con chulo y un botón con `sub`
+  que el cursor toca; solo al final), `web` (una página que se arma: `titulo` arriba, cada punto
+  es una sección), `panel` (tablero: cada punto con `valor`, solo números que la persona dice),
+  `crm` (contactos que avanzan de Nuevo a Cliente).
+- `cue` de cada punto: 2–5 palabras **copiadas tal cual** de la transcripción, dichas dentro de
+  la escena. Ahí aparece el punto, el cursor lo toca y suena. Sin `cue` exacto, el punto sale solo.
+- La escena empieza 0.5–1 s antes del primer cue y termina 1.5 s después del último.
+- Textos cortos: `titulo` de 2–6 palabras, puntos de 1–4 palabras (máx. 4 puntos).
+- `calle`: `abierto: "abrir"` cuando dice que abre, empieza o consigue clientes (CERRADO →
+  ABIERTO, se prenden las luces); `"cerrar"` cuando cuenta que cierra o se retira. `busqueda`
+  (solo en pantalla `mundo`): una búsqueda que no encuentra nada ("tu negocio cerca de mí").
+- `nombre`: el nombre del negocio o la página solo si la persona lo dice (sale en el letrero).
+- En solo audio, las escenas van pegadas (sin huecos): se siente un solo lugar y la cámara sigue.
+  En un video con la persona, 4–8 s cada una.
+- `icono`: nombres de la lista de abajo (no emojis).
+- Nunca en pantalla: promesas de ingresos ni de resultados, porcentajes de ganancia, ni las
+  palabras invertir, inversión, rentabilidad, rentable ni retorno (la escena se descarta).
 
 Cada punto: `{ "texto": "…", "icono": "…" o null, "en": segundo o null }` (null = se reparten
 solos en la primera mitad). En `camino`, pon `en` = el segundo en que dice cada paso: el trazo

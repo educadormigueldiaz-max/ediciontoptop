@@ -101,6 +101,27 @@ export const esquemaEscenaIlustrada = z.object({
     .max(10),
 });
 
+// Escenario animado de una escena de apoyo (`modo: "escenario"`): un mundo dibujado (un cuarto
+// de noche o una calle al atardecer) con un personaje en pixeles, una cámara que va de la toma
+// abierta a la de cerca y una ventana de app o navegador con lo que se dice; un cursor toca cada
+// punto cuando la persona dice su `cue`. Las escenas seguidas del mismo mundo se sienten un solo lugar.
+export const MUNDOS = ["cuarto", "calle"] as const;
+export const PANTALLAS = ["mundo", "lista", "chips", "tarjetas", "aviso", "guion", "cierre", "web", "panel", "crm"] as const;
+export const esquemaEscenario = z.object({
+  mundo: z.enum(MUNDOS).default("cuarto"),
+  // mundo: solo el lugar y el personaje con un globo (el título). guion: lo que se dice, escrito
+  // al ritmo de la voz. Las demás son ventanas con los puntos (ver la skill bydzyne-apoyo).
+  pantalla: z.enum(PANTALLAS).default("lista"),
+  // Texto de abajo en "aviso" y del botón en "cierre".
+  sub: z.string().nullable().default(null),
+  // Nombre del negocio o la página, solo si la persona lo dice (letrero de la calle, la web).
+  nombre: z.string().max(24).nullable().default(null),
+  // Calle: el negocio se abre (CERRADO → ABIERTO, se prenden las luces) o se cierra en esta escena.
+  abierto: z.enum(["abrir", "cerrar"]).nullable().default(null),
+  // Calle: una búsqueda que se escribe y no encuentra nada (por ejemplo "tu negocio cerca de mí").
+  busqueda: z.string().max(40).nullable().default(null),
+});
+
 export const esquemaElemento = z.discriminatedUnion("tipo", [
   // Motion explicativo: título + puntos que aparecen uno a uno.
   z.object({
@@ -205,6 +226,7 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
       // camino: 2–4 pasos sobre un camino punteado que se dibuja de uno a otro.
       // escena: una ilustración animada (dibujos hechos para este video, por capas, con cámara).
       // video: un trozo de un video de apoyo (`npm run videos-apoyo`), desde el segundo `desde`.
+      // escenario: un mundo con personaje, ventanas y cursor (ver `escenario`).
       modo: z
         .enum([
           "concepto",
@@ -216,6 +238,7 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
           "imagen",
           "escena",
           "video",
+          "escenario",
         ])
         .default("concepto"),
       titulo: z.string().nullable().default(null),
@@ -228,14 +251,19 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
           z.object({
             texto: z.string().min(1),
             icono: nombreIcono.nullable().default(null),
-            // Segundo en que aparece (null = se reparten solos).
+            // Segundo en que aparece (null = se reparten solos, o cuando se dice `cue`).
             en: z.number().nullable().default(null),
+            // Palabras exactas que dice la persona cuando aparece (escenarios).
+            cue: z.string().nullable().default(null),
+            // Número que se muestra (pantalla "panel"), solo uno que la persona dice.
+            valor: z.string().max(16).nullable().default(null),
           }),
         )
         .max(4)
         .default([]),
       archivo: z.string().nullable().default(null),
       escena: esquemaEscenaIlustrada.nullable().default(null),
+      escenario: esquemaEscenario.nullable().default(null),
       // Solo en modo video: segundo del video de apoyo donde empieza el trozo y su volumen
       // (0 = sin sonido: se escucha solo la voz).
       desde: z.number().min(0).default(0),
@@ -264,6 +292,14 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
         falta('necesita "archivo" (por ejemplo "imagenes/foto.jpg")');
       if (e.modo === "escena" && !e.escena)
         falta('necesita "escena" con sus "capas"');
+      if (e.modo === "escenario") {
+        const p = e.escenario?.pantalla;
+        if (!p) falta('necesita "escenario" con su "mundo" y su "pantalla"');
+        else if (["lista", "chips", "web", "panel", "crm"].includes(p) && e.puntos.length < 1)
+          falta(`la pantalla "${p}" necesita "puntos"`);
+        else if (p === "tarjetas" && e.puntos.length < 2) falta('la pantalla "tarjetas" necesita de 2 a 4 "puntos"');
+        else if (p === "mundo" && !e.titulo) falta('la pantalla "mundo" necesita "titulo" (lo que dice el globo)');
+      }
       if (e.modo === "video" && !e.archivo)
         falta('necesita "archivo" (por ejemplo "videos-apoyo/f1/video.mp4")');
     }),

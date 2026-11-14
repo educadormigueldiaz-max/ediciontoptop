@@ -52,8 +52,9 @@ tramos.slice(1, 3).forEach((t, i) => cuadros.push([`02-corte-${i + 1}`, t.desdeF
     console.log(`Aviso: el elemento ${i + 1} (${e.tipo}) cae en una parte cortada y no se ve.`);
     return;
   }
-  // Para las listas, cuando ya aparecieron todos los puntos.
-  const frame = e.tipo === "lista" ? Math.max(desde, hasta - 15) : Math.floor((desde + hasta) / 2);
+  // Para las listas y los escenarios, cuando ya aparecieron todos los puntos.
+  const alFinal = e.tipo === "lista" || (e.tipo === "apoyo" && e.modo === "escenario");
+  const frame = alFinal ? Math.max(desde, hasta - 15) : Math.floor((desde + hasta) / 2);
   cuadros.push([`03-elemento-${i + 1}-${e.tipo}`, frame]);
 });
 cuadros.push(["04-final", Math.max(0, finVideo - 10)]);

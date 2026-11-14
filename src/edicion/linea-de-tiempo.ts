@@ -154,9 +154,39 @@ export type ElementoEnEditado = {
   duracionFrames: number;
   // Frames (relativos al elemento) en que aparece cada punto, paso o etiqueta.
   momentos: number[];
+  // Escenarios: las palabras que se dicen mientras dura, con su frame (relativo al elemento).
+  dichas?: Array<{ texto: string; frame: number; hasta: number }>;
 };
 
-const momentosDe = (e: Elemento): number[] => {
+// Segundo (del original) en que la persona empieza a decir `cue` entre `desde` y `hasta`, o null.
+// Basta con que coincidan las primeras palabras (o todas, si el cue es corto).
+export const buscarCue = (palabras: Edicion["palabras"], cue: string, desde: number, hasta: number): number | null => {
+  const buscadas = cue.split(/\s+/).map(normalizar).filter(Boolean);
+  if (buscadas.length === 0) return null;
+  const dichas = palabras.map((p) => normalizar(p.texto));
+  let mejor: { inicio: number; k: number } | null = null;
+  for (let i = 0; i < palabras.length; i++) {
+    const p = palabras[i];
+    if (dichas[i] !== buscadas[0] || p.inicio < desde - 0.5 || p.inicio > hasta) continue;
+    let k = 0;
+    let j = i;
+    while (k < buscadas.length && j < dichas.length) {
+      if (!dichas[j]) {
+        j++;
+        continue;
+      }
+      if (dichas[j] !== buscadas[k]) break;
+      k++;
+      j++;
+    }
+    if (k < Math.min(2, buscadas.length)) continue;
+    if (!mejor || k > mejor.k) mejor = { inicio: p.inicio, k };
+    if (k === buscadas.length) break;
+  }
+  return mejor ? Math.max(desde, mejor.inicio - 0.1) : null;
+};
+
+const momentosDe = (e: Elemento, palabras: Edicion["palabras"]): number[] => {
   switch (e.tipo) {
     case "lista":
       return e.puntos.map((p) => p.en);
@@ -168,7 +198,10 @@ const momentosDe = (e: Elemento): number[] => {
       // Los puntos sin momento propio se reparten en la primera mitad de la escena.
       const n = e.puntos.length;
       return e.puntos.map(
-        (p, i) => p.en ?? e.inicio + (e.fin - e.inicio) * (0.15 + (n > 1 ? (0.4 * i) / (n - 1) : 0)),
+        (p, i) =>
+          p.en ??
+          (p.cue ? buscarCue(palabras, p.cue, e.inicio, e.fin) : null) ??
+          e.inicio + (e.fin - e.inicio) * (0.15 + (n > 1 ? (0.4 * i) / (n - 1) : 0)),
       );
     }
     default:
@@ -191,11 +224,22 @@ export const elementosEnElEditado = (
     // Lo último que aparece necesita tiempo para entrar y leerse antes de que el elemento se vaya:
     // ningún punto aparece en el último 1.2 s (o el último tercio, si el elemento es corto).
     const ultimo = hasta - desde - Math.min(Math.round(1.2 * fps), Math.floor((hasta - desde) / 3));
-    const momentos = momentosDe(elemento).map((en) => {
+    const momentos = momentosDe(elemento, edicion.palabras).map((en) => {
       const f = aFrameEditado(en, tramos, fps, "inicio");
       return Math.max(0, Math.min((f ?? desde) - desde, ultimo));
     });
-    return [{ elemento, desdeFrame: desde, duracionFrames: hasta - desde, momentos }];
+    if (elemento.tipo !== "apoyo" || elemento.modo !== "escenario") {
+      return [{ elemento, desdeFrame: desde, duracionFrames: hasta - desde, momentos }];
+    }
+    // Las palabras que se oyen durante el escenario (las de partes cortadas no cuentan).
+    const dichas = edicion.palabras.flatMap((p) => {
+      const t = tramos.find((x) => p.inicio * fps >= x.trimBefore && p.inicio * fps < x.trimBefore + x.duracionFrames);
+      if (!t) return [];
+      const frame = Math.round(t.desdeFrame + p.inicio * fps - t.trimBefore) - desde;
+      const fin = Math.round(t.desdeFrame + Math.min(p.fin * fps, t.trimBefore + t.duracionFrames) - t.trimBefore) - desde;
+      return frame >= 0 && frame < hasta - desde ? [{ texto: p.texto.trim(), frame, hasta: fin }] : [];
+    });
+    return [{ elemento, desdeFrame: desde, duracionFrames: hasta - desde, momentos, dichas }];
   });
 
 const normalizar = (texto: string) =>

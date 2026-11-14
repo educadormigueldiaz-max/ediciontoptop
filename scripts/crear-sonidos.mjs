@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Crea los efectos de sonido de public/sonidos/ (whoosh, pop y click) desde cero, con matemática:
+// Crea los efectos de sonido de public/sonidos/ (whoosh, pop, click, ding y brillo) desde cero, con matemática:
 // no se graba ni se copia nada, así que son libres (CC0). Ya vienen hechos; solo hace falta
 // correrlo si se cambian:
 //   node scripts/crear-sonidos.mjs
@@ -106,3 +106,30 @@ guardarWav(
     ),
   );
 }
+
+// Ding: campanita limpia (dos tonos que se apagan despacio). Para un botón que se toca al final.
+guardarWav(
+  "ding.wav",
+  pulir(
+    sonido(0.7, (t) => {
+      const campana = (f, v, caida) => Math.sin(2 * Math.PI * f * t) * v * Math.exp(-t * caida);
+      return (campana(1318.5, 1, 6) + campana(2637, 0.35, 9) + campana(3951, 0.15, 14)) * Math.min(1, t / 0.003);
+    }),
+  ),
+);
+
+// Brillo: destello que sube (cuatro notas rápidas y agudas que se van apagando).
+guardarWav(
+  "brillo.wav",
+  pulir(
+    sonido(0.8, (t) => {
+      const notas = [1568, 1976, 2349, 3136];
+      return notas.reduce((suma, f, i) => {
+        const desde = i * 0.06;
+        if (t < desde) return suma;
+        const x = t - desde;
+        return suma + Math.sin(2 * Math.PI * f * x) * Math.exp(-x * 7) * Math.min(1, x / 0.004) * (1 - i * 0.15);
+      }, 0);
+    }),
+  ),
+);

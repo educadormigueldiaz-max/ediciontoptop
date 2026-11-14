@@ -1,4 +1,4 @@
-Efectos de sonido de esta carpeta (whoosh.wav, pop.wav, click.wav)
+Efectos de sonido de esta carpeta (whoosh.wav, pop.wav, click.wav, ding.wav, brillo.wav)
 
 Se crearon desde cero con scripts/crear-sonidos.mjs (ruido y tonos generados con matemática):
 no contienen grabaciones ni partes de sonidos de otras personas.

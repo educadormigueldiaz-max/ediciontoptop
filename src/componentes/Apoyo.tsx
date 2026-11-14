@@ -21,6 +21,7 @@ import type { ElementoEnEditado } from "../edicion/linea-de-tiempo";
 import type { Marca } from "../marca";
 import { buscarIcono } from "./iconos";
 import { EscenaIlustrada } from "./EscenaIlustrada";
+import { continuidadEscenarios, EscenarioAnimado, type Continuidad } from "./Escenario";
 import { fuenteImagen } from "./ImagenInsertada";
 import { normalizar, tamanoQueCabe } from "./Lettering";
 
@@ -1366,7 +1367,8 @@ const Escena: React.FC<{
   limiteAbajo: number | null;
   dibujos: Record<string, string>;
   variante: Variante;
-}> = ({ item, limiteAbajo, dibujos, variante }) => {
+  continuidad: Continuidad;
+}> = ({ item, limiteAbajo, dibujos, variante, continuidad }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const { duracionFrames } = item;
@@ -1382,16 +1384,20 @@ const Escena: React.FC<{
     alto: piso - m.arriba,
   };
   const perspectiva = Math.max(width, height) * 1.4;
-  const abre = interpolate(frame, [0, 14], [0, 1], {
-    ...LIMITE,
-    easing: Easing.bezier(0.65, 0, 0.35, 1),
-  });
-  const cierra = interpolate(
-    frame,
-    [duracionFrames - 9, duracionFrames],
-    [0, 1],
-    { ...LIMITE, easing: Easing.in(Easing.cubic) },
-  );
+  // Un escenario que sigue en el mismo mundo que el anterior (o el siguiente) no se abre ni se
+  // cierra: es el mismo lugar.
+  const abre = continuidad.entra
+    ? 1
+    : interpolate(frame, [0, 14], [0, 1], {
+        ...LIMITE,
+        easing: Easing.bezier(0.65, 0, 0.35, 1),
+      });
+  const cierra = continuidad.sale
+    ? 0
+    : interpolate(frame, [duracionFrames - 9, duracionFrames], [0, 1], {
+        ...LIMITE,
+        easing: Easing.in(Easing.cubic),
+      });
   const lado = random(`lado-${item.elemento.inicio}`) < 0.5 ? 1 : -1;
   const ilustrada =
     item.elemento.modo === "escena" ? item.elemento.escena : null;
@@ -1403,7 +1409,9 @@ const Escena: React.FC<{
   return (
     <VarianteEscena.Provider value={variante}>
     <AbsoluteFill style={estiloTransicion(variante.transicion, abre, cierra, width, height, lado)}>
-      {ilustrada || video ? (
+      {item.elemento.modo === "escenario" ? (
+        <EscenarioAnimado item={item} area={area} continuidad={continuidad} />
+      ) : ilustrada || video ? (
         <>
           {ilustrada && ilustrada.fondo === "marca" ? (
             <FondoEnCapas frame={frame} semilla={`${item.elemento.inicio}`} tipo={variante.fondo} />
@@ -1471,6 +1479,7 @@ export const Apoyos: React.FC<{
   dibujos: Record<string, string>;
 }> = ({ items, limiteAbajo, dibujos }) => {
   const variantes = elegirVariantes(items.map((x) => x.elemento));
+  const continuidades = continuidadEscenarios(items);
   return (
     <AbsoluteFill>
       {items.map((item, i) => (
@@ -1478,9 +1487,19 @@ export const Apoyos: React.FC<{
           key={i}
           from={item.desdeFrame}
           durationInFrames={item.duracionFrames}
-          name={`Apoyo: ${item.elemento.modo} · ${variantes[i].transicion} · ${variantes[i].fondo}`}
+          name={
+            item.elemento.modo === "escenario"
+              ? `Apoyo: escenario · ${item.elemento.escenario?.mundo} · ${item.elemento.escenario?.pantalla}`
+              : `Apoyo: ${item.elemento.modo} · ${variantes[i].transicion} · ${variantes[i].fondo}`
+          }
         >
-          <Escena item={item} limiteAbajo={limiteAbajo} dibujos={dibujos} variante={variantes[i]} />
+          <Escena
+            item={item}
+            limiteAbajo={limiteAbajo}
+            dibujos={dibujos}
+            variante={variantes[i]}
+            continuidad={continuidades[i]}
+          />
         </Sequence>
       ))}
     </AbsoluteFill>

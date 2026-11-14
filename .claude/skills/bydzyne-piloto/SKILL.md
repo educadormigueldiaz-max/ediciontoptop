@@ -66,7 +66,7 @@ estilo elegido. Tú decides el resto, en este orden:
    - **Escenas de apoyo** (`"tipo": "apoyo"`, skill `bydzyne-apoyo`): si la persona pidió
      animaciones, ya vienen puestas. No las quites ni las encimes; puedes corregir un texto mal
      escrito o una cifra que no se dice. Sin animaciones pedidas, no agregues escenas de apoyo.
-     Vienen de la clase que eligió la persona (con personajes, con textos o textos y figuras);
+     Vienen de la clase que eligió la persona (con personajes, con textos, textos y figuras o escenarios);
      si cambias o agregas una a mano, que sea de esa misma clase.
    - **Solo audio** (`opciones.soloAudio: true`): no hay imagen de la persona; las escenas de
      apoyo llenan el video. No agregues otros elementos, solo gancho y cierre si corresponde.

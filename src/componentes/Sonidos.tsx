@@ -1,6 +1,7 @@
 import { Audio } from "@remotion/media";
 import { Sequence, staticFile } from "remotion";
 import type { ElementoEnEditado } from "../edicion/linea-de-tiempo";
+import { continuidadEscenarios, golpesEscenario } from "./Escenario";
 
 // Efectos de sonido cortos de public/sonidos/ (hechos desde cero, licencia CC0).
 const SONIDOS = {
@@ -10,6 +11,10 @@ const SONIDOS = {
   pop: { archivo: "sonidos/pop.wav", duracion: 0.14, volumen: 1 },
   // Toque seco: cambia el paso de un tutorial.
   click: { archivo: "sonidos/click.wav", duracion: 0.06, volumen: 0.8 },
+  // Campanita: se toca el botón del final (escenarios).
+  ding: { archivo: "sonidos/ding.wav", duracion: 0.7, volumen: 0.6 },
+  // Destello: salta una etiqueta (escenarios).
+  brillo: { archivo: "sonidos/brillo.wav", duracion: 0.8, volumen: 0.55 },
 } as const;
 
 export type Golpe = { frame: number; sonido: keyof typeof SONIDOS };
@@ -19,11 +24,13 @@ const SEPARACION_MINIMA = 6;
 // Un punto o paso que aparece casi junto con el elemento no lleva sonido propio.
 const JUNTO_AL_INICIO = 8;
 
-type ConMomentos = Pick<ElementoEnEditado, "elemento" | "desdeFrame" | "momentos">;
+type ConMomentos = Pick<ElementoEnEditado, "elemento" | "desdeFrame" | "momentos"> & { duracionFrames?: number };
 
 // Qué suena y cuándo, según el tipo de cada elemento.
 export const golpesDe = (items: ConMomentos[]): Golpe[] => {
-  const golpes = items.flatMap(({ elemento, desdeFrame, momentos }): Golpe[] => {
+  // Un escenario que sigue en el mismo mundo que el anterior no lleva el "whoosh" de entrada.
+  const continuidad = continuidadEscenarios(items.map((x) => ({ ...x, duracionFrames: x.duracionFrames ?? 0 })));
+  const golpes = items.flatMap(({ elemento, desdeFrame, momentos }, i): Golpe[] => {
     if (!elemento.sonido) return [];
     const entrada: Golpe = { frame: desdeFrame, sonido: "whoosh" };
     const cada = (sonido: Golpe["sonido"]) =>
@@ -39,7 +46,16 @@ export const golpesDe = (items: ConMomentos[]): Golpe[] => {
       case "tutorial":
         return [entrada, ...cada("click")];
       case "objeto3d":
+        return [entrada, ...cada("pop")];
       case "apoyo":
+        if (elemento.modo === "escenario") {
+          const dur = items[i].duracionFrames ?? 0;
+          return [
+            ...(continuidad[i].entra ? [] : [entrada]),
+            ...momentos.map((m) => ({ frame: desdeFrame + m, sonido: "pop" as const })),
+            ...golpesEscenario(elemento, dur).map((g) => ({ ...g, frame: desdeFrame + g.frame })),
+          ];
+        }
         return [entrada, ...cada("pop")];
       default:
         return [entrada];

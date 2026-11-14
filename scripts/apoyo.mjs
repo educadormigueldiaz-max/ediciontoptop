@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Escenas de apoyo: Claude lee lo que se dice y diseña animaciones a pantalla completa que lo
 // ilustran (skill bydzyne-apoyo). En un proyecto de solo audio cubren todo el video.
-//   npm run apoyo -- <id> [--cuantas 4] [--modelo sonnet] [--tope 1]
+//   npm run apoyo -- <id> [--cuantas 4] [--modelo sonnet] [--tope 1] [--tipo escenarios]
 import fs from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
@@ -22,7 +22,9 @@ Opciones:
                     de las escenas ilustradas tiene su propio tope de 0.8)
   --tipo <tipo>     Qué clase de animaciones: personajes (escenas dibujadas con personajes que
                     actúan lo que se dice), textos (textos, cifras e íconos) o figuras (textos con
-                    figuras: pasos sobre un camino punteado, comparaciones, cifras). Sin --tipo, mezcla
+                    figuras: pasos sobre un camino punteado, comparaciones, cifras) o escenarios
+                    (un cuarto de noche o una calle con un personaje, ventanas de app y un cursor
+                    que toca cada cosa cuando se dice). Sin --tipo, mezcla
   --sin-dibujos     Sin escenas ilustradas (solo texto, íconos y cifras: más rápido y barato)
   --agregar         Agrega escenas y conserva las que ya tiene (y reusa sus dibujos)
   --desde <seg> --hasta <seg>  Solo crea escenas en ese tramo (segundos del original)
@@ -77,7 +79,20 @@ const TIPOS = {
       "camino (los pasos sobre un camino punteado que se dibuja de uno a otro); para un antes y después, " +
       "comparar; para un número, dato; para una idea, concepto con su ícono. Prefiere camino siempre que se pueda.",
   },
+  escenarios: {
+    modos: ["escenario"],
+    criterio:
+      "La persona eligió ESCENARIOS ANIMADOS: todas las escenas son modo escenario (sección \"Escenarios\" " +
+      "de la skill). Elige UN mundo para todo el video según el tema (cuarto o calle) y úsalo en todas las " +
+      "escenas. Varía la pantalla de una escena a otra. Cada punto lleva su cue: las palabras EXACTAS que " +
+      "dice la persona (copiadas de la transcripción) para que aparezca y el cursor lo toque justo ahí.",
+  },
 };
+// Palabras que nunca salen en pantalla en los escenarios (se usan para videos de negocios y
+// afiliados: nada que suene a promesa de dinero).
+const PROHIBIDAS = /\b(invertir|inversi[oó]n(es)?|inviert\w*|rentabilidad|rentable|retornos?)\b/i;
+const MUNDOS = ["cuarto", "calle"];
+const PANTALLAS = ["mundo", "lista", "chips", "tarjetas", "aviso", "guion", "cierre", "web", "panel", "crm"];
 if (op.tipo && !TIPOS[op.tipo]) {
   console.error(`Tipo desconocido "${op.tipo}". Usa: ${Object.keys(TIPOS).join(", ")}.`);
   process.exit(1);
@@ -107,6 +122,31 @@ for (const p of edicion.palabras.filter(dentro)) {
   else Object.assign(actual, { fin: p.fin, texto: `${actual.texto} ${p.texto.trim()}` });
 }
 const editado = edicion.segmentos.reduce((t, s) => t + (s.fin - s.inicio), 0);
+// Segundo en que la persona empieza a decir `cue` (palabras exactas) entre `desde` y `hasta`, o null.
+// Igual que buscarCue de src/edicion/linea-de-tiempo.ts.
+const normal = (t) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9ñ]/g, "");
+const buscarCue = (cue, desde, hasta) => {
+  const buscadas = String(cue).split(/\s+/).map(normal).filter(Boolean);
+  if (!buscadas.length) return null;
+  const dichas = edicion.palabras.map((p) => normal(p.texto));
+  let mejor = null;
+  for (let i = 0; i < dichas.length; i++) {
+    const p = edicion.palabras[i];
+    if (dichas[i] !== buscadas[0] || p.inicio < desde - 0.5 || p.inicio > hasta || !dentro(p)) continue;
+    let k = 0;
+    let j = i;
+    while (k < buscadas.length && j < dichas.length) {
+      if (!dichas[j]) { j++; continue; }
+      if (dichas[j] !== buscadas[k]) break;
+      k++;
+      j++;
+    }
+    if (k < Math.min(2, buscadas.length)) continue;
+    if (!mejor || k > mejor.k) mejor = { inicio: p.inicio, k };
+    if (k === buscadas.length) break;
+  }
+  return mejor ? redondear(Math.max(desde, mejor.inicio - 0.1)) : null;
+};
 const inicioPermitido = soloAudio
   ? (edicion.opciones.gancho ? edicion.opciones.duracionGancho : 0)
   : Math.max(3, edicion.opciones.gancho ? edicion.opciones.duracionGancho : 0);
@@ -252,17 +292,38 @@ const pedidos = new Map(
 );
 const rutaDibujo = (nombre) => `proyectos/${id}/dibujos/${nombre}.svg`;
 const ilustracion = (i) => limpiarIlustracion(i, (n) => pedidos.has(n) || yaDibujados.includes(n));
+const escenarioDe = (x) => {
+  if (!x || !MUNDOS.includes(x.mundo) || !PANTALLAS.includes(x.pantalla)) return null;
+  return {
+    mundo: x.mundo,
+    pantalla: x.pantalla,
+    sub: texto(x.sub)?.slice(0, 90) ?? null,
+    nombre: texto(x.nombre)?.slice(0, 24) ?? null,
+    abierto: ["abrir", "cerrar"].includes(x.abierto) && x.mundo === "calle" ? x.abierto : null,
+    busqueda: x.mundo === "calle" ? (texto(x.busqueda)?.slice(0, 40) ?? null) : null,
+  };
+};
 const fin = frases.at(-1).fin;
 const escenas = [];
 const descartadas = [];
+const avisos = [];
 const ordenadas = [...propuestas].sort((a, b) => a.inicio - b.inicio);
 for (const [k, e] of ordenadas.entries()) {
   const inicio = redondear(Math.max(inicioPermitido, Number(e.inicio)));
   let final = redondear(Math.min(fin + (soloAudio ? 1 : 0), Number(e.fin)));
+  const esEscenario = e.modo === "escenario";
   const puntos = (Array.isArray(e.puntos) ? e.puntos : [])
     .filter((p) => texto(p?.texto))
     .slice(0, 4)
-    .map((p) => ({ texto: texto(p.texto), icono: icono(p.icono), en: Number.isFinite(p.en) ? redondear(p.en) : null }));
+    .map((p) => {
+      const punto = { texto: texto(p.texto).slice(0, 40), icono: icono(p.icono), en: Number.isFinite(p.en) ? redondear(p.en) : null };
+      if (!esEscenario) return punto;
+      // En los escenarios cada punto sale cuando se dice su cue (palabras exactas de la transcripción).
+      const cue = texto(p.cue);
+      const en = cue ? buscarCue(cue, Number(e.inicio), Number(e.fin) + 1) : null;
+      if (cue && en === null) avisos.push(`"${cue}" no se encontró en lo que se dice (${e.inicio}–${e.fin} s): ese punto sale solo`);
+      return { ...punto, en, cue, valor: texto(p.valor)?.slice(0, 16) ?? null };
+    });
   // El último punto necesita 1.5 s en pantalla: si sale muy al final, la escena se alarga hasta
   // donde se pueda (sin pisar la siguiente escena, otro elemento ni el final del video).
   const ultimoEn = Math.max(...puntos.map((p) => p.en ?? -Infinity));
@@ -288,7 +349,10 @@ for (const [k, e] of ordenadas.entries()) {
     puntos,
     archivo: fotos.includes(e.archivo) ? e.archivo : null,
     escena: e.modo === "escena" ? ilustracion(e.escena) : null,
+    escenario: esEscenario ? escenarioDe(e.escenario) : null,
   };
+  const pantalla = escena.escenario?.pantalla;
+  const enPantalla = [escena.titulo, escena.destacar, escena.escenario?.sub, escena.escenario?.nombre, escena.escenario?.busqueda, ...puntos.flatMap((p) => [p.texto, p.valor])].filter(Boolean).join(" · ");
   const problema =
     !MODOS.includes(e.modo) ? "modo desconocido"
     : !(final - inicio >= 2) ? "muy corta"
@@ -302,6 +366,11 @@ for (const [k, e] of ordenadas.entries()) {
     : e.modo === "frase" && !escena.texto ? "sin frase"
     : e.modo === "imagen" && !escena.archivo ? "sin foto"
     : e.modo === "escena" && !escena.escena ? "sin dibujos"
+    : esEscenario && !escena.escenario ? "sin mundo o pantalla"
+    : esEscenario && ["lista", "chips", "web", "panel", "crm"].includes(pantalla) && puntos.length < 1 ? "pantalla sin puntos"
+    : esEscenario && pantalla === "tarjetas" && puntos.length < 2 ? "tarjetas sin dos puntos"
+    : esEscenario && pantalla === "mundo" && !escena.titulo ? "sin lo que dice el globo"
+    : esEscenario && PROHIBIDAS.test(enPantalla) ? "texto con palabras que suenan a promesa de dinero"
     : null;
   if (problema) descartadas.push(`${e.modo ?? "?"} ${e.inicio}–${e.fin} s (${problema})`);
   else escenas.push(escena);
@@ -384,11 +453,14 @@ if (!op["sin-revision"] && finales.some((e) => e.modo === "escena")) {
 console.log(`\nListo: ${finales.length} escenas de apoyo en "${id}"`);
 for (const e of finales) {
   const que =
-    e.modo === "escena"
+    e.modo === "escenario"
+      ? `${e.escenario.mundo} · ${e.escenario.pantalla}: ${e.titulo ?? e.puntos.map((p) => p.texto).join(" / ")}`
+      : e.modo === "escena"
       ? `${e.titulo ? `${e.titulo}: ` : ""}${e.escena.capas.map((c) => path.basename(c.dibujo, ".svg")).join(", ")}`
       : e.titulo ?? e.cifra ?? e.texto ?? e.puntos.map((p) => p.texto).join(" / ");
   console.log(`  ${e.inicio.toFixed(1)}–${e.fin.toFixed(1)} s  ${e.modo.padEnd(9)} ${que}`);
 }
 if (descartadas.length) console.log(`  (se descartaron: ${descartadas.join("; ")})`);
+for (const a of avisos) console.log(`  Aviso: ${a}`);
 console.log(`  Costo aprox.: ${costo.toFixed(2)} USD`);
 console.log(`\nRevisa con "npm run revisar -- ${id}" o en la vista previa (npm run dev).`);
