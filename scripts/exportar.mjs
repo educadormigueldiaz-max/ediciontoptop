@@ -11,6 +11,7 @@ import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { asegurarCaras } from "./lib/caras.mjs";
+import { opcionesGl } from "./lib/gl.mjs";
 import { REDES, TODAS_LAS_REDES, asegurarProduccion, opcionesDeRed } from "./lib/produccion.mjs";
 import { asegurarRecortes, avisarRecortesIncompletos } from "./lib/recorte.mjs";
 import {
@@ -109,7 +110,7 @@ for (const { formato, nombre, red, opciones, aviso } of exportaciones) {
     console.log(`\nExportando ${id} ${red ? `para ${REDES[red].nombre} ` : ""}en ${formato}…`);
     const r = spawnSync(
       remotion,
-      ["render", id, salida, `--props=${props}`, `--port=${await puertoLibre()}`, ...opciones],
+      ["render", id, salida, `--props=${props}`, `--port=${await puertoLibre()}`, ...opciones, ...opcionesGl(edicion)],
       { cwd: RAIZ, stdio: "inherit" },
     );
     if (r.status !== 0) process.exit(r.status ?? 1);

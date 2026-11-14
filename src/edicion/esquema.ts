@@ -126,6 +126,40 @@ export const esquemaEscenario = z.object({
   vistas: z.array(z.enum(VISTAS)).max(4).nullable().default(null),
 });
 
+// Escenarios 3D (`modo: "escenario3d"`): escenas con objetos de cubitos y cámara en 3D, y los textos
+// en 2D encima. plataformas: 2–4 pantallas 3D con su interfaz (tienda, reservas, panel, crm) y un
+// título grande al final. cuarto: un cuarto de noche con una tarjeta de ideas. calle: un negocio
+// que se enciende al atardecer. celular: un perfil que se llena de videos, con pasos. cohete: un
+// cohete que despega con una frase. confeti: confeti, personajes y una invitación final.
+export const ESCENAS_3D = ["plataformas", "cuarto", "calle", "celular", "cohete", "confeti"] as const;
+export const VISTAS_3D = ["tienda", "reservas", "panel", "crm"] as const;
+export const esquemaEscenario3D = z.object({
+  escena: z.enum(ESCENAS_3D).default("plataformas"),
+  // plataformas: qué interfaz muestra cada pantalla (en el orden de los puntos) y lo que se lee en
+  // ella. tienda: productos. reservas: horas (y en `nota`, la cita confirmada). panel: métricas
+  // ("Visitas" o "Visitas: 120", nunca dinero; en `nota`, el título de la gráfica). crm:
+  // clientes "Nombre: lo que hizo".
+  pantallas: z
+    .array(
+      z.object({
+        vista: z.enum(VISTAS_3D),
+        filas: z.array(z.string().max(40)).max(4).default([]),
+        nota: z.string().max(40).nullable().default(null),
+      }),
+    )
+    .max(4)
+    .nullable()
+    .default(null),
+  // Letrero del negocio (calle), cuenta del perfil (celular), solo si la persona lo dice.
+  nombre: z.string().max(24).nullable().default(null),
+  // Calle: lo que se busca. confeti: el botón final. cohete: la línea de abajo.
+  sub: z.string().max(60).nullable().default(null),
+});
+// Dónde va la escena de apoyo: completa (tapa el video y se oye la voz), encima (una tarjeta
+// sobre el video, sin tapar la cara) o dividida (la animación arriba y la persona abajo; en
+// horizontal, lado a lado).
+export const UBICACIONES = ["completa", "encima", "dividida"] as const;
+
 export const esquemaElemento = z.discriminatedUnion("tipo", [
   // Motion explicativo: título + puntos que aparecen uno a uno.
   z.object({
@@ -243,6 +277,7 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
           "escena",
           "video",
           "escenario",
+          "escenario3d",
         ])
         .default("concepto"),
       titulo: z.string().nullable().default(null),
@@ -268,6 +303,8 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
       archivo: z.string().nullable().default(null),
       escena: esquemaEscenaIlustrada.nullable().default(null),
       escenario: esquemaEscenario.nullable().default(null),
+      escenario3d: esquemaEscenario3D.nullable().default(null),
+      ubicacion: z.enum(UBICACIONES).default("completa"),
       // Solo en modo video: segundo del video de apoyo donde empieza el trozo y su volumen
       // (0 = sin sonido: se escucha solo la voz).
       desde: z.number().min(0).default(0),
@@ -305,6 +342,14 @@ export const esquemaElemento = z.discriminatedUnion("tipo", [
         else if ((p === "mosaico" || p === "proceso") && e.puntos.length < 2) falta(`la pantalla "${p}" necesita de 2 a 4 "puntos"`);
         else if (p === "mosaico" && !e.titulo) falta('la pantalla "mosaico" necesita "titulo" (el título grande del final)');
         else if (p === "mundo" && !e.titulo) falta('la pantalla "mundo" necesita "titulo" (lo que dice el globo)');
+      }
+      if (e.modo === "escenario3d") {
+        const q = e.escenario3d?.escena;
+        if (!q) falta('necesita "escenario3d" con su "escena"');
+        else if (q === "plataformas" && e.puntos.length < 2) falta('la escena 3D "plataformas" necesita de 2 a 4 "puntos"');
+        else if (q === "plataformas" && !e.titulo) falta('la escena 3D "plataformas" necesita "titulo" (el título grande del final)');
+        else if ((q === "cuarto" || q === "celular") && e.puntos.length < 1) falta(`la escena 3D "${q}" necesita "puntos"`);
+        else if ((q === "cohete" || q === "confeti") && !e.titulo) falta(`la escena 3D "${q}" necesita "titulo"`);
       }
       if (e.modo === "video" && !e.archivo)
         falta('necesita "archivo" (por ejemplo "videos-apoyo/f1/video.mp4")');

@@ -9,6 +9,7 @@ import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { asegurarCaras } from "./lib/caras.mjs";
+import { opcionesGl } from "./lib/gl.mjs";
 import { aFrameEditado as aFrameEnTramos, tramosDe } from "./lib/escenas.mjs";
 import { asegurarProduccion } from "./lib/produccion.mjs";
 import { asegurarRecortes, avisarRecortesIncompletos } from "./lib/recorte.mjs";
@@ -53,7 +54,7 @@ tramos.slice(1, 3).forEach((t, i) => cuadros.push([`02-corte-${i + 1}`, t.desdeF
     return;
   }
   // Para las listas y los escenarios, cuando ya aparecieron todos los puntos.
-  const alFinal = e.tipo === "lista" || (e.tipo === "apoyo" && e.modo === "escenario");
+  const alFinal = e.tipo === "lista" || (e.tipo === "apoyo" && (e.modo === "escenario" || e.modo === "escenario3d"));
   const frame = alFinal ? Math.max(desde, hasta - 15) : Math.floor((desde + hasta) / 2);
   cuadros.push([`03-elemento-${i + 1}-${e.tipo}`, frame]);
 });
@@ -75,7 +76,7 @@ for (const [nombre, frame] of cuadros) {
   const salida = path.join(carpeta, `${nombre}.png`);
   const r = spawnSync(
     remotion,
-    ["still", id, salida, `--frame=${frame}`, `--props=${props}`, `--port=${puerto}`, "--log=error"],
+    ["still", id, salida, `--frame=${frame}`, `--props=${props}`, `--port=${puerto}`, "--log=error", ...opcionesGl(edicion)],
     { cwd: RAIZ, encoding: "utf8" },
   );
   if (r.status !== 0) {

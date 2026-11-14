@@ -185,7 +185,7 @@ const preparar = async (t) => {
 const crearAnimaciones = async (t) => {
   const r = await node(
     "apoyo.mjs",
-    [t.proyecto, "--tope", "1", ...(t.tipoAnimacion ? ["--tipo", t.tipoAnimacion] : []), ...(t.notas ? ["--pedido", t.notas] : [])],
+    [t.proyecto, "--tope", "1", ...(t.tipoAnimacion ? ["--tipo", t.tipoAnimacion] : []), ...(t.ubicacion ? ["--ubicacion", t.ubicacion] : []), ...(t.notas ? ["--pedido", t.notas] : [])],
     { limiteMin: 20 },
   );
   anotar(t.id, `Animaciones (código ${r.codigo}):\n${r.salida.slice(-1500)}`);

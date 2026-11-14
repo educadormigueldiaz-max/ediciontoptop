@@ -30,7 +30,10 @@ export const Subtitulos: React.FC<{
   ocultarEn?: ReadonlyArray<readonly [number, number]>;
   // Dónde está la cara entre dos frames, para no taparla.
   caraEntre?: (desde: number, hasta: number) => Caja | null;
-}> = ({ captions, estilo, posicion, ocultarEn = [], caraEntre }) => {
+  // Franja (x, ancho y, si se da, altura del centro) donde van entre dos frames, cuando no es la
+  // de siempre (pantalla dividida).
+  columnaEn?: (desde: number, hasta: number) => { x: number; ancho: number; centro?: number } | null;
+}> = ({ captions, estilo, posicion, ocultarEn = [], caraEntre, columnaEn }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const media = mediaFranjaSubtitulos(width, height, estilo);
@@ -63,7 +66,8 @@ export const Subtitulos: React.FC<{
         const desde = Math.round((page.startMs / 1000) * fps);
         const hasta = Math.round((finMs / 1000) * fps);
         if (hasta <= desde) return null;
-        const centro = centroSubtitulos({
+        const columna = columnaEn?.(desde, hasta) ?? null;
+        const centro = columna?.centro ?? centroSubtitulos({
           preferido: posicion * height,
           media,
           cara: caraEntre?.(desde, hasta) ?? null,
@@ -77,6 +81,7 @@ export const Subtitulos: React.FC<{
               estilo={estilo}
               centro={centro}
               alterna={page.tokens.some((t) => alternas.has(t.fromMs))}
+              columna={columna}
             />
           </Sequence>
         );
@@ -85,12 +90,13 @@ export const Subtitulos: React.FC<{
   );
 };
 
-const Pagina: React.FC<{ page: TikTokPage; estilo: Estilo; centro: number; alterna: boolean }> = ({
-  page,
-  estilo,
-  centro,
-  alterna,
-}) => {
+const Pagina: React.FC<{
+  page: TikTokPage;
+  estilo: Estilo;
+  centro: number;
+  alterna: boolean;
+  columna: { x: number; ancho: number } | null;
+}> = ({ page, estilo, centro, alterna, columna }) => {
   const marca = useMarca();
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
@@ -108,8 +114,8 @@ const Pagina: React.FC<{ page: TikTokPage; estilo: Estilo; centro: number; alter
     <div
       style={{
         position: "absolute",
-        left: margen,
-        right: margen,
+        left: columna ? columna.x + margen * 0.6 : margen,
+        right: columna ? width - columna.x - columna.ancho + margen * 0.6 : margen,
         top: centro,
         textAlign: "center",
         fontFamily: alterna ? marca.fuenteAlterna : marca.fuente,

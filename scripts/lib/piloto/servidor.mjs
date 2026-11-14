@@ -349,8 +349,10 @@ const manejar = async (req, res) => {
       fotosEsperadas: fotos.length,
       // Escenas de apoyo animadas en medio del video (con un audio solo, siempre).
       animaciones: esAudio || d.animaciones === true,
-      // Clase de animaciones (personajes, textos, figuras o escenarios: `npm run apoyo -- --tipo`); null = mezcla.
-      tipoAnimacion: ["personajes", "textos", "figuras", "escenarios"].includes(d.tipoAnimacion) ? d.tipoAnimacion : null,
+      // Clase de animaciones (personajes, textos, figuras, escenarios o 3d: `npm run apoyo -- --tipo`); null = mezcla.
+      tipoAnimacion: ["personajes", "textos", "figuras", "escenarios", "3d"].includes(d.tipoAnimacion) ? d.tipoAnimacion : null,
+      // Dónde van (`npm run apoyo -- --ubicacion`): completa, encima o dividida; null = completa.
+      ubicacion: ["completa", "encima", "dividida"].includes(d.ubicacion) ? d.ubicacion : null,
       // Enlaces de YouTube de donde sacar trozos de apoyo (npm run videos-apoyo).
       videosApoyo: d.tipo === "clips" ? [] : enlacesDeApoyo(d.videosApoyo),
       apoyosEsperados: apoyos.length,

@@ -38,7 +38,7 @@ export type ItemEscenario = ElementoEnEditado & { elemento: ElementoApoyo };
 export type Continuidad = { entra: boolean; sale: boolean; cercaAntes: boolean; luzAntes: number };
 
 // ---------------- Colores ----------------
-const mezclar = (a: string, b: string, t: number) => {
+export const mezclar = (a: string, b: string, t: number) => {
   const n = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
   const [x, y] = [n(a), n(b)];
   if (x.some(Number.isNaN) || y.some(Number.isNaN)) return a;
@@ -63,7 +63,7 @@ const useTema = () => useContext(ContextoTema);
 // Los íconos se buscan una sola vez (buscar en la lista enorme de lucide en cada cuadro hacía caer
 // el render de Chrome en algunos cuadros de 16:9).
 const ICONOS_YA = new Map<string, ReturnType<typeof buscarIcono>>();
-const iconoDe = (n: string) => {
+export const iconoDe = (n: string) => {
   if (!ICONOS_YA.has(n)) ICONOS_YA.set(n, buscarIcono(n));
   return ICONOS_YA.get(n) ?? null;
 };
@@ -74,14 +74,14 @@ const Icono: React.FC<{ nombre: string | null; defecto: string; tam: number; col
 };
 
 // ---------------- Personaje en pixeles ----------------
-const FRENTE = [
+export const FRENTE = [
   "....hhhhhhhh....", "...hhhhhhhhhh...", "..hhhhhhhhhhhh..", "..hssssssssssh..", "..sswwsssswwss..", "..sseesssseess..",
   "..ssssssssssss..", "..ssssSSssssss..", "..ssssmmmmssss..", "...ssssssssss...", ".....ssssss.....", "...pppppppppp...",
   "..pppppppppppp..", ".pppppkkkkppppp.", ".spppppppppppps.", ".sPPPPPPPPPPPPs.", "...jjjjjjjjjj...", "...jjjj..jjjj...",
   "...jjjj..jjjj...", "..zzzzz..zzzzz..", "..ZZZZZ..ZZZZZ..",
 ];
 // La tendera de la calle: pelo largo, camisa y delantal
-const TENDERA = [
+export const TENDERA = [
   "....hhhhhhhh....", "...hhhhhhhhhh...", "..hhhhhhhhhhhh..", "..hhhhsssshhhh..", ".hsswwsssswwssh.", ".hsseesssseessh.",
   ".hssssssssssssh.", ".hssssSSssssssh.", ".hssssmmmmssssh.", ".hhsssssssssshh.", ".hh..ssssss..hh.", ".hpppppppppppph.",
   "..ppaaaaaaaapp..", ".ppaaakkkkaaapp.", ".spaaaaaaaaaaps.", ".sPaaaaaaaaaaPs.", "...aaaaaaaaaa...", "...jjjj..jjjj...",
@@ -93,12 +93,12 @@ const sprite = (frente: string[], paleta: Record<string, string>): Sprite => ({
   paleta,
   parpadeo: frente.map((f, i) => (i === 4 || i === 5 ? f.replace(/[we]/g, "s") : f)),
 });
-const PIEL = { s: "#d9a27a", S: "#b98660", e: "#18161a", w: "#f4f4f4", m: "#8a3f2c" };
+export const PIEL = { s: "#d9a27a", S: "#b98660", e: "#18161a", w: "#f4f4f4", m: "#8a3f2c" };
 const spriteDe = (mundo: Escenario["mundo"], K: Tema) =>
   mundo === "calle"
     ? sprite(TENDERA, { h: "#6a2f1c", s: "#c98d64", S: "#a8714d", e: "#18161a", w: "#f4f4f4", m: "#8a3f2c", p: "#2f8f83", P: "#22685f", a: "#f3e6cf", k: K.acento, j: "#3a3346", z: "#f0f0f0", Z: K.acento })
     : sprite(FRENTE, { ...PIEL, h: "#2a1c14", p: K.acento, P: K.acentoOscuro, k: "#ffffff", j: "#2b3c63", z: "#efefef", Z: K.acento2 });
-const TRANSEUNTES: Sprite[] = [
+export const TRANSEUNTES: Sprite[] = [
   sprite(FRENTE, { ...PIEL, h: "#111", p: "#e0524a", P: "#a83a33", k: "#e0524a", j: "#24324f", z: "#efefef", Z: "#222" }),
   sprite(TENDERA, { h: "#d9b26a", s: "#e3b38c", S: "#c4936c", e: "#18161a", w: "#f4f4f4", m: "#8a3f2c", p: "#4b6cc4", P: "#33508f", a: "#4b6cc4", k: "#4b6cc4", j: "#2a2a2a", z: "#f0f0f0", Z: "#4b6cc4" }),
   sprite(FRENTE, { ...PIEL, h: "#5a3a22", s: "#8d5a3b", S: "#6f4529", p: "#e7c15a", P: "#b8932f", k: "#e7c15a", j: "#3d3d3d", z: "#efefef", Z: "#e7c15a" }),
@@ -810,7 +810,7 @@ const VISTAS_DE: Record<"mosaico" | "proceso", NonNullable<Escenario["vistas"]>>
 // el render de Chrome con íconos SVG en 16:9.
 const rd = (x: number) => Math.round(x * 1000) / 1000;
 // Letras de un texto que caben en un ancho (para bajar el tamaño antes de tocar el borde).
-const tamQueCabe = (texto: string, ancho: number, maximo: number, factor = 0.66) =>
+export const tamQueCabe = (texto: string, ancho: number, maximo: number, factor = 0.66) =>
   Math.max(28, Math.min(maximo, ancho / Math.max(1, texto.length * factor)));
 // Momentos de los puntos, sin pasar del punto en que todavía queda tiempo para leer lo último.
 export const momentosLegibles = (m: number[], n: number, dur: number, fps: number) => {
@@ -819,7 +819,7 @@ export const momentosLegibles = (m: number[], n: number, dur: number, fps: numbe
 };
 // Cuándo sale el título del final del mosaico: un poco después de la última ventana y con al
 // menos 1.8 s para leerlo.
-const finalMosaico = (m: number[], dur: number, fps: number) =>
+export const finalMosaico = (m: number[], dur: number, fps: number) =>
   Math.max(10, Math.min(dur - Math.round(fps * 1.8), Math.max((m.at(-1) ?? 0) + Math.round(fps * 0.9), Math.round(dur * 0.55))));
 
 const Mini: React.FC<{ titulo: string; icono: string; x: number; y: number; w: number; h: number; v: number; rot?: number; children: React.ReactNode }> = ({ titulo, icono, x, y, w, h, v, rot = 0, children }) => {

@@ -33,9 +33,10 @@ corregido (hasta 3 veces). `npm run apoyo -- <id> --revisar` hace solo esa revis
 | `video` | Un trozo de un video de apoyo a pantalla completa, sin su sonido (lo pone `npm run videos-apoyo`; criterio en `videos.md`) | `archivo` (`videos-apoyo/<nombre>/video.mp4`), `desde` (segundo del video de apoyo), `volumen` (0) |
 | `escena` | **Ilustración animada**: dibujos hechos para este momento (un Fórmula 1 en la pista, una casa que se construye, dinero que crece), por capas y con cámara | `escena`, `titulo` opcional |
 | `escenario` | **Escenario animado**: un mundo dibujado (cuarto de noche o calle con un negocio), un personaje en pixeles, la cámara que se acerca y una ventana de app con los puntos; un cursor toca cada punto cuando la persona lo dice. Solo con `--tipo escenarios` | `escenario`, `titulo`, `destacar`, `puntos` con `cue` |
+| `escenario3d` | **Escenario 3D**: objetos de cubitos, luces y cámara en 3D (pantallas con su interfaz, un cuarto, una calle, un celular, un cohete o confeti) y los textos en 2D encima. Solo con `--tipo 3d` | `escenario3d`, `titulo`, `puntos` con `cue` |
 
 ## Tipo de animaciones que eligió la persona (`--tipo`)
-En la página (o con `npm run apoyo -- <id> --tipo <tipo>`) la persona elige una de cuatro clases.
+En la página (o con `npm run apoyo -- <id> --tipo <tipo>`) la persona elige una de cinco clases.
 Respétala: es lo que quiere ver.
 - `personajes` — **animación con personajes**: todas las escenas son ilustradas (`escena`) y en
   cada una hay un personaje (persona, animal u objeto con cara) que actúa lo que se dice.
@@ -45,6 +46,12 @@ Respétala: es lo que quiere ver.
   proceso en orden → `camino` (paso 1, paso 2, paso 3 sobre una línea punteada); antes y
   después → `comparar`; un número → `dato`; una idea → `concepto` con ícono.
 - `escenarios` — **escenarios animados**: todas las escenas son `escenario` (ver "Escenarios" abajo).
+- `3d` — **escenarios 3D**: todas las escenas son `escenario3d` (ver "Escenarios 3D" abajo).
+
+La persona también elige **dónde** va cada animación (`--ubicacion`; no lo pones tú, lo pone
+el editor): `completa` (tapa el video y se oye la voz), `encima` (una tarjeta sobre el video,
+sin tapar la cara) o `dividida` (la animación arriba y la persona abajo; en horizontal, lado a
+lado). En `encima` y `dividida` el espacio es la mitad: usa textos cortos.
 Sin tipo, mezcla los modos con el criterio de abajo (sin `escenario`) (`camino` en vez de `pasos` cuando lo que se
 cuenta es un recorrido o un proceso en orden).
 
@@ -172,6 +179,39 @@ al final, alarga `fin`): necesita tiempo para entrar y leerse antes de que la es
 { "tipo": "apoyo", "inicio": 12.4, "fin": 17.2, "modo": "pasos", "titulo": "Cómo empezar",
   "puntos": [ { "texto": "Elige un producto", "icono": "carrito", "en": 13.1 },
               { "texto": "Habla con 5 personas", "icono": "equipo", "en": 14.6 } ] }
+```
+
+## Escenarios 3D (`modo: "escenario3d"`)
+Escenas con objetos en 3D (cubitos, luces, cámara) y los textos en 2D encima. Elige la `escena`
+que ilustra lo que se dice y **varíala** de una escena a otra (no repitas la misma seguida):
+
+| `escena` | Qué se ve | Necesita |
+|---|---|---|
+| `plataformas` | 2–4 pantallas 3D, cada una con su **interfaz de verdad**: `tienda` (productos que se agregan al carrito; una caja vuela al carrito), `reservas` (día, hora y "Cita confirmada"; sale un chulito 3D), `panel` (métricas y una gráfica), `crm` (clientes que pasan de Nuevo a Cliente). Cada pantalla sale grande cuando se dice su punto y luego va a su lugar; al final, un título grande | `puntos` (2–4: el nombre de cada pantalla, con `cue`), `titulo`, `pantallas` |
+| `cuarto` | Un cuarto de noche en 3D (escritorio, portátil, lámpara, alguien trabajando) con una tarjeta de ideas | `titulo`, `puntos` (1–4) con `icono` y `cue` |
+| `calle` | Un negocio al atardecer que se enciende (letrero con `nombre`) cuando se dice el primer punto; arriba, una búsqueda (`sub`) que lo encuentra "abierto ahora" | `puntos` (1, con el `cue` del momento en que se enciende), `sub` y `nombre` opcionales, `titulo` opcional |
+| `celular` | Un celular en 3D con un perfil (`nombre` = la cuenta) que se llena de videos, corazones que suben y una tarjeta con pasos que se marcan | `titulo`, `puntos` (1–4) con `cue` |
+| `cohete` | Un cohete de cubitos que despega con una frase grande | `titulo` (la frase), `sub` opcional (línea de abajo), un punto con el `cue` del despegue |
+| `confeti` | Confeti, personajes que saltan y una invitación final | `titulo`, `sub` opcional (el botón, p. ej. "Escríbeme hoy"), un punto con el `cue` del botón |
+
+`pantallas` (solo `plataformas`), una por punto y en el mismo orden:
+`{ "vista": "tienda"|"reservas"|"panel"|"crm", "filas": [...], "nota": "…" o null }`. Cada pantalla con una vista distinta.
+- `tienda`: `filas` = hasta 4 productos de los que habla la persona ("Vinilo PU", "Camisetas").
+- `reservas`: `filas` = hasta 4 horas ("9:00"); `nota` = la cita confirmada ("Ana · jueves · 10:30").
+- `panel`: `filas` = hasta 3 métricas ("Visitas", o "Visitas: 120" solo si la persona dice ese
+  número); `nota` = título de la gráfica. **Nunca dinero** (ni ventas, ni ganancias, ni $).
+- `crm`: `filas` = hasta 4 clientes "Nombre: lo que hizo" ("Ana: Pidió el catálogo").
+Las filas salen del tema del video; si no hay nada que decir, déjalas vacías (`[]`) y salen unas
+genéricas. `nombre` y `sub`: solo si encajan con lo que se dice. Termina la escena 2 s después del
+último cue (3 s en `plataformas`, por el título final).
+
+```json
+{ "modo": "escenario3d", "inicio": 10.8, "fin": 22.4, "titulo": "Tu negocio en línea",
+  "escenario3d": { "escena": "plataformas", "nombre": null, "sub": null,
+    "pantallas": [ { "vista": "tienda", "filas": ["Vinilo PU", "DTF", "Camisetas"], "nota": null },
+                   { "vista": "crm", "filas": ["Ana: Pidió el catálogo", "Luis: Agendó una cita"], "nota": null } ] },
+  "puntos": [ { "texto": "Tienda", "icono": null, "cue": "tanta gente" },
+              { "texto": "Clientes", "icono": null, "cue": "desconocimiento" } ] }
 ```
 
 ## Cuándo y cuánto

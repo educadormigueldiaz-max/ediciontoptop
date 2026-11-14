@@ -20,7 +20,15 @@ import {
   type PropsEditado,
 } from "../edicion/esquema";
 import { Elementos } from "../componentes/Elementos";
-import { Apoyos, esApoyo, FondoSoloAudio } from "../componentes/Apoyo";
+import { Apoyos, esApoyo, FondoSoloAudio, type UbicacionApoyo } from "../componentes/Apoyo";
+import {
+  avanceDivision,
+  cajaEncima,
+  caraCorrida,
+  corrimientoDividido,
+  esVertical,
+  tramosDivididos,
+} from "../edicion/ubicacion";
 import { VideoEnEscena } from "../componentes/Escena3D";
 import { esEscena } from "../edicion/escenas";
 import { dibujosDe } from "../edicion/dibujos";
@@ -176,16 +184,63 @@ export const Editado: React.FC<PropsEditado> = ({ edicion, dibujos }) => {
     () => (edicion ? momentosConVoz(edicion, tramos, fps) : []),
     [edicion, tramos, fps],
   );
-  // Durante una escena de apoyo no se ve la cara: los subtítulos no tienen que esquivarla.
+  // Dónde va cada escena de apoyo: tapando el video (completa), en una tarjeta encima o en
+  // pantalla dividida. En los proyectos de solo audio no hay persona: siempre completa.
+  const ubicaciones = useMemo((): Array<UbicacionApoyo & { ocultaSubtitulos?: boolean }> => {
+    if (!edicion) return [];
+    const o = edicion.opciones;
+    const tope = o.subtitulos
+      ? o.posicionSubtitulos * height -
+        mediaFranjaSubtitulos(width, height, o.estiloSubtitulos) -
+        Math.min(width, height) * 0.03
+      : null;
+    return apoyos.map((a) => {
+      const u = o.soloAudio || a.elemento.tipo !== "apoyo" ? "completa" : a.elemento.ubicacion;
+      if (u !== "encima") return { modo: u };
+      const caja = cajaEncima({
+        width,
+        height,
+        cara: caraEntre(a.desdeFrame, a.desdeFrame + a.duracionFrames),
+        topeSubtitulos: tope,
+      });
+      return { modo: "encima", caja, ocultaSubtitulos: caja.ocultaSubtitulos };
+    });
+  }, [edicion, apoyos, width, height, caraEntre]);
+  // Tramos en pantalla dividida y cuánto se corre el video en cada uno.
+  const divididos = useMemo(
+    () => tramosDivididos(apoyos.filter((_, i) => ubicaciones[i]?.modo === "dividida")),
+    [apoyos, ubicaciones],
+  );
+  const corrimientos = useMemo(
+    () => divididos.map((t) => corrimientoDividido(width, height, caraEntre(t.desde, t.hasta))),
+    [divididos, width, height, caraEntre],
+  );
+  // Durante una escena de apoyo completa no se ve la cara: los subtítulos no tienen que
+  // esquivarla. En pantalla dividida, esquivan la cara ya corrida.
   const caraParaSubtitulos = useCallback(
-    (desde: number, hasta: number) =>
-      apoyos.some(
-        (a) =>
-          desde >= a.desdeFrame && hasta <= a.desdeFrame + a.duracionFrames,
-      )
-        ? null
-        : caraEntre(desde, hasta),
-    [apoyos, caraEntre],
+    (desde: number, hasta: number) => {
+      const d = divididos.findIndex((t) => desde < t.hasta && hasta > t.desde);
+      if (d >= 0) return caraCorrida(caraEntre(desde, hasta), corrimientos[d]);
+      const tapada = apoyos.some(
+        (a, i) =>
+          ubicaciones[i]?.modo === "completa" &&
+          desde >= a.desdeFrame &&
+          hasta <= a.desdeFrame + a.duracionFrames,
+      );
+      return tapada ? null : caraEntre(desde, hasta);
+    },
+    [apoyos, ubicaciones, divididos, corrimientos, caraEntre],
+  );
+  // Con la pantalla dividida, los subtítulos van en la línea que divide (vertical) o en la mitad
+  // de la persona (horizontal): nunca encima de la animación ni de la cara.
+  const columnaSubtitulos = useCallback(
+    (desde: number, hasta: number) => {
+      if (!divididos.some((t) => desde < t.hasta && hasta > t.desde)) return null;
+      return esVertical(width, height)
+        ? { x: 0, ancho: width, centro: height / 2 + Math.min(width, height) * 0.075 }
+        : { x: width / 2, ancho: width / 2 };
+    },
+    [divididos, width, height],
   );
   if (!edicion) return null;
 
@@ -227,6 +282,11 @@ export const Editado: React.FC<PropsEditado> = ({ edicion, dibujos }) => {
   ) {
     sinSubtitulos.push([0, framesGancho]);
   }
+  // Una tarjeta encima sin lugar para los subtítulos los esconde mientras dura.
+  apoyos.forEach((a, i) => {
+    if (ubicaciones[i]?.ocultaSubtitulos)
+      sinSubtitulos.push([a.desdeFrame, a.desdeFrame + a.duracionFrames]);
+  });
   // Una escena de frase ya muestra lo que se dice.
   for (const a of apoyos) {
     if (a.elemento.modo === "frase")
@@ -243,6 +303,11 @@ export const Editado: React.FC<PropsEditado> = ({ edicion, dibujos }) => {
 
   const { marca } = buscarEstilo(edicion.estilo);
   const color = colorEn(colores, frame);
+  // El video se corre (abajo o a la derecha) mientras la pantalla está dividida.
+  const division = avanceDivision(frame, divididos);
+  const corrido = division.tramo
+    ? corrimientos[divididos.indexOf(division.tramo)]
+    : { x: 0, y: 0 };
 
   return (
     <ConEstilo estilo={edicion.estilo}>
@@ -256,6 +321,14 @@ export const Editado: React.FC<PropsEditado> = ({ edicion, dibujos }) => {
         <AbsoluteFill
           style={{ opacity: opciones.soloAudio ? 0 : 1, filter: color.filtro }}
         >
+          <AbsoluteFill
+            style={{
+              transform:
+                division.t > 0
+                  ? `translate(${corrido.x * division.t}px, ${corrido.y * division.t}px)`
+                  : undefined,
+            }}
+          >
           <VideoEnEscena escenas={escenas} caraEntre={caraEntre}>
             <Series>
               {tramos.map((tramo, i) => (
@@ -281,6 +354,7 @@ export const Editado: React.FC<PropsEditado> = ({ edicion, dibujos }) => {
               ))}
             </Series>
           </VideoEnEscena>
+          </AbsoluteFill>
           {color.vineta > 0 ? (
             <AbsoluteFill
               style={{
@@ -309,6 +383,8 @@ export const Editado: React.FC<PropsEditado> = ({ edicion, dibujos }) => {
               items={apoyos}
               limiteAbajo={limiteApoyos}
               dibujos={dibujos ?? {}}
+              ubicaciones={ubicaciones}
+              divididos={divididos}
             />
           </Sequence>
         ) : null}
@@ -327,6 +403,7 @@ export const Editado: React.FC<PropsEditado> = ({ edicion, dibujos }) => {
               posicion={opciones.posicionSubtitulos}
               ocultarEn={sinSubtitulos}
               caraEntre={caraParaSubtitulos}
+              columnaEn={columnaSubtitulos}
             />
           </Sequence>
         ) : null}

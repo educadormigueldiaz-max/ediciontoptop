@@ -6,6 +6,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { CARPETA_PROYECTOS, CARPETA_SALIDA, FPS, RAIZ, REMOTION_BIN, actualizarListaDeProyectos, escribirJson, leerJson, puertoLibre } from "./herramientas.mjs";
+import { opcionesGl } from "./gl.mjs";
 
 // Misma cuenta que src/edicion/linea-de-tiempo.ts: de segundos del original a cuadros del editado.
 export const tramosDe = (edicion) => {
@@ -182,7 +183,7 @@ export const revisarSentido = async ({ id, preguntar, rondas = 3, cuales = null,
         const salida = path.join(carpeta, `escena-${i}-${k + 1}.png`);
         const r = spawnSync(
           REMOTION_BIN,
-          ["still", id, salida, `--frame=${frame}`, `--props=${props}`, `--port=${puerto}`, "--log=error"],
+          ["still", id, salida, `--frame=${frame}`, `--props=${props}`, `--port=${puerto}`, "--log=error", ...opcionesGl(actual)],
           { cwd: RAIZ, encoding: "utf8" },
         );
         if (r.status === 0) lista.push({ archivo: salida, segundo: ((frame - desde) / FPS).toFixed(1) });

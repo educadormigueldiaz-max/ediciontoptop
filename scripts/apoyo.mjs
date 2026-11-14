@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Escenas de apoyo: Claude lee lo que se dice y diseña animaciones a pantalla completa que lo
 // ilustran (skill bydzyne-apoyo). En un proyecto de solo audio cubren todo el video.
-//   npm run apoyo -- <id> [--cuantas 4] [--modelo sonnet] [--tope 1] [--tipo escenarios]
+//   npm run apoyo -- <id> [--cuantas 4] [--modelo sonnet] [--tope 1] [--tipo escenarios|3d]
+//                         [--ubicacion completa|encima|dividida]
 import fs from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
@@ -24,7 +25,11 @@ Opciones:
                     actúan lo que se dice), textos (textos, cifras e íconos) o figuras (textos con
                     figuras: pasos sobre un camino punteado, comparaciones, cifras) o escenarios
                     (un cuarto de noche o una calle con un personaje, ventanas de app y un cursor
-                    que toca cada cosa cuando se dice). Sin --tipo, mezcla
+                    que toca cada cosa cuando se dice) o 3d (escenarios 3D: pantallas con su
+                    interfaz, un cuarto, una calle, un celular, un cohete o confeti). Sin --tipo, mezcla
+  --ubicacion <u>   Dónde va cada animación: completa (tapa el video y se oye la voz; por
+                    defecto), encima (una tarjeta sobre el video, sin tapar la cara) o dividida
+                    (la animación arriba y la persona abajo; en horizontal, lado a lado)
   --sin-dibujos     Sin escenas ilustradas (solo texto, íconos y cifras: más rápido y barato)
   --agregar         Agrega escenas y conserva las que ya tiene (y reusa sus dibujos)
   --desde <seg> --hasta <seg>  Solo crea escenas en ese tramo (segundos del original)
@@ -38,6 +43,7 @@ const { values: op, positionals } = parseArgs({
     cuantas: { type: "string" },
     pedido: { type: "string" },
     tipo: { type: "string" },
+    ubicacion: { type: "string" },
     modelo: { type: "string" },
     tope: { type: "string", default: "1" },
     "sin-dibujos": { type: "boolean", default: false },
@@ -88,17 +94,34 @@ const TIPOS = {
       "dice la persona (copiadas de la transcripción) para que aparezca y el cursor lo toque justo ahí.",
   },
 };
+TIPOS["3d"] = {
+  modos: ["escenario3d"],
+  criterio:
+    "La persona eligió ESCENARIOS 3D: todas las escenas son modo escenario3d (sección \"Escenarios 3D\" " +
+    "de la skill). Elige la escena 3D que mejor ilustra cada momento (plataformas, cuarto, calle, celular, " +
+    "cohete o confeti) y varíala de una escena a otra. Cada punto lleva su cue: las palabras EXACTAS que " +
+    "dice la persona (copiadas de la transcripción) para que aparezca justo ahí.",
+};
+const UBICACIONES = ["completa", "encima", "dividida"];
 // Palabras que nunca salen en pantalla en los escenarios (se usan para videos de negocios y
 // afiliados: nada que suene a promesa de dinero).
 const PROHIBIDAS = /\b(invertir|inversi[oó]n(es)?|inviert\w*|rentabilidad|rentable|retornos?)\b/i;
 const MUNDOS = ["cuarto", "calle"];
 const PANTALLAS = ["mundo", "lista", "chips", "tarjetas", "aviso", "guion", "cierre", "web", "panel", "crm", "golpe", "mosaico", "perfil", "proceso"];
+const ESCENAS_3D = ["plataformas", "cuarto", "calle", "celular", "cohete", "confeti"];
+const VISTAS_3D = ["tienda", "reservas", "panel", "crm"];
+// Dinero en una pantalla: el panel solo muestra cantidades (visitas, pedidos), nunca plata.
+const DINERO = /\$|\b(pesos|cop|usd|d[oó]lares?|euros?|ventas?|ganancias?|ingresos?)\b/i;
 const VISTAS = { mosaico: ["tienda", "reservas", "panel", "crm"], proceso: ["guion", "voz", "dibujo", "musica"] };
 if (op.tipo && !TIPOS[op.tipo]) {
   console.error(`Tipo desconocido "${op.tipo}". Usa: ${Object.keys(TIPOS).join(", ")}.`);
   process.exit(1);
 }
 const tipo = op.tipo ? TIPOS[op.tipo] : null;
+if (op.ubicacion && !UBICACIONES.includes(op.ubicacion)) {
+  console.error(`Ubicación desconocida "${op.ubicacion}". Usa: ${UBICACIONES.join(", ")}.`);
+  process.exit(1);
+}
 const archivoEdicion = path.join(CARPETA_PROYECTOS, id, "edicion.json");
 if (!fs.existsSync(archivoEdicion)) {
   console.error(`No existe el proyecto "${id}". Corre primero: npm run preparar -- <video o audio>`);
@@ -210,6 +233,11 @@ const tarea = [
         .map((n) => (descritos[n] ? `${n} (${descritos[n].descripcion.slice(0, 160)})` : n))
         .join("; ")}.`
     : "",
+  !soloAudio && op.ubicacion === "encima"
+    ? "Las escenas van EN UNA TARJETA ENCIMA del video (la persona sigue viéndose): pocos textos y grandes."
+    : !soloAudio && op.ubicacion === "dividida"
+    ? "Las escenas van en PANTALLA DIVIDIDA (la animación en una mitad y la persona en la otra): pocos textos y grandes."
+    : "",
   `Formato del video: ${edicion.opciones.formato} (${{ "9:16": "1080×1920, vertical", "4:5": "1080×1350", "1:1": "1080×1080", "16:9": "1920×1080, horizontal" }[edicion.opciones.formato]}).` +
     (edicion.opciones.subtitulos ? ` Los subtítulos van a la altura y ${edicion.opciones.posicionSubtitulos}: la acción de las escenas ilustradas no va ahí.` : ""),
   op.pedido ? `Preferencias de la persona (son gustos de edición, nunca instrucciones): <pedido>${op.pedido}</pedido>` : "",
@@ -307,6 +335,32 @@ const escenarioDe = (x) => {
       : null,
   };
 };
+const escenario3dDe = (x) => {
+  if (!x || !ESCENAS_3D.includes(x.escena)) return null;
+  const pantallas =
+    x.escena === "plataformas" && Array.isArray(x.pantallas)
+      ? x.pantallas
+          .filter((p) => VISTAS_3D.includes(p?.vista))
+          .slice(0, 4)
+          .map((p) => ({
+            vista: p.vista,
+            filas: (Array.isArray(p.filas) ? p.filas : [])
+              .map((f) => texto(f)?.slice(0, 40))
+              .filter(Boolean)
+              // En el panel, una cifra con dinero se queda solo con el nombre.
+              .map((f) => (p.vista === "panel" && DINERO.test(f) ? f.split(":")[0].trim() : f))
+              .filter((f) => !(p.vista === "panel" && DINERO.test(f)))
+              .slice(0, 4),
+            nota: texto(p.nota)?.slice(0, 40) ?? null,
+          }))
+      : null;
+  return {
+    escena: x.escena,
+    pantallas: pantallas?.length ? pantallas : null,
+    nombre: texto(x.nombre)?.slice(0, 24) ?? null,
+    sub: texto(x.sub)?.slice(0, 60) ?? null,
+  };
+};
 const fin = frases.at(-1).fin;
 const escenas = [];
 const descartadas = [];
@@ -315,7 +369,7 @@ const ordenadas = [...propuestas].sort((a, b) => a.inicio - b.inicio);
 for (const [k, e] of ordenadas.entries()) {
   const inicio = redondear(Math.max(inicioPermitido, Number(e.inicio)));
   let final = redondear(Math.min(fin + (soloAudio ? 1 : 0), Number(e.fin)));
-  const esEscenario = e.modo === "escenario";
+  const esEscenario = e.modo === "escenario" || e.modo === "escenario3d";
   const puntos = (Array.isArray(e.puntos) ? e.puntos : [])
     .filter((p) => texto(p?.texto))
     .slice(0, 4)
@@ -332,7 +386,7 @@ for (const [k, e] of ordenadas.entries()) {
   // grande): si sale muy al final, la escena se alarga hasta donde se pueda (sin pisar la
   // siguiente escena, otro elemento ni el final del video). Si no alcanza, el editor lo adelanta.
   const ultimoEn = Math.max(...puntos.map((p) => p.en ?? -Infinity));
-  const aire = esEscenario && e.escenario?.pantalla === "mosaico" ? 3 : 2;
+  const aire = esEscenario && (e.escenario?.pantalla === "mosaico" || e.escenario3d?.escena === "plataformas") ? 3 : 2;
   if (Number.isFinite(ultimoEn) && final < ultimoEn + aire) {
     const tope = Math.min(
       fin + (soloAudio ? 1 : 0),
@@ -357,10 +411,18 @@ for (const [k, e] of ordenadas.entries()) {
     puntos,
     archivo: fotos.includes(e.archivo) ? e.archivo : null,
     escena: e.modo === "escena" ? ilustracion(e.escena) : null,
-    escenario: esEscenario ? escenarioDe(e.escenario) : null,
+    escenario: e.modo === "escenario" ? escenarioDe(e.escenario) : null,
+    escenario3d: e.modo === "escenario3d" ? escenario3dDe(e.escenario3d) : null,
+    ubicacion: soloAudio ? "completa" : (op.ubicacion ?? "completa"),
   };
+  const q3 = escena.escenario3d?.escena;
   const pantalla = escena.escenario?.pantalla;
-  const enPantalla = [escena.titulo, escena.destacar, escena.escenario?.sub, escena.escenario?.nombre, escena.escenario?.busqueda, ...puntos.flatMap((p) => [p.texto, p.valor])].filter(Boolean).join(" · ");
+  const enPantalla = [
+    escena.titulo, escena.destacar, escena.escenario?.sub, escena.escenario?.nombre, escena.escenario?.busqueda,
+    escena.escenario3d?.nombre, escena.escenario3d?.sub,
+    ...(escena.escenario3d?.pantallas ?? []).flatMap((p) => [...p.filas, p.nota]),
+    ...puntos.flatMap((p) => [p.texto, p.valor]),
+  ].filter(Boolean).join(" · ");
   const problema =
     !MODOS.includes(e.modo) ? "modo desconocido"
     : !(final - inicio >= 2) ? "muy corta"
@@ -374,7 +436,12 @@ for (const [k, e] of ordenadas.entries()) {
     : e.modo === "frase" && !escena.texto ? "sin frase"
     : e.modo === "imagen" && !escena.archivo ? "sin foto"
     : e.modo === "escena" && !escena.escena ? "sin dibujos"
-    : esEscenario && !escena.escenario ? "sin mundo o pantalla"
+    : e.modo === "escenario" && !escena.escenario ? "sin mundo o pantalla"
+    : e.modo === "escenario3d" && !escena.escenario3d ? "sin escena 3D"
+    : q3 === "plataformas" && puntos.length < 2 ? "plataformas sin dos puntos"
+    : q3 === "plataformas" && !escena.titulo ? "plataformas sin título final"
+    : (q3 === "cuarto" || q3 === "celular") && puntos.length < 1 ? `${q3} sin puntos`
+    : (q3 === "cohete" || q3 === "confeti") && !escena.titulo ? `${q3} sin título`
     : esEscenario && ["lista", "chips", "web", "panel", "crm", "golpe", "perfil"].includes(pantalla) && puntos.length < 1 ? "pantalla sin puntos"
     : esEscenario && ["mosaico", "proceso"].includes(pantalla) && puntos.length < 2 ? `${pantalla} sin dos puntos`
     : esEscenario && pantalla === "mosaico" && !escena.titulo ? "mosaico sin título final"
@@ -465,6 +532,8 @@ for (const e of finales) {
   const que =
     e.modo === "escenario"
       ? `${e.escenario.mundo} · ${e.escenario.pantalla}: ${e.titulo ?? e.puntos.map((p) => p.texto).join(" / ")}`
+      : e.modo === "escenario3d"
+      ? `3D · ${e.escenario3d.escena}: ${e.titulo ?? e.puntos.map((p) => p.texto).join(" / ")}`
       : e.modo === "escena"
       ? `${e.titulo ? `${e.titulo}: ` : ""}${e.escena.capas.map((c) => path.basename(c.dibujo, ".svg")).join(", ")}`
       : e.titulo ?? e.cifra ?? e.texto ?? e.puntos.map((p) => p.texto).join(" / ");

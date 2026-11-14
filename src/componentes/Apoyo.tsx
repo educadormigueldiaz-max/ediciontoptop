@@ -13,7 +13,8 @@ import {
   useVideoConfig,
 } from "remotion";
 import { createContext, useContext } from "react";
-import { margenesSeguros } from "../edicion/encuadre";
+import { margenesSeguros, type Caja } from "../edicion/encuadre";
+import { avanceDivision, esVertical, margenesDivididos, mitadAnimacion, type TramoDividido } from "../edicion/ubicacion";
 import type { ElementoApoyo } from "../edicion/esquema";
 import { useMarca } from "../edicion/estilos";
 import { elegirVariantes, VARIANTE_BASE, type Entrada, type FondoEscena, type Variante } from "../edicion/variantes";
@@ -22,6 +23,7 @@ import type { Marca } from "../marca";
 import { buscarIcono } from "./iconos";
 import { EscenaIlustrada } from "./EscenaIlustrada";
 import { continuidadEscenarios, EscenarioAnimado, type Continuidad } from "./Escenario";
+import { Escenario3D } from "./Escenario3D";
 import { fuenteImagen } from "./ImagenInsertada";
 import { normalizar, tamanoQueCabe } from "./Lettering";
 
@@ -1376,11 +1378,13 @@ const Escena: React.FC<{
   dibujos: Record<string, string>;
   variante: Variante;
   continuidad: Continuidad;
-}> = ({ item, limiteAbajo, dibujos, variante, continuidad }) => {
+  // Márgenes propios (escena dentro de una tarjeta o de media pantalla).
+  margenes?: { arriba: number; abajo: number; lados: number };
+}> = ({ item, limiteAbajo, dibujos, variante, continuidad, margenes }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const { duracionFrames } = item;
-  const m = margenesSeguros(width, height);
+  const m = margenes ?? margenesSeguros(width, height);
   const piso = Math.max(
     m.arriba + height * 0.3,
     limiteAbajo ?? height - m.abajo,
@@ -1419,6 +1423,8 @@ const Escena: React.FC<{
     <AbsoluteFill style={estiloTransicion(variante.transicion, abre, cierra, width, height, lado)}>
       {item.elemento.modo === "escenario" ? (
         <EscenarioAnimado item={item} area={area} continuidad={continuidad} />
+      ) : item.elemento.modo === "escenario3d" ? (
+        <Escenario3D item={item} area={area} />
       ) : ilustrada || video ? (
         <>
           {ilustrada && ilustrada.fondo === "marca" ? (
@@ -1481,36 +1487,111 @@ const Escena: React.FC<{
   );
 };
 
+// Dónde va cada escena (ver src/edicion/ubicacion.ts): la tarjeta de las de "encima".
+export type UbicacionApoyo = { modo: "completa" } | { modo: "dividida" } | { modo: "encima"; caja: Caja };
+
 export const Apoyos: React.FC<{
   items: ApoyoEnEditado[];
   limiteAbajo: number | null;
   dibujos: Record<string, string>;
-}> = ({ items, limiteAbajo, dibujos }) => {
+  ubicaciones?: UbicacionApoyo[];
+  divididos?: TramoDividido[];
+}> = ({ items, limiteAbajo, dibujos, ubicaciones, divididos = [] }) => {
+  const frame = useCurrentFrame();
+  const { width, height } = useVideoConfig();
   const variantes = elegirVariantes(items.map((x) => x.elemento));
   const continuidades = continuidadEscenarios(items);
+  const division = avanceDivision(frame, divididos);
+  const mitad = mitadAnimacion(width, height);
+  const vertical = esVertical(width, height);
   return (
     <AbsoluteFill>
-      {items.map((item, i) => (
-        <Sequence
-          key={i}
-          from={item.desdeFrame}
-          durationInFrames={item.duracionFrames}
-          name={
-            item.elemento.modo === "escenario"
-              ? `Apoyo: escenario · ${item.elemento.escenario?.mundo} · ${item.elemento.escenario?.pantalla}`
-              : `Apoyo: ${item.elemento.modo} · ${variantes[i].transicion} · ${variantes[i].fondo}`
-          }
-        >
+      {items.map((item, i) => {
+        const u = ubicaciones?.[i] ?? { modo: "completa" as const };
+        const escena = (margenes?: { arriba: number; abajo: number; lados: number }) => (
           <Escena
             item={item}
-            limiteAbajo={limiteAbajo}
+            limiteAbajo={u.modo === "completa" ? limiteAbajo : null}
             dibujos={dibujos}
             variante={variantes[i]}
             continuidad={continuidades[i]}
+            margenes={margenes}
           />
-        </Sequence>
-      ))}
+        );
+        const nombre =
+          item.elemento.modo === "escenario"
+            ? `Apoyo: escenario · ${item.elemento.escenario?.mundo} · ${item.elemento.escenario?.pantalla}`
+            : item.elemento.modo === "escenario3d"
+              ? `Apoyo: 3D · ${item.elemento.escenario3d?.escena}`
+              : `Apoyo: ${item.elemento.modo} · ${variantes[i].transicion} · ${variantes[i].fondo}`;
+        return (
+          <Sequence key={i} from={item.desdeFrame} durationInFrames={item.duracionFrames} name={`${nombre} · ${u.modo}`}>
+            {u.modo === "completa" ? (
+              escena()
+            ) : u.modo === "dividida" ? (
+              // La mitad de la animación entra deslizándose cuando la pantalla se divide.
+              <div
+                style={{
+                  position: "absolute",
+                  left: mitad.x,
+                  top: mitad.y,
+                  width: mitad.ancho,
+                  height: mitad.alto,
+                  overflow: "hidden",
+                  transform: vertical
+                    ? `translateY(${-(1 - division.t) * mitad.alto}px)`
+                    : `translateX(${-(1 - division.t) * mitad.ancho}px)`,
+                  boxShadow: "0 0 40px rgba(0,0,0,.45)",
+                }}
+              >
+                <Sequence width={mitad.ancho} height={mitad.alto} layout="none">
+                  <AbsoluteFill style={{ width: mitad.ancho, height: mitad.alto }}>
+                    {escena(margenesDivididos(width, height))}
+                  </AbsoluteFill>
+                </Sequence>
+              </div>
+            ) : (
+              <TarjetaEncima caja={u.caja} duracion={item.duracionFrames}>
+                {escena({ arriba: u.caja.alto * 0.05, abajo: u.caja.alto * 0.05, lados: u.caja.ancho * 0.05 })}
+              </TarjetaEncima>
+            )}
+          </Sequence>
+        );
+      })}
     </AbsoluteFill>
+  );
+};
+
+// La tarjeta de una escena "encima": entra y sale con un pequeño salto; adentro, la escena se
+// dibuja a la medida de la tarjeta.
+const TarjetaEncima: React.FC<{ caja: Caja; duracion: number; children: React.ReactNode }> = ({ caja, duracion, children }) => {
+  const frame = useCurrentFrame();
+  const { width, height } = useVideoConfig();
+  const abre = interpolate(frame, [0, 10], [0, 1], { ...LIMITE, easing: Easing.bezier(0.16, 1, 0.3, 1) });
+  const cierra = interpolate(frame, [duracion - 8, duracion], [0, 1], { ...LIMITE, easing: Easing.in(Easing.cubic) });
+  const ancho = Math.round(caja.ancho);
+  const alto = Math.round(caja.alto);
+  const radio = Math.min(width, height) * 0.035;
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: caja.x,
+        top: caja.y,
+        width: ancho,
+        height: alto,
+        borderRadius: radio,
+        overflow: "hidden",
+        border: "2px solid rgba(255,255,255,.18)",
+        boxShadow: "0 30px 80px rgba(0,0,0,.55)",
+        opacity: abre * (1 - cierra),
+        transform: `translateY(${(1 - abre) * height * 0.03}px) scale(${0.92 + 0.08 * abre - 0.04 * cierra})`,
+      }}
+    >
+      <Sequence width={ancho} height={alto} layout="none">
+        <AbsoluteFill style={{ width: ancho, height: alto }}>{children}</AbsoluteFill>
+      </Sequence>
+    </div>
   );
 };
 
