@@ -40,6 +40,32 @@ export const duracionDeYoutube = async (url) => {
   return Number.isFinite(segundos) && segundos > 0 ? segundos : null;
 };
 
+// Datos públicos de un video (licencia, canal, título, duración) sin descargarlo. Los clips de un
+// enlace solo se aceptan si el autor lo publicó con licencia Creative Commons (permite reusarlo
+// dando crédito). Devuelve { licencia, cc, canal, titulo, segundos } o { error: "bloqueo" | "privado" | "otro" }.
+export const datosDeYoutube = async (url) => {
+  await asegurarYtdlp();
+  const env = { ...process.env, PATH: `${path.dirname(process.execPath)}:${process.env.PATH}` };
+  const r = await new Promise((resolve) => {
+    const p = spawn(YTDLP, ["--no-playlist", "--skip-download", "--js-runtimes", `node:${process.execPath}`, "--print", "%(license)s\t%(channel)s\t%(title)s\t%(duration)s", url], { env });
+    let salida = "";
+    let errores = "";
+    const reloj = setTimeout(() => p.kill("SIGKILL"), 90000);
+    p.stdout.on("data", (d) => (salida += d));
+    p.stderr.on("data", (d) => (errores += d));
+    p.on("close", (codigo) => { clearTimeout(reloj); resolve({ codigo, salida, errores }); });
+    p.on("error", () => { clearTimeout(reloj); resolve({ codigo: 1, salida: "", errores: "" }); });
+  });
+  const linea = r.salida.trim().split("\n").filter((l) => l.includes("\t")).at(-1);
+  if (r.codigo !== 0 || !linea) {
+    if (/not a bot|confirm you/i.test(r.errores)) return { error: "bloqueo" };
+    if (/private|members|sign in|age/i.test(r.errores)) return { error: "privado" };
+    return { error: "otro" };
+  }
+  const [licencia, canal, titulo, duracion] = linea.split("\t").map((x) => (x === "NA" ? "" : x.trim()));
+  return { licencia, cc: /creative commons/i.test(licencia), canal, titulo, segundos: parseFloat(duracion) || null };
+};
+
 // Descarga un video de YouTube en `carpeta` y devuelve la ruta del archivo. `alAvanzar(pct, listo)`
 // recibe el avance (0–99).
 export const descargarDeYoutube = async (url, { carpeta, alAvanzar = () => {} }) => {
@@ -49,8 +75,9 @@ export const descargarDeYoutube = async (url, { carpeta, alAvanzar = () => {} })
   const args = [
     "--no-playlist", "--restrict-filenames", "--newline", "--progress",
     "--progress-template", "download:BYDZYNE %(progress._percent_str)s",
-    // Hasta 1080p, en H.264 si existe (lo abre cualquier programa).
-    "-f", "bv*[height<=1080][vcodec^=avc1]+ba[ext=m4a]/bv*[height<=1080]+ba/b[height<=1080]/b",
+    // La mejor calidad que haya hasta 4K (1080p o más cuando existe; así el recorte vertical se ve
+    // nítido). Sin AV1, que algunos programas no abren.
+    "-f", "bv*[height<=2160][vcodec!^=av01]+ba[ext=m4a]/bv*[height<=2160][vcodec!^=av01]+ba/b[height<=2160]/b",
     "--merge-output-format", "mp4",
     "--ffmpeg-location", CARPETA_FFMPEG,
     // YouTube necesita un motor de JavaScript: el mismo Node que corre ByDzyne.

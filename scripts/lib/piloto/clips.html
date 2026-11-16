@@ -87,7 +87,7 @@ input[type=url] { font-size: 18px; }
 <section class="portada centro">
   <span class="etiqueta">Clips automáticos</span>
   <h1>Un video largo. <span class="brillo">Muchos clips listos.</span></h1>
-  <p>Pega un enlace de YouTube o sube tu charla, podcast o en vivo: salen los mejores momentos en vertical, con subtítulos y gancho.</p>
+  <p>Sube tu charla, podcast o en vivo, o pega el enlace de un video de YouTube con licencia libre: salen los mejores momentos en vertical, con subtítulos y gancho.</p>
 </section>
 
 <main class="centro">
@@ -113,13 +113,17 @@ input[type=url] { font-size: 18px; }
           <input type="url" id="enlace" inputmode="url" placeholder="https://www.youtube.com/watch?v=…" autocomplete="off">
           <button class="boton" type="submit" id="boton-clips">Sacar clips</button>
         </div>
-        <span class="ayuda">Solo videos tuyos o con permiso. Un video de 1 hora tarda de 30 a 60 minutos.</span>
+        <span class="ayuda">Solo videos con licencia Creative Commons: su autor permite reusarlos dando crédito. Kreo IA lo revisa antes de empezar y baja la mejor calidad que haya (1080p o más). En YouTube los encuentras con Filtros → Creative Commons. Un video de 1 hora tarda de 30 a 60 minutos.</span>
       </div>
       <p class="o">o</p>
       <label class="archivo" id="caja-video">
         <input type="file" id="video" accept="video/*">
         <strong id="texto-video">Sube el video desde tu equipo</strong>
         <span class="ayuda">Se envía al tocar «Sacar clips»</span>
+      </label>
+      <label class="casilla-permiso" style="display:flex;gap:10px;align-items:flex-start;font-size:15px">
+        <input type="checkbox" id="permiso" style="margin-top:3px">
+        <span>El video que subo es mío o tengo permiso de su autor para usarlo. <span class="ayuda">Usar videos de otros sin permiso puede hacer que te bajen los clips o te bloqueen la cuenta.</span></span>
       </label>
       <div class="campo">
         <span class="titulo">¿Dónde los vas a publicar?</span>
@@ -238,8 +242,9 @@ $("form-clips").addEventListener("submit", async (e) => {
   const enlace = $("enlace").value.trim();
   const video = $("video").files[0];
   if (!enlace && !video) return avisar("Pega el enlace de YouTube o elige un video.");
-  if (video && video.size > 4 * 1024 ** 3) return avisar("El video pesa más de 4 GB. Expórtalo más liviano o usa el enlace de YouTube.");
-  avisar("");
+  if (video && video.size > 4 * 1024 ** 3) return avisar("El video pesa más de 4 GB. Expórtalo más liviano.");
+  if (video && !$("permiso").checked) return avisar("Marca la casilla para confirmar que el video es tuyo o que tienes permiso de su autor.");
+  avisar(video ? "" : "Revisando la licencia del video en YouTube…", "bien");
   $("boton-clips").disabled = true;
   try {
     const { id } = await api("/api/trabajos", {
@@ -247,6 +252,7 @@ $("form-clips").addEventListener("submit", async (e) => {
       body: JSON.stringify({
         tipo: "clips",
         enlace: video ? "" : enlace,
+        permiso: Boolean(video) && $("permiso").checked,
         red: document.querySelector("input[name=red]:checked").value,
         estilo: $("estilo").value,
         nombreVideo: video?.name ?? "",
@@ -378,7 +384,10 @@ function clipsDe(t) {
 function cabeza(t) {
   const nombre = t.nombre === "clips-youtube" ? t.progreso?.video || "Video de YouTube" : t.nombre;
   const cola = t.enCola ? (t.enCola === 1 ? "Es el siguiente en la cola" : `Hay ${t.enCola - 1} antes en la cola`) : "";
-  return `<div class="cabeza"><div><h3>${esc(nombre)}</h3><p class="ayuda">${esc(t.red)} · ${fecha(t.creado)}${t.costo ? ` · ≈ ${t.costo} USD` : ""}${cola ? ` · ${cola}` : ""}</p></div>
+  // Licencia Creative Commons: el crédito al autor es obligatorio en la descripción de cada clip.
+  const credito = t.credito ? `Video original: "${t.credito.titulo}" de ${t.credito.canal} (${t.credito.enlace}), licencia Creative Commons Atribución.` : "";
+  const caja = credito ? `<div class="aviso bien" style="margin-top:8px"><strong>Crédito obligatorio:</strong> copia esto en la descripción de cada clip que publiques.<br><span style="user-select:all">${esc(credito)}</span><br><button class="boton suave" type="button" data-copiar="${esc(credito)}" style="min-height:32px;padding:0 12px;font-size:13px;margin-top:6px">Copiar crédito</button></div>` : "";
+  return `<div class="cabeza"><div><h3>${esc(nombre)}</h3><p class="ayuda">${esc(t.red)} · ${fecha(t.creado)}${t.costo ? ` · ≈ ${t.costo} USD` : ""}${cola ? ` · ${cola}` : ""}</p>${caja}</div>
     <div style="display:flex;gap:8px;align-items:center"><span class="estado ${t.estado}">${esc(t.estadoTexto)}</span>
     ${["listo", "problema"].includes(t.estado) ? `<button class="boton suave" type="button" data-borrar-grupo="${t.id}" style="min-height:36px;padding:0 14px;font-size:14px">Borrar todo</button>` : ""}</div></div>`;
 }
@@ -475,6 +484,11 @@ const confirmar = (boton, texto) => {
 };
 
 document.addEventListener("click", async (e) => {
+  const copiar = e.target.closest("[data-copiar]");
+  if (copiar) {
+    try { await navigator.clipboard.writeText(copiar.dataset.copiar); copiar.textContent = "✓ Copiado"; } catch { copiar.textContent = "Selecciónalo y cópialo"; }
+    return;
+  }
   const clip = e.target.closest("[data-borrar-clip]");
   const grupo = e.target.closest("[data-borrar-grupo]");
   if (clip || grupo) {

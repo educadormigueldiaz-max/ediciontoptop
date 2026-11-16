@@ -7,6 +7,7 @@ import path from "node:path";
 import { CARPETA_PROYECTOS, CARPETA_SALIDA, RAIZ, aId } from "../herramientas.mjs";
 import { estilosDisponibles, nombresDeEstilos } from "../produccion.mjs";
 import { archivoProgreso, posicionEnCola, siguiente } from "./cola.mjs";
+import { datosDeYoutube } from "../youtube.mjs";
 import {
   ESTADOS, REDES_PILOTO, TIPOS, abrirSesion, actualizarTrabajo, anotar, borrarPersona, carpetaTrabajo,
   cerrarSesion, comprobarClave, guardarPersona, leerSesion, leerTrabajo, nombreValido, nuevoTrabajo,
@@ -127,6 +128,8 @@ const vista = (t, posiciones, conDueno) => ({
   // Cambio a un clip en curso (el grupo sigue listo y los demás clips se pueden ver).
   cambioClip: t.pendiente?.tipo === "cambio-clip" ? { n: t.pendiente.n, pedido: t.pendiente.pedido } : null,
   cambiosClips: t.cambiosClips ?? [],
+  // Crédito al autor de un video de YouTube con licencia Creative Commons (va en la descripción).
+  credito: t.credito ?? null,
   ...(conDueno ? { usuario: t.usuario, costo: t.costo ?? 0 } : {}),
 });
 
@@ -291,6 +294,13 @@ const manejar = async (req, res) => {
     if (d.tipo === "clips" && d.enlace) {
       const enlace = String(d.enlace).trim();
       if (!ENLACE_YOUTUBE.test(enlace)) return error(res, 400, "Ese enlace no parece de un video de YouTube.");
+      // Solo videos que el autor publicó con licencia Creative Commons (permite reusarlos dando
+      // crédito). Si YouTube no deja leer el video desde el servidor, no se insiste: se pide subirlo.
+      const info = await datosDeYoutube(enlace);
+      if (info.error === "bloqueo") return error(res, 503, "YouTube no deja revisar videos desde nuestro servidor en este momento. Si tienes permiso para usar el video, descárgalo y súbelo como archivo aquí mismo.");
+      if (info.error === "privado") return error(res, 400, "Ese video es privado o pide iniciar sesión: no se puede usar.");
+      if (info.error) return error(res, 400, "No pudimos revisar ese video. Revisa el enlace e intenta de nuevo.");
+      if (!info.cc) return error(res, 400, "Ese video no tiene licencia Creative Commons, así que su autor no permite reusarlo. Si es tuyo o tienes permiso del autor, descárgalo y súbelo como archivo marcando la casilla de permiso.");
       const t = nuevoTrabajo({
         usuario,
         nombre: "clips-youtube",
@@ -298,6 +308,7 @@ const manejar = async (req, res) => {
         red: d.red,
         estilo,
         enlace,
+        credito: { titulo: info.titulo.slice(0, 200), canal: info.canal.slice(0, 120), enlace, licencia: info.licencia.slice(0, 120) },
         cta: "",
         notas: "",
         fotosEsperadas: 0,
@@ -305,7 +316,7 @@ const manejar = async (req, res) => {
         paso: "Esperando turno",
         enColaDesde: new Date().toISOString(),
       });
-      anotar(t.id, `Clips de YouTube pedidos por ${usuario}: ${enlace}, ${t.red}, estilo ${estilo}.`);
+      anotar(t.id, `Clips de YouTube pedidos por ${usuario}: ${enlace}, ${t.red}, estilo ${estilo}. Licencia: ${info.licencia}. Autor: ${info.canal}.`);
       siguiente();
       return enviarJson(res, 200, { id: t.id, enCola: true });
     }
@@ -332,6 +343,8 @@ const manejar = async (req, res) => {
     if (!origen && !EXT_VIDEO.includes(extension(d.nombreVideo)) && !(esAudio && d.tipo !== "clips")) {
       return error(res, 400, "Ese archivo no parece un video ni un audio. Usa MP4 o MOV (los del celular sirven) o un audio MP3 o M4A.");
     }
+    // Clips de un video subido: quien lo sube confirma que es suyo o que tiene permiso del autor.
+    if (!origen && d.tipo === "clips" && d.permiso !== true) return error(res, 400, "Marca la casilla para confirmar que el video es tuyo o que tienes permiso de su autor.");
     const fotos = Array.isArray(d.fotos) ? d.fotos : [];
     if (fotos.length > MAX_FOTOS) return error(res, 400, `Puedes subir hasta ${MAX_FOTOS} fotos.`);
     if (fotos.some((f) => !EXT_FOTO.includes(extension(f)))) return error(res, 400, "Las fotos deben ser JPG, PNG o HEIC.");
@@ -357,6 +370,7 @@ const manejar = async (req, res) => {
       videosApoyo: d.tipo === "clips" ? [] : enlacesDeApoyo(d.videosApoyo),
       apoyosEsperados: apoyos.length,
       ...(partes.length ? { partesEsperadas: partes.length, nombresPartes: partes.map((p) => p.slice(0, 120)), partes: [] } : {}),
+      ...(!origen && d.tipo === "clips" ? { permiso: { confirmado: true, fecha: new Date().toISOString() } } : {}),
       ...(origen ? { desdeClip: { id: origen.grupo, n: origen.n }, video: "video.mp4" } : {}),
     });
     if (origen) {
@@ -368,7 +382,7 @@ const manejar = async (req, res) => {
       t.id,
       `${origen ? `Clip ${origen.n} de ${origen.grupo} mandado a editar` : "Subido"} por ${usuario}: ${TIPOS[t.tipo]}${esAudio ? " (solo audio)" : ""}${partes.length ? ` (en ${partes.length} partes)` : ""}, ${t.red}, estilo ${estilo}, ` +
         `animaciones ${t.animaciones ? (t.tipoAnimacion ? `con ${t.tipoAnimacion}` : "sí") : "no"}, videos de apoyo ${t.videosApoyo.length + apoyos.length || "no"}. ` +
-        `CTA: ${t.cta || "-"}. Notas: ${t.notas || "-"}`,
+        `CTA: ${t.cta || "-"}. Notas: ${t.notas || "-"}${t.permiso ? ". Confirmó que el video es suyo o tiene permiso del autor" : ""}`,
     );
     return enviarJson(res, 200, { id: t.id });
   }

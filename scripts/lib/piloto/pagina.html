@@ -77,7 +77,8 @@
         <div class="campo" id="campo-enlace" hidden>
           <label class="titulo" for="enlace">…o pega el enlace de YouTube</label>
           <input type="url" id="enlace" inputmode="url" placeholder="https://www.youtube.com/watch?v=…">
-          <span class="ayuda">Solo videos tuyos o con permiso. Un video de 1 hora tarda de 30 a 60 minutos.</span>
+          <span class="ayuda">Solo videos con licencia Creative Commons (su autor permite reusarlos dando crédito): Kreo IA lo revisa antes. Un video de 1 hora tarda de 30 a 60 minutos.</span>
+          <label class="casilla" style="display:flex;gap:8px;align-items:flex-start;margin-top:8px"><input type="checkbox" id="permiso-clips"> <span>Si subo el archivo: el video es mío o tengo permiso de su autor para usarlo.</span></label>
         </div>
       </div>
       <div class="campo">
@@ -431,6 +432,7 @@ $("form-subir").addEventListener("submit", async (e) => {
   }
   const enlace = tipo === "clips" && !video ? $("enlace").value.trim() : "";
   const clip = !video && tipo !== "clips" ? clipElegido : null;
+  if (tipo === "clips" && video && !$("permiso-clips").checked) return avisar($("subir-aviso"), "Marca la casilla para confirmar que el video es tuyo o que tienes permiso de su autor.");
   if (!video && !enlace && !clip && partes.length < 2) return avisar($("subir-aviso"), tipo === "clips" ? "Elige el video o pega el enlace de YouTube." : "Elige el video primero.");
   const elegidos = tipo === "clips" ? [] : [...extras];
   const fotos = elegidos.filter((f) => !esVideoDeApoyo(f));
@@ -451,6 +453,7 @@ $("form-subir").addEventListener("submit", async (e) => {
       body: JSON.stringify({
         tipo,
         enlace,
+        permiso: tipo === "clips" && Boolean(video) && $("permiso-clips").checked,
         red: document.querySelector("input[name=red]:checked").value,
         estilo: $("estilo").value,
         cta: $("cta").value,
