@@ -193,8 +193,8 @@
   "nicho": "SAL",
   "ingles": true,
   "subs": 1080000,
-  "libres": 6,
-  "revisados": 6,
+  "libres": 5,
+  "revisados": 5,
   "revisado": "2026-11-16"
  },
  {
@@ -347,9 +347,10 @@
   "nicho": "ESP",
   "ingles": false,
   "subs": 602000,
-  "libres": 3,
-  "revisados": 4,
-  "revisado": "2026-11-16"
+  "libres": 2,
+  "revisados": 6,
+  "revisado": "2026-11-16",
+  "retirado": "2026-11-16"
  },
  {
   "id": "UCV_Yh2Gin-pC1lnIrfiLO4Q",
@@ -479,8 +480,8 @@
   "nicho": "SAL",
   "ingles": false,
   "subs": 391000,
-  "libres": 6,
-  "revisados": 6,
+  "libres": 5,
+  "revisados": 5,
   "revisado": "2026-11-16"
  },
  {
@@ -742,7 +743,7 @@
   "url": "https://www.youtube.com/@GaRby_Ruiz",
   "nicho": "HUM",
   "ingles": false,
-  "subs": 196000,
+  "subs": 197000,
   "libres": 6,
   "revisados": 6,
   "revisado": "2026-11-16"
@@ -897,7 +898,7 @@
   "nicho": "TEC",
   "ingles": true,
   "subs": 144000,
-  "libres": 5,
+  "libres": 6,
   "revisados": 6,
   "revisado": "2026-11-16"
  },
@@ -1039,7 +1040,7 @@
   "url": "https://www.youtube.com/@dauryrosariooficial",
   "nicho": "ESP",
   "ingles": false,
-  "subs": 115000,
+  "subs": 116000,
   "libres": 6,
   "revisados": 6,
   "revisado": "2026-11-16"
@@ -1193,7 +1194,7 @@
   "url": "https://www.youtube.com/@MarialuceyRD_Dietitian",
   "nicho": "SAL",
   "ingles": true,
-  "subs": 79700,
+  "subs": 79900,
   "libres": 6,
   "revisados": 6,
   "revisado": "2026-11-16"
@@ -1336,7 +1337,7 @@
   "url": "https://www.youtube.com/@GabrielBlancoOficial",
   "nicho": "DES",
   "ingles": false,
-  "subs": 59000,
+  "subs": 58900,
   "libres": 6,
   "revisados": 6,
   "revisado": "2026-11-16"
@@ -1479,7 +1480,7 @@
   "url": "https://www.youtube.com/@opentiera",
   "nicho": "HIS",
   "ingles": false,
-  "subs": 44200,
+  "subs": 44300,
   "libres": 5,
   "revisados": 6,
   "revisado": "2026-11-16"
@@ -1490,7 +1491,7 @@
   "url": "https://www.youtube.com/@REDPATBolivia",
   "nicho": "MIS",
   "ingles": false,
-  "subs": 44100,
+  "subs": 44200,
   "libres": 6,
   "revisados": 6,
   "revisado": "2026-11-16"
@@ -1535,7 +1536,7 @@
   "nicho": "VEN",
   "ingles": false,
   "subs": 40600,
-  "libres": 5,
+  "libres": 4,
   "revisados": 6,
   "revisado": "2026-11-16"
  },
@@ -1997,7 +1998,7 @@
   "nicho": "EDU",
   "ingles": false,
   "subs": 16200,
-  "libres": 6,
+  "libres": 5,
   "revisados": 6,
   "revisado": "2026-11-16"
  },
@@ -2161,7 +2162,7 @@
   "url": "https://www.youtube.com/@LunesInspiradores",
   "nicho": "DES",
   "ingles": false,
-  "subs": 8950,
+  "subs": 8960,
   "libres": 6,
   "revisados": 6,
   "revisado": "2026-11-16"
