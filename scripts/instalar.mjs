@@ -7,10 +7,15 @@ import { prepararWhisper } from "./lib/transcribir.mjs";
 
 const modelo = process.argv[2] ?? "medium";
 
-for (const [bin, ayuda] of [
-  ["git", "Instala las herramientas de Xcode con: xcode-select --install"],
-  ["make", "Instala las herramientas de Xcode con: xcode-select --install"],
-]) {
+// En Windows, Whisper se baja ya armado: no hace falta "make" (las herramientas de Xcode son solo de Mac).
+const enWindows = process.platform === "win32";
+const requisitos = enWindows
+  ? [["git", "Instala Git desde https://git-scm.com/download/win"]]
+  : [
+      ["git", "Instala las herramientas de Xcode con: xcode-select --install"],
+      ["make", "Instala las herramientas de Xcode con: xcode-select --install"],
+    ];
+for (const [bin, ayuda] of requisitos) {
   if (spawnSync(bin, ["--version"]).status !== 0) {
     console.error(`Falta "${bin}". ${ayuda}`);
     process.exit(1);

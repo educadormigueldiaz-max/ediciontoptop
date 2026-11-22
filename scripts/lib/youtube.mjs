@@ -5,14 +5,15 @@ import path from "node:path";
 import { RAIZ } from "./herramientas.mjs";
 
 // yt-dlp descarga de YouTube. Se baja solo la primera vez (es gratuito y de código abierto).
-const YTDLP = path.join(RAIZ, "node_modules", ".cache", "bydzyne", "yt-dlp");
+const YTDLP = path.join(RAIZ, "node_modules", ".cache", "bydzyne", process.platform === "win32" ? "yt-dlp.exe" : "yt-dlp");
 const asegurarYtdlp = async () => {
   if (fs.existsSync(YTDLP)) return;
-  // La versión que toca según dónde corre: el Mac de Miguel o el servidor (Linux, editor.somoskreo.com).
+  // La versión que toca según dónde corre: Mac, Windows o Linux.
   const version = process.platform === "darwin" ? "yt-dlp_macos"
+    : process.platform === "win32" ? "yt-dlp.exe"
     : process.platform === "linux" ? (process.arch === "arm64" ? "yt-dlp_linux_aarch64" : "yt-dlp_linux")
     : null;
-  if (!version) throw new Error("La descarga de YouTube solo está preparada para Mac y Linux.");
+  if (!version) throw new Error("La descarga de YouTube solo está preparada para Mac, Windows y Linux.");
   console.log("  Instalando el descargador de YouTube (solo la primera vez)…");
   const r = await fetch(`https://github.com/yt-dlp/yt-dlp/releases/latest/download/${version}`);
   if (!r.ok) throw new Error(`No se pudo bajar el descargador (${r.status}). Revisa el internet.`);
